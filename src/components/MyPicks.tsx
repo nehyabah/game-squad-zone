@@ -68,37 +68,41 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center space-y-2 sm:space-y-4">
-        <div className="flex items-center justify-between">
-          <div></div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-display font-bold text-foreground">My Current Picks</h3>
-            <p className="text-muted-foreground text-xs sm:text-base">Week 1 - Against the Spread</p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onEditPicks}
-            className="text-primary border-primary/20 hover:bg-primary/10 hover:border-primary/30"
-          >
-            <Edit className="w-3 h-3 mr-1" />
-            Edit
-          </Button>
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl sm:text-3xl font-display font-bold text-foreground">My Current Picks</h3>
+          <p className="text-muted-foreground text-sm sm:text-base mt-1">Week 1 - Against the Spread</p>
         </div>
-        <div className="flex items-center justify-center gap-2 flex-wrap px-3">
-          <Badge variant="default" className="text-xs px-2 py-0.5">
+        <Button 
+          variant="outline" 
+          size="default"
+          onClick={onEditPicks}
+          className="text-primary border-primary/30 hover:bg-primary/10 hover:border-primary/50 shadow-sm"
+        >
+          <Edit className="w-4 h-4 mr-2" />
+          Edit Picks
+        </Button>
+      </div>
+
+      {/* Stats Bar */}
+      <div className="flex items-center justify-center gap-6 py-4 px-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 rounded-xl border border-primary/20">
+        <div className="flex items-center gap-2">
+          <Badge variant="default" className="text-sm px-3 py-1">
             {pickedGames.length}/3 selected
           </Badge>
-          <Badge variant="outline" className="text-muted-foreground text-xs px-2 py-0.5">
-            <Calendar className="w-2 h-2 mr-1" />
-            <span className="hidden sm:inline">Lock: </span>Sat 12PM EST
-          </Badge>
+        </div>
+        <div className="hidden sm:block w-px h-6 bg-border"></div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar className="w-4 h-4" />
+          <span>Lock: Saturday 12PM EST</span>
         </div>
       </div>
 
-      <div className="grid gap-4">
-        {pickedGames.map(({ gameId, team, game }) => {
+      {/* Picks Grid */}
+      <div className="grid gap-6 max-w-4xl mx-auto">
+        {pickedGames.map(({ gameId, team, game }, index) => {
           if (!game) return null;
           
           const selectedTeam = team === 'home' ? game.homeTeam : game.awayTeam;
@@ -110,30 +114,60 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
           return (
             <Card 
               key={gameId}
-              className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent relative overflow-hidden"
+              className="group border-border/50 bg-gradient-to-br from-card via-card/95 to-primary/5 hover:from-card hover:to-primary/10 transition-all duration-300 shadow-sm hover:shadow-md relative overflow-hidden"
             >
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center gap-4">
-                  {/* Picked Team Logo */}
-                  <img 
-                    src={selectedTeam.logo} 
-                    alt={`${selectedTeam.name} logo`}
-                    className="w-12 h-12 sm:w-14 sm:h-14 object-contain"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                    }}
-                  />
+              {/* Pick Number Badge */}
+              <div className="absolute top-4 left-4 z-10">
+                <Badge variant="secondary" className="text-xs font-medium bg-primary/20 text-primary border-primary/30">
+                  Pick #{index + 1}
+                </Badge>
+              </div>
+
+              <CardContent className="p-6 pt-12">
+                <div className="flex items-center gap-6">
+                  {/* Picked Team Logo - Larger and Prominent */}
+                  <div className="flex-shrink-0">
+                    <div className="relative">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl flex items-center justify-center shadow-inner">
+                        <img 
+                          src={selectedTeam.logo} 
+                          alt={`${selectedTeam.name} logo`}
+                          className="w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-sm"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                   
-                  {/* Game Info */}
-                  <div className="flex-1">
-                    <div className="text-sm sm:text-base">
-                      <span className="font-bold text-foreground">{selectedTeam.name}</span>
-                      <span className="text-muted-foreground mx-2">vs</span>
+                  {/* Game Info - Better Typography */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-base sm:text-lg leading-tight">
+                      <span className="font-bold text-foreground text-lg">{selectedTeam.name}</span>
+                      <span className="text-muted-foreground/70 mx-3 text-sm">vs</span>
                       <span className="text-foreground">{opponentTeam.name}</span>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Spread: {displaySpread}
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Spread</span>
+                        <Badge variant="outline" className={`text-xs font-bold ${
+                          isPickingFavorite 
+                            ? 'text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800' 
+                            : 'text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
+                        }`}>
+                          {displaySpread}
+                        </Badge>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {isPickingFavorite ? 'Favorite' : 'Underdog'}
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Confidence Indicator */}
+                  <div className="hidden sm:flex flex-col items-center">
+                    <div className="w-2 h-8 bg-gradient-to-t from-primary/20 to-primary rounded-full"></div>
                   </div>
                 </div>
               </CardContent>
@@ -142,6 +176,7 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
         })}
       </div>
 
+      {/* Clear All Button */}
       {pickedGames.length > 0 && (
         <div className="text-center pt-4">
           <Button 

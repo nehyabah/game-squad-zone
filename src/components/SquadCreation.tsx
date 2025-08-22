@@ -13,12 +13,14 @@ const SquadCreation = () => {
   const [isCreated, setIsCreated] = useState(false);
 
   const triggerConfetti = () => {
+    const confettiColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8', '#f7dc6f'];
+    
     // Burst from left
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { x: 0.2, y: 0.6 },
-      colors: ['#3b82f6', '#1d4ed8', '#2563eb', '#60a5fa', '#93c5fd']
+      colors: confettiColors
     });
     
     // Burst from right
@@ -26,7 +28,7 @@ const SquadCreation = () => {
       particleCount: 100,
       spread: 70,
       origin: { x: 0.8, y: 0.6 },
-      colors: ['#3b82f6', '#1d4ed8', '#2563eb', '#60a5fa', '#93c5fd']
+      colors: confettiColors
     });
     
     // Center burst
@@ -35,7 +37,7 @@ const SquadCreation = () => {
         particleCount: 150,
         spread: 60,
         origin: { x: 0.5, y: 0.5 },
-        colors: ['#3b82f6', '#1d4ed8', '#2563eb', '#60a5fa', '#93c5fd']
+        colors: confettiColors
       });
     }, 200);
   };

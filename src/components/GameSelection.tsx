@@ -1,62 +1,53 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { nflApi, Game, Team } from "@/services/nflApi";
+import ApiKeyInput from "./ApiKeyInput";
 
-interface Game {
-  id: string;
-  homeTeam: string;
-  awayTeam: string;
-  spread: number;
-  time: string;
-  homeLogo: string;
-  awayLogo: string;
-}
-
-const mockGames: Game[] = [
-  {
-    id: "1",
-    homeTeam: "Patriots",
-    awayTeam: "Buccaneers", 
-    spread: -3.5,
-    time: "Sunday, Sep 10, 1:00 PM ET",
-    homeLogo: "🏈",
-    awayLogo: "🏈"
-  },
-  {
-    id: "2", 
-    homeTeam: "Panthers",
-    awayTeam: "Falcons",
-    spread: 2.5,
-    time: "Sunday, Sep 10, 1:00 PM ET",
-    homeLogo: "🏈",
-    awayLogo: "🏈"
-  },
-  {
-    id: "3",
-    homeTeam: "Browns", 
-    awayTeam: "Bengals",
-    spread: 5.5,
-    time: "Sunday, Sep 10, 1:00 PM ET",
-    homeLogo: "🏈",
-    awayLogo: "🏈"
-  },
-  {
-    id: "4",
-    homeTeam: "Lions",
-    awayTeam: "Chiefs", 
-    spread: -3.5,
-    time: "Sunday, Sep 10, 1:00 PM ET",
-    homeLogo: "🏈",
-    awayLogo: "🏈"
-  }
-];
 
 const GameSelection = () => {
   const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
+  const [games, setGames] = useState<Game[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasApiKey, setHasApiKey] = useState(false);
   const maxGames = 3;
+
+  useEffect(() => {
+    const checkApiKey = () => {
+      const apiKey = localStorage.getItem('nfl_api_key');
+      setHasApiKey(!!apiKey);
+      if (apiKey) {
+        loadGames();
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkApiKey();
+  }, []);
+
+  const loadGames = async () => {
+    setIsLoading(true);
+    try {
+      const gameData = await nflApi.getGames();
+      setGames(gameData);
+    } catch (error) {
+      console.error('Error loading games:', error);
+      // Fallback to mock data
+      const fallbackGames = await nflApi.getGames();
+      setGames(fallbackGames);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleApiKeySet = () => {
+    setHasApiKey(true);
+    loadGames();
+  };
 
   const toggleGameSelection = (gameId: string) => {
     const newSelected = new Set(selectedGames);
@@ -93,6 +84,52 @@ const GameSelection = () => {
     });
   };
 
+  if (!hasApiKey) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center space-y-2 sm:space-y-4">
+          <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">Connect your API to get real NFL data</p>
+        </div>
+        <ApiKeyInput onApiKeySet={handleApiKeySet} />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center space-y-2 sm:space-y-4">
+          <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">Loading games...</p>
+        </div>
+        <div className="grid gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-12 h-12 bg-muted rounded"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-24 bg-muted rounded"></div>
+                      <div className="h-3 w-16 bg-muted rounded"></div>
+                    </div>
+                    <div className="h-4 w-4 bg-muted rounded"></div>
+                    <div className="w-12 h-12 bg-muted rounded"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 w-24 bg-muted rounded"></div>
+                      <div className="h-3 w-16 bg-muted rounded"></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center space-y-2 sm:space-y-4">
@@ -110,10 +147,10 @@ const GameSelection = () => {
       </div>
 
       <div className="grid gap-4">
-        {mockGames.map((game) => {
+        {games.map((game) => {
           const isSelected = selectedGames.has(game.id);
-          const favoriteTeam = game.spread < 0 ? game.homeTeam : game.awayTeam;
-          const underdogTeam = game.spread < 0 ? game.awayTeam : game.homeTeam;
+          const favoriteTeam = game.spread < 0 ? game.homeTeam.name : game.awayTeam.name;
+          const underdogTeam = game.spread < 0 ? game.awayTeam.name : game.homeTeam.name;
           const spreadValue = Math.abs(game.spread);
 
           return (
@@ -131,11 +168,18 @@ const GameSelection = () => {
                   {/* Game Info */}
                   <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 sm:gap-3">
-                      <div className="text-lg sm:text-3xl">{game.awayLogo}</div>
+                      <img 
+                        src={game.awayTeam.logo} 
+                        alt={`${game.awayTeam.name} logo`}
+                        className="w-8 h-8 sm:w-12 sm:h-12 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                        }}
+                      />
                       <div className="text-left">
-                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.awayTeam}</div>
+                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.awayTeam.name}</div>
                         <div className="text-xs font-medium text-muted-foreground">
-                          {game.awayTeam === underdogTeam && `+${spreadValue}`}
+                          {game.awayTeam.name === underdogTeam && `+${spreadValue}`}
                         </div>
                       </div>
                     </div>
@@ -143,11 +187,18 @@ const GameSelection = () => {
                     <div className="text-muted-foreground font-bold text-xs sm:text-lg">@</div>
 
                     <div className="flex items-center gap-1.5 sm:gap-3">
-                      <div className="text-lg sm:text-3xl">{game.homeLogo}</div>
+                      <img 
+                        src={game.homeTeam.logo} 
+                        alt={`${game.homeTeam.name} logo`}
+                        className="w-8 h-8 sm:w-12 sm:h-12 object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                        }}
+                      />
                       <div className="text-left">
-                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.homeTeam}</div>
+                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.homeTeam.name}</div>
                         <div className="text-xs font-medium text-muted-foreground">
-                          {game.homeTeam === favoriteTeam && `-${spreadValue}`}
+                          {game.homeTeam.name === favoriteTeam && `-${spreadValue}`}
                         </div>
                       </div>
                     </div>

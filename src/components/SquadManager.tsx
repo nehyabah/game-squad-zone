@@ -147,7 +147,7 @@ const SquadManager = () => {
 
       <div className="grid gap-4">
         {squads.map((squad) => (
-          <Card key={squad.id} className="hover:shadow-md transition-shadow">
+          <Card key={squad.id} className="shadow-card border-0 bg-gradient-card hover:shadow-hover transition-smooth">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -165,21 +165,21 @@ const SquadManager = () => {
                   
                   <p className="text-muted-foreground text-sm mb-3">{squad.description}</p>
                   
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <Users className="w-4 h-4" />
                       <span>{squad.memberCount}/{squad.maxMembers} members</span>
                     </div>
                     
                     <div className="flex items-center gap-1">
-                      <Trophy className="w-4 h-4 text-muted-foreground" />
-                      <span>Join Code: {squad.joinCode}</span>
+                      <Trophy className="w-4 h-4" />
+                      <span>Join Code: <span className="font-mono text-foreground">{squad.joinCode}</span></span>
                     </div>
                   </div>
                 </div>
                 
                 <div className="flex flex-col gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="shadow-sm">
                     View Details
                   </Button>
                   {squad.createdBy === "You" && (

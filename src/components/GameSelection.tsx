@@ -138,10 +138,26 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className="cursor-pointer border-border bg-card"
+              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border bg-muted/30 hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-muted/40 hover:via-muted/50 hover:to-primary/20 relative overflow-hidden"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+                e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+              }}
             >
-              <CardContent className="p-3 sm:p-4">
-                <div className="flex flex-col items-center gap-2">
+              <CardContent className="p-3 sm:p-4 relative overflow-hidden">
+                {/* Mouse spotlight effect */}
+                <div 
+                  className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full blur-xl bg-primary/10 w-32 h-32 -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: 'var(--mouse-x, 50%)',
+                    top: 'var(--mouse-y, 50%)',
+                  }}
+                />
+                {/* Main content */}
+                <div className="relative flex flex-col items-center gap-2">
                   {/* Teams Layout - Logo Centered */}
                   <div className="flex items-center justify-center gap-4 sm:gap-8 w-full">
                     {/* Away Team */}

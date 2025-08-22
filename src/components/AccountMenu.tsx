@@ -46,12 +46,12 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
         {/* Menu Items */}
         <div className="p-6 pt-4 space-y-2">
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 p-4 rounded-2xl border border-blue-200/50 dark:border-blue-800/50">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 p-4 rounded-2xl border border-blue-200/50 dark:border-blue-800/50 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
               <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
               <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">My Stats</div>
               <div className="text-xs text-blue-600 dark:text-blue-300">View performance</div>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-4 rounded-2xl border border-green-200/50 dark:border-green-800/50">
+            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-4 rounded-2xl border border-green-200/50 dark:border-green-800/50 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
               <Settings className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
               <div className="text-sm font-semibold text-green-900 dark:text-green-100">Settings</div>
               <div className="text-xs text-green-600 dark:text-green-300">Preferences</div>
@@ -59,8 +59,8 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
           </div>
 
           <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group">
-              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-colors">
+            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-all duration-200 group-hover:scale-110">
                 <User className="w-5 h-5 text-primary" />
               </div>
               <div>
@@ -69,8 +69,8 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group">
-              <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-orange-500/20 transition-colors">
+            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+              <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-orange-500/20 transition-all duration-200 group-hover:scale-110">
                 <Bell className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
@@ -79,8 +79,8 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group">
-              <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-purple-500/20 transition-colors">
+            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+              <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-purple-500/20 transition-all duration-200 group-hover:scale-110">
                 <HelpCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
@@ -95,9 +95,9 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
             <Button 
               variant="ghost" 
               onClick={handleLogout}
-              className="w-full justify-start h-14 text-left font-normal text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-xl group"
+              className="w-full justify-start h-14 text-left font-normal text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm"
             >
-              <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-red-500/20 transition-colors">
+              <div className="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-red-500/20 transition-all duration-200 group-hover:scale-110">
                 <LogOut className="w-5 h-5" />
               </div>
               <div>

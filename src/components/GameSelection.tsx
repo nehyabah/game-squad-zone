@@ -137,7 +137,7 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card/90 hover:via-card/85 hover:to-primary/10 relative overflow-hidden"
+              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card hover:via-card/95 hover:to-primary/20 relative overflow-hidden"
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = e.clientX - rect.left;

@@ -15,6 +15,7 @@ import { Lock, Users } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("fixtures");
+  const [squadSubTab, setSquadSubTab] = useState("chat");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user } = useAuth();
 
@@ -213,7 +214,40 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="create" className="space-y-8">
-            <SquadManager />
+            {/* Squad Sub-tabs */}
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-center mb-6">
+                <div className="bg-muted/30 p-1 rounded-lg flex gap-1">
+                  <button
+                    onClick={() => setSquadSubTab("chat")}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      squadSubTab === "chat"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    Chat
+                  </button>
+                  <button
+                    onClick={() => setSquadSubTab("leaderboard")}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      squadSubTab === "leaderboard"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    Leaderboard
+                  </button>
+                </div>
+              </div>
+
+              {/* Squad Content */}
+              {squadSubTab === "chat" ? (
+                <SquadManager />
+              ) : (
+                <Leaderboard />
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">

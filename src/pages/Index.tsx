@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Lock, Users } from "lucide-react";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("create");
+  const [activeTab, setActiveTab] = useState("fixtures");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user } = useAuth();
 
@@ -72,33 +72,46 @@ const Index = () => {
         <CountdownTimer />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-sm sm:max-w-lg mx-auto mb-6 sm:mb-16 h-11 sm:h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
+          <TabsList className="grid w-full grid-cols-4 max-w-md sm:max-w-2xl mx-auto mb-6 sm:mb-16 h-11 sm:h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
+            <TabsTrigger 
+              value="fixtures" 
+              className="font-medium text-xs sm:text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+            >
+              Fixtures
+            </TabsTrigger>
             <TabsTrigger 
               value="create" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+              className="font-medium text-xs sm:text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
-              Create Squad
+              Create
             </TabsTrigger>
             <TabsTrigger 
               value="games" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+              className="font-medium text-xs sm:text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               My Picks
             </TabsTrigger>
             <TabsTrigger 
               value="leaderboard" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+              className="font-medium text-xs sm:text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               Ranking
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="fixtures" className="space-y-8">
+            <GameSelection />
+          </TabsContent>
 
           <TabsContent value="create" className="space-y-8">
             <SquadCreation />
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">
-            <GameSelection />
+            <div className="text-center">
+              <h3 className="text-xl font-display font-semibold text-foreground mb-4">My Current Picks</h3>
+              <p className="text-muted-foreground">Your picks for this week will appear here</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-8">

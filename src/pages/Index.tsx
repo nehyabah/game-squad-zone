@@ -6,6 +6,7 @@ import SquadManager from "@/components/SquadManager";
 import SquadManagerWithConditionalTabs from "@/components/SquadManagerWithConditionalTabs";
 import GameSelection from "@/components/GameSelection";
 import MyPicks from "@/components/MyPicks";
+import TeamLogosBanner from "@/components/TeamLogosBanner";
 import Leaderboard from "@/components/Leaderboard";
 import AuthModal from "@/components/AuthModal";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -73,6 +74,9 @@ const Index = () => {
           </h2>
           <p className="text-muted-foreground text-xs sm:text-base">Ready to make your picks?</p>
         </div>
+
+        {/* Team Logos Banner */}
+        <TeamLogosBanner />
 
         {activeTab !== "create" && <CountdownTimer />}
 

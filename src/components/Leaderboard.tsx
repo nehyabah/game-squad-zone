@@ -52,32 +52,32 @@ const getRankIcon = (rank: number) => {
 
 const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
   <div className="bg-card border border-border rounded-lg shadow-sm">
-    <div className="p-4 border-b border-border">
-      <h3 className="font-semibold text-foreground">Rankings</h3>
+    <div className="p-3 border-b border-border">
+      <h3 className="font-semibold text-sm text-foreground">Rankings</h3>
     </div>
     <div className="divide-y divide-border">
       {data.map((entry, index) => (
         <div 
           key={entry.rank}
-          className={`flex items-center justify-between p-4 hover:bg-muted/50 transition-colors ${
-            entry.isCurrentUser ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+          className={`flex items-center justify-between p-2.5 hover:bg-muted/50 transition-colors ${
+            entry.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
           } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
             index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
           } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
         >
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center w-8 h-8">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-6 h-6">
               {getRankIcon(entry.rank)}
             </div>
             
-            <div className="flex items-center gap-3">
-              <Avatar className="w-8 h-8">
-                <AvatarFallback className="text-sm font-medium">
+            <div className="flex items-center gap-2">
+              <Avatar className="w-6 h-6">
+                <AvatarFallback className="text-xs font-medium">
                   {entry.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <div className={`font-semibold ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+                <div className={`text-sm font-medium ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
                   {entry.username}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -87,14 +87,14 @@ const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="font-semibold text-foreground">{entry.winPercentage}%</div>
+              <div className="text-sm font-medium text-foreground">{entry.winPercentage}%</div>
               <div className="text-xs text-muted-foreground">Win Rate</div>
             </div>
             
             <div className="text-right">
-              <div className="font-bold text-lg text-primary">{entry.points}</div>
+              <div className="font-bold text-primary">{entry.points}</div>
               <div className="text-xs text-muted-foreground">Points</div>
             </div>
           </div>

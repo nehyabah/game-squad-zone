@@ -1,8 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Trophy, Users } from "lucide-react";
+import { Trophy, Users, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
-const Header = () => {
+interface HeaderProps {
+  onAuthClick: () => void;
+}
+
+const Header = ({ onAuthClick }: HeaderProps) => {
+  const { user, logout } = useAuth();
+
   return (
     <header className="bg-background border-b border-border px-6 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -24,15 +31,29 @@ const Header = () => {
           <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">My Squads</a>
         </nav>
 
-        {/* User Profile */}
+        {/* User Actions */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm">
-            <Users className="w-4 h-4 mr-2" />
-            My Squads
-          </Button>
-          <Avatar>
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+          {user ? (
+            <>
+              <div className="hidden sm:flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Welcome,</span>
+                <span className="font-semibold text-foreground">{user.username}</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={logout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+              <Avatar>
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                  {user.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </>
+          ) : (
+            <Button variant="squad" size="sm" onClick={onAuthClick}>
+              Login / Sign Up
+            </Button>
+          )}
         </div>
       </div>
     </header>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, Users, Trophy, Calendar } from "lucide-react";
+import { Plus, Users, Trophy, Calendar, Copy, Share2, MessageCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,6 +60,7 @@ const SquadManager = () => {
   const [squads, setSquads] = useState<Squad[]>(mockSquads);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedSquad, setSelectedSquad] = useState<Squad | null>(null);
+  const [createdSquad, setCreatedSquad] = useState<Squad | null>(null);
   const [newSquad, setNewSquad] = useState({
     name: "",
     description: "",
@@ -106,14 +107,53 @@ const SquadManager = () => {
     };
     
     setSquads([squad, ...squads]);
-    setNewSquad({ name: "", description: "", maxMembers: 10, isPublic: true });
-    setShowCreateDialog(false);
+    setCreatedSquad(squad);
     
     // Trigger celebration
     triggerConfetti();
     toast.success(`🎉 Squad "${squad.name}" created successfully!`, {
       description: `Join code: ${squad.joinCode}`
     });
+  };
+
+  const copyJoinCode = async (joinCode: string) => {
+    try {
+      await navigator.clipboard.writeText(joinCode);
+      toast.success("Join code copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy join code");
+    }
+  };
+
+  const shareToWhatsApp = (squad: Squad) => {
+    const message = `🎯 Join my fantasy squad "${squad.name}"!\n\nJoin Code: ${squad.joinCode}\n\nLet's compete and see who's the best at picking winners! 🏆`;
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+  };
+
+  const shareGeneric = async (squad: Squad) => {
+    const shareData = {
+      title: `Join ${squad.name}`,
+      text: `🎯 Join my fantasy squad "${squad.name}"! Use join code: ${squad.joinCode}`,
+      url: window.location.origin
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+        toast.success("Squad details copied to clipboard!");
+      }
+    } catch (err) {
+      toast.error("Failed to share squad details");
+    }
+  };
+
+  const handleFinishSharing = () => {
+    setCreatedSquad(null);
+    setNewSquad({ name: "", description: "", maxMembers: 10, isPublic: true });
+    setShowCreateDialog(false);
   };
 
   const handleViewSquad = (squad: Squad) => {
@@ -145,66 +185,137 @@ const SquadManager = () => {
             </Button>
           </DialogTrigger>
           <DialogContent className="w-[95vw] max-w-sm mx-auto p-0 gap-0 border-0 bg-white rounded-2xl shadow-2xl">
-            <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 border-b border-border/50">
-              <DialogHeader className="space-y-0">
-                <DialogTitle className="text-lg font-semibold text-center">Create Squad</DialogTitle>
-              </DialogHeader>
-            </div>
-            
-            <div className="p-4 space-y-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="squad-name" className="text-xs font-medium text-muted-foreground">Squad Name</Label>
-                <Input
-                  id="squad-name"
-                  placeholder="Enter squad name"
-                  value={newSquad.name}
-                  onChange={(e) => setNewSquad({ ...newSquad, name: e.target.value })}
-                  className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
-                />
-              </div>
-              
-              <div className="space-y-1.5">
-                <Label htmlFor="squad-description" className="text-xs font-medium text-muted-foreground">Description (Optional)</Label>
-                <Textarea
-                  id="squad-description"
-                  placeholder="What's your squad about?"
-                  value={newSquad.description}
-                  onChange={(e) => setNewSquad({ ...newSquad, description: e.target.value })}
-                  rows={2}
-                  className="border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm resize-none"
-                />
-              </div>
-              
-              <div className="space-y-1.5">
-                <Label htmlFor="max-members" className="text-xs font-medium text-muted-foreground">Max Members</Label>
-                <Input
-                  id="max-members"
-                  type="number"
-                  min="2"
-                  max="50"
-                  value={newSquad.maxMembers}
-                  onChange={(e) => setNewSquad({ ...newSquad, maxMembers: parseInt(e.target.value) })}
-                  className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
-                />
-              </div>
-              
-              <div className="flex gap-2 pt-2">
-                <Button 
-                  variant="outline"
-                  onClick={() => setShowCreateDialog(false)}
-                  className="flex-1 h-10 rounded-xl border-border/50 text-sm"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleCreateSquad} 
-                  className="flex-1 h-10 rounded-xl text-sm font-medium"
-                  disabled={!newSquad.name.trim()}
-                >
-                  Create
-                </Button>
-              </div>
-            </div>
+            {!createdSquad ? (
+              // Squad Creation Form
+              <>
+                <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 border-b border-border/50">
+                  <DialogHeader className="space-y-0">
+                    <DialogTitle className="text-lg font-semibold text-center">Create Squad</DialogTitle>
+                  </DialogHeader>
+                </div>
+                
+                <div className="p-4 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="squad-name" className="text-xs font-medium text-muted-foreground">Squad Name</Label>
+                    <Input
+                      id="squad-name"
+                      placeholder="Enter squad name"
+                      value={newSquad.name}
+                      onChange={(e) => setNewSquad({ ...newSquad, name: e.target.value })}
+                      className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label htmlFor="squad-description" className="text-xs font-medium text-muted-foreground">Description (Optional)</Label>
+                    <Textarea
+                      id="squad-description"
+                      placeholder="What's your squad about?"
+                      value={newSquad.description}
+                      onChange={(e) => setNewSquad({ ...newSquad, description: e.target.value })}
+                      rows={2}
+                      className="border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm resize-none"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label htmlFor="max-members" className="text-xs font-medium text-muted-foreground">Max Members</Label>
+                    <Input
+                      id="max-members"
+                      type="number"
+                      min="2"
+                      max="50"
+                      value={newSquad.maxMembers}
+                      onChange={(e) => setNewSquad({ ...newSquad, maxMembers: parseInt(e.target.value) })}
+                      className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setShowCreateDialog(false)}
+                      className="flex-1 h-10 rounded-xl border-border/50 text-sm"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleCreateSquad} 
+                      className="flex-1 h-10 rounded-xl text-sm font-medium"
+                      disabled={!newSquad.name.trim()}
+                    >
+                      Create
+                    </Button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              // Squad Sharing View
+              <>
+                <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 p-4 border-b border-border/50">
+                  <DialogHeader className="space-y-0">
+                    <DialogTitle className="text-lg font-semibold text-center">🎉 Squad Created!</DialogTitle>
+                  </DialogHeader>
+                </div>
+                
+                <div className="p-4 space-y-4">
+                  {/* Squad Info */}
+                  <div className="text-center space-y-2">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mx-auto">
+                      {createdSquad.name.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 className="font-semibold text-base">{createdSquad.name}</h3>
+                    <div className="bg-gray-50 rounded-xl p-3">
+                      <p className="text-xs text-muted-foreground mb-1">Join Code</p>
+                      <p className="font-mono font-bold text-lg tracking-wider text-primary">{createdSquad.joinCode}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Sharing Options */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground text-center">Share with friends</p>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyJoinCode(createdSquad.joinCode)}
+                        className="h-10 rounded-xl border-border/50 text-sm gap-2"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copy Code
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => shareToWhatsApp(createdSquad)}
+                        className="h-10 rounded-xl border-border/50 text-sm gap-2 text-green-600 border-green-200 hover:bg-green-50"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        WhatsApp
+                      </Button>
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => shareGeneric(createdSquad)}
+                      className="w-full h-10 rounded-xl border-border/50 text-sm gap-2"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share Squad
+                    </Button>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleFinishSharing}
+                    className="w-full h-10 rounded-xl text-sm font-medium"
+                  >
+                    Done
+                  </Button>
+                </div>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>

@@ -16,6 +16,10 @@ interface Squad {
   isPublic: boolean;
   createdBy: string;
   joinCode: string;
+  features: {
+    hasChat: boolean;
+    hasLeaderboard: boolean;
+  };
 }
 
 interface ChatMessage {
@@ -71,7 +75,12 @@ interface SquadDashboardProps {
 }
 
 const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
-  const [activeTab, setActiveTab] = useState("chat");
+  const [activeTab, setActiveTab] = useState(() => {
+    // Set initial tab based on available features
+    if (squad.features.hasChat) return "chat";
+    if (squad.features.hasLeaderboard) return "leaderboard";
+    return "chat";
+  });
   const [newMessage, setNewMessage] = useState("");
 
   const handleSendMessage = () => {
@@ -79,6 +88,8 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
     // In a real app, this would send the message to the backend
     setNewMessage("");
   };
+
+  const hasBothFeatures = squad.features.hasChat && squad.features.hasLeaderboard;
 
   return (
     <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6 px-3 sm:px-0 pb-16 sm:pb-0">
@@ -119,31 +130,33 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
         </CardContent>
       </Card>
 
-      {/* Mobile Bottom Tabs */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t sm:hidden">
-        <div className="grid grid-cols-2 h-12">
-          <button
-            onClick={() => setActiveTab("chat")}
-            className={`flex items-center justify-center text-xs font-medium transition-colors ${
-              activeTab === "chat" ? "text-primary bg-primary/10" : "text-muted-foreground"
-            }`}
-          >
-            💬 Squad Chat
-          </button>
-          <button
-            onClick={() => setActiveTab("leaderboard")}
-            className={`flex items-center justify-center text-xs font-medium transition-colors ${
-              activeTab === "leaderboard" ? "text-primary bg-primary/10" : "text-muted-foreground"
-            }`}
-          >
-            🏆 Leaderboard
-          </button>
+      {/* Mobile Bottom Tabs - Only show if squad has both features */}
+      {hasBothFeatures && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t sm:hidden">
+          <div className="grid grid-cols-2 h-12">
+            <button
+              onClick={() => setActiveTab("chat")}
+              className={`flex items-center justify-center text-xs font-medium transition-colors ${
+                activeTab === "chat" ? "text-primary bg-primary/10" : "text-muted-foreground"
+              }`}
+            >
+              💬 Squad Chat
+            </button>
+            <button
+              onClick={() => setActiveTab("leaderboard")}
+              className={`flex items-center justify-center text-xs font-medium transition-colors ${
+                activeTab === "leaderboard" ? "text-primary bg-primary/10" : "text-muted-foreground"
+              }`}
+            >
+              🏆 Leaderboard
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Mobile Content */}
       <div className="sm:hidden">
-        {activeTab === "chat" && (
+        {(!hasBothFeatures && squad.features.hasChat) && (
           <Card className="border-0 shadow-sm bg-card">
             <CardHeader className="pb-2 pt-3 px-3">
               <CardTitle className="text-base">Squad Chat</CardTitle>
@@ -202,7 +215,118 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
           </Card>
         )}
 
-        {activeTab === "leaderboard" && (
+        {(!hasBothFeatures && squad.features.hasLeaderboard) && (
+          <Card className="border-0 shadow-sm bg-card">
+            <CardHeader className="pb-2 pt-3 px-3">
+              <CardTitle className="text-base">🏆 Leaderboard</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border">
+                {mockSquadRanking.map((member, index) => (
+                  <div 
+                    key={member.username}
+                    className={`flex items-center justify-between p-2.5 hover:bg-muted/50 transition-colors ${
+                      member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                    } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
+                      index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
+                    } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
+                        {getRankIcon(member.rank)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-6 h-6">
+                          <AvatarFallback className="text-xs font-medium">
+                            {member.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+                            {member.username}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {member.wins}W - {member.losses}L
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="font-bold text-sm text-primary">{member.points}</div>
+                        <div className="text-xs text-muted-foreground">Points</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground">{member.winPercentage}%</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {hasBothFeatures && activeTab === "chat" && (
+          <Card className="border-0 shadow-sm bg-card">
+            <CardHeader className="pb-2 pt-3 px-3">
+              <CardTitle className="text-base">Squad Chat</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 p-3 pt-0">
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {mockChatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`flex items-start gap-2 max-w-[85%] ${
+                      message.isCurrentUser ? 'flex-row-reverse' : 'flex-row'
+                    }`}>
+                      <Avatar className="w-5 h-5 flex-shrink-0">
+                        <AvatarFallback className="text-xs">
+                          {message.username.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={`rounded-lg p-2 ${
+                        message.isCurrentUser 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted'
+                      }`}>
+                        <div className="flex items-baseline gap-2 mb-0.5">
+                          <span className={`text-xs font-medium ${
+                            message.isCurrentUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                          }`}>
+                            {message.username}
+                          </span>
+                          <span className={`text-xs ${
+                            message.isCurrentUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
+                          }`}>
+                            {message.timestamp}
+                          </span>
+                        </div>
+                        <p className="text-xs">{message.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-border">
+                <Input
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className="flex-1 h-8 text-sm"
+                />
+                <Button onClick={handleSendMessage} disabled={!newMessage.trim()} size="sm" className="h-8 w-8 p-0">
+                  <Send className="w-3 h-3" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {hasBothFeatures && activeTab === "leaderboard" && (
           <Card className="border-0 shadow-sm bg-card">
             <CardHeader className="pb-2 pt-3 px-3">
               <CardTitle className="text-base">🏆 Leaderboard</CardTitle>
@@ -255,12 +379,13 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
         )}
       </div>
 
-      {/* Desktop Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full hidden sm:block">
-        <TabsList className="grid w-full grid-cols-2 h-10 mb-6">
-          <TabsTrigger value="chat" className="text-sm">💬 Squad Chat</TabsTrigger>
-          <TabsTrigger value="leaderboard" className="text-sm">🏆 Leaderboard</TabsTrigger>
-        </TabsList>
+      {/* Desktop Tabs - Only show if squad has both features */}
+      {hasBothFeatures ? (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full hidden sm:block">
+          <TabsList className="grid w-full grid-cols-2 h-10 mb-6">
+            <TabsTrigger value="chat" className="text-sm">💬 Squad Chat</TabsTrigger>
+            <TabsTrigger value="leaderboard" className="text-sm">🏆 Leaderboard</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="chat" className="mt-0">
           <Card className="border-0 shadow-sm bg-card">
@@ -385,6 +510,131 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
           </Card>
         </TabsContent>
       </Tabs>
+      ) : (
+        /* Single feature view for desktop */
+        <div className="hidden sm:block">
+          {squad.features.hasChat && !squad.features.hasLeaderboard && (
+            /* Chat only content - same as mobile but for desktop */
+            <Card className="border-0 shadow-sm bg-card">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-base sm:text-lg">Squad Chat</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 p-3 pt-0">
+                <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
+                  {mockChatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`flex items-start gap-2 max-w-[85%] sm:max-w-[80%] ${
+                        message.isCurrentUser ? 'flex-row-reverse' : 'flex-row'
+                      }`}>
+                        <Avatar className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0">
+                          <AvatarFallback className="text-xs">
+                            {message.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className={`rounded-lg p-2 sm:p-3 ${
+                          message.isCurrentUser 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-muted'
+                        }`}>
+                          <div className="flex items-baseline gap-2 mb-0.5">
+                            <span className={`text-xs font-medium ${
+                              message.isCurrentUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                            }`}>
+                              {message.username}
+                            </span>
+                            <span className={`text-xs ${
+                              message.isCurrentUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
+                            }`}>
+                              {message.timestamp}
+                            </span>
+                          </div>
+                          <p className="text-xs sm:text-sm">{message.message}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 pt-2 border-t border-border">
+                  <Input
+                    placeholder="Type a message..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    className="flex-1 h-8 text-sm"
+                  />
+                  <Button onClick={handleSendMessage} disabled={!newMessage.trim()} size="sm" className="h-8 w-8 p-0">
+                    <Send className="w-3 h-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {squad.features.hasLeaderboard && !squad.features.hasChat && (
+            /* Leaderboard only content - same as mobile but for desktop */
+            <Card className="border-0 shadow-sm bg-card">
+              <CardHeader className="pb-2 pt-3 px-3">
+                <CardTitle className="text-base sm:text-lg">🏆 Leaderboard</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border">
+                  {mockSquadRanking.map((member, index) => (
+                    <div 
+                      key={member.username}
+                      className={`flex items-center justify-between p-2.5 sm:p-4 hover:bg-muted/50 transition-colors ${
+                        member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                      } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
+                        index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
+                      } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
+                          {getRankIcon(member.rank)}
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
+                            <AvatarFallback className="text-xs font-medium">
+                              {member.username.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+                              {member.username}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {member.wins}W - {member.losses}L
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 sm:gap-6">
+                        <div className="text-right hidden sm:block">
+                          <div className="font-semibold text-foreground">{member.winPercentage}%</div>
+                          <div className="text-xs text-muted-foreground">Win Rate</div>
+                        </div>
+                        
+                        <div className="text-right">
+                          <div className="font-bold text-sm sm:text-lg text-primary">{member.points}</div>
+                          <div className="text-xs text-muted-foreground">Points</div>
+                        </div>
+                        
+                        <div className="text-right sm:hidden">
+                          <div className="text-xs text-muted-foreground">{member.winPercentage}%</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 };

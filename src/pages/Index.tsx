@@ -216,7 +216,7 @@ const Index = () => {
           <TabsContent value="create" className="space-y-8">
             {/* Squad Sub-tabs */}
             <div className="max-w-4xl mx-auto">
-              <div className="flex items-center justify-center mb-6">
+              <div className="flex items-center justify-center mb-8">
                 <div className="bg-muted/30 p-1 rounded-lg flex gap-1">
                   <button
                     onClick={() => setSquadSubTab("chat")}

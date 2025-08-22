@@ -147,50 +147,73 @@ const SquadManager = () => {
 
       <div className="grid gap-4">
         {squads.map((squad) => (
-          <Card key={squad.id} className="shadow-card border-0 bg-gradient-card hover:shadow-hover transition-smooth">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between">
+          <div key={squad.id} className="relative overflow-hidden rounded-xl bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-6 text-white shadow-xl transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
+            {/* Background Pattern */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent"></div>
+            
+            {/* Content */}
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-lg text-foreground">{squad.name}</h3>
+                    <h3 className="font-bold text-xl text-white">{squad.name}</h3>
                     <div className="flex gap-2">
                       {squad.createdBy === "You" && (
-                        <Badge variant="secondary" className="text-xs">Owner</Badge>
+                        <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium">
+                          Owner
+                        </span>
                       )}
-                      <Badge variant={squad.isPublic ? "default" : "outline"} className="text-xs">
+                      <span className={`px-2 py-1 backdrop-blur-sm rounded-full text-xs font-medium ${
+                        squad.isPublic ? 'bg-green-400/20 text-green-100' : 'bg-orange-400/20 text-orange-100'
+                      }`}>
                         {squad.isPublic ? "Public" : "Private"}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
                   
-                  <p className="text-muted-foreground text-sm mb-3">{squad.description}</p>
+                  <p className="text-white/80 text-sm mb-4 leading-relaxed">{squad.description}</p>
                   
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-white/90">
                       <Users className="w-4 h-4" />
-                      <span>{squad.memberCount}/{squad.maxMembers} members</span>
+                      <span className="font-medium">{squad.memberCount}/{squad.maxMembers}</span>
+                      <span className="text-white/70">members</span>
                     </div>
                     
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2 text-sm text-white/90">
                       <Trophy className="w-4 h-4" />
-                      <span>Join Code: <span className="font-mono text-foreground">{squad.joinCode}</span></span>
+                      <span className="text-white/70">Join Code:</span>
+                      <span className="font-mono font-bold text-white bg-white/10 px-2 py-1 rounded">
+                        {squad.joinCode}
+                      </span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex flex-col gap-2">
-                  <Button variant="outline" size="sm" className="shadow-sm">
+                <div className="flex flex-col gap-2 ml-4">
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+                  >
                     View Details
                   </Button>
                   {squad.createdBy === "You" && (
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-white/80 hover:text-white hover:bg-white/10"
+                    >
                       Manage
                     </Button>
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            {/* Corner Decoration */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+          </div>
         ))}
       </div>
 

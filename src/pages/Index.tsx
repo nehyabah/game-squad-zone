@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import SquadManager from "@/components/SquadManager";
+import SquadManagerWithConditionalTabs from "@/components/SquadManagerWithConditionalTabs";
 import GameSelection from "@/components/GameSelection";
 import MyPicks from "@/components/MyPicks";
 import Leaderboard from "@/components/Leaderboard";
@@ -214,40 +215,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="create" className="space-y-8">
-            {/* Squad Sub-tabs */}
-            <div className="max-w-4xl mx-auto">
-              <div className="flex items-center justify-center mb-8">
-                <div className="bg-muted/30 p-1 rounded-lg flex gap-1">
-                  <button
-                    onClick={() => setSquadSubTab("chat")}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      squadSubTab === "chat"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    Chat
-                  </button>
-                  <button
-                    onClick={() => setSquadSubTab("leaderboard")}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      squadSubTab === "leaderboard"
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    }`}
-                  >
-                    Leaderboard
-                  </button>
-                </div>
-              </div>
-
-              {/* Squad Content */}
-              {squadSubTab === "chat" ? (
-                <SquadManager />
-              ) : (
-                <Leaderboard />
-              )}
-            </div>
+            <SquadManagerWithConditionalTabs squadSubTab={squadSubTab} setSquadSubTab={setSquadSubTab} />
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">

@@ -21,6 +21,10 @@ interface Squad {
   isPublic: boolean;
   createdBy: string;
   joinCode: string;
+  features: {
+    hasChat: boolean;
+    hasLeaderboard: boolean;
+  };
 }
 
 const mockSquads: Squad[] = [
@@ -32,7 +36,11 @@ const mockSquads: Squad[] = [
     maxMembers: 10,
     isPublic: false,
     createdBy: "You",
-    joinCode: "FM2024"
+    joinCode: "FM2024",
+    features: {
+      hasChat: true,
+      hasLeaderboard: true
+    }
   },
   {
     id: "2", 
@@ -42,7 +50,11 @@ const mockSquads: Squad[] = [
     maxMembers: 15,
     isPublic: true,
     createdBy: "Mike",
-    joinCode: "OFFICE"
+    joinCode: "OFFICE",
+    features: {
+      hasChat: true,
+      hasLeaderboard: false
+    }
   },
   {
     id: "3",
@@ -52,7 +64,11 @@ const mockSquads: Squad[] = [
     maxMembers: 8,
     isPublic: true,
     createdBy: "Sarah",
-    joinCode: "WKND24"
+    joinCode: "WKND24",
+    features: {
+      hasChat: false,
+      hasLeaderboard: true
+    }
   }
 ];
 
@@ -103,7 +119,11 @@ const SquadManager = () => {
       maxMembers: newSquad.maxMembers,
       isPublic: newSquad.isPublic,
       createdBy: "You",
-      joinCode: Math.random().toString(36).substring(2, 8).toUpperCase()
+      joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+      features: {
+        hasChat: true,
+        hasLeaderboard: true
+      }
     };
     
     setSquads([squad, ...squads]);

@@ -8,6 +8,8 @@ import { Plus, Users, Trophy, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 import SquadDashboard from "./SquadDashboard";
 
 interface Squad {
@@ -65,6 +67,32 @@ const SquadManager = () => {
     isPublic: true
   });
 
+  const triggerConfetti = () => {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 }
+      });
+    }, 250);
+    
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 }
+      });
+    }, 400);
+  };
+
   const handleCreateSquad = () => {
     const squad: Squad = {
       id: Date.now().toString(),
@@ -80,6 +108,12 @@ const SquadManager = () => {
     setSquads([squad, ...squads]);
     setNewSquad({ name: "", description: "", maxMembers: 10, isPublic: true });
     setShowCreateDialog(false);
+    
+    // Trigger celebration
+    triggerConfetti();
+    toast.success(`🎉 Squad "${squad.name}" created successfully!`, {
+      description: `Join code: ${squad.joinCode}`
+    });
   };
 
   const handleViewSquad = (squad: Squad) => {

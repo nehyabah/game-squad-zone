@@ -138,7 +138,7 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className="cursor-pointer border-border/50 bg-card"
+              className="cursor-pointer border-border bg-card"
             >
               <CardContent className="p-3 sm:p-4">
                 <div className="flex flex-col items-center gap-2">

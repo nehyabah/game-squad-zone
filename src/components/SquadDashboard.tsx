@@ -122,8 +122,8 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
       {/* Compact Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10 mb-3 sm:mb-6">
-          <TabsTrigger value="chat" className="text-xs sm:text-sm">Squad Chat</TabsTrigger>
-          <TabsTrigger value="ranking" className="text-xs sm:text-sm">Rankings</TabsTrigger>
+          <TabsTrigger value="chat" className="text-xs sm:text-sm">💬 Squad Chat</TabsTrigger>
+          <TabsTrigger value="leaderboard" className="text-xs sm:text-sm">🏆 Leaderboard</TabsTrigger>
         </TabsList>
 
         <TabsContent value="chat" className="mt-0">
@@ -188,10 +188,10 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="ranking" className="mt-0">
+        <TabsContent value="leaderboard" className="mt-0">
           <Card className="border-0 shadow-sm bg-card">
             <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-base sm:text-lg">Squad Rankings</CardTitle>
+              <CardTitle className="text-base sm:text-lg">🏆 Leaderboard</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border">

@@ -46,12 +46,12 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
         {/* Menu Items */}
         <div className="p-6 pt-4 space-y-2">
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 p-4 rounded-2xl border border-blue-200/50 dark:border-blue-800/50 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 p-4 rounded-2xl border border-blue-200/50 dark:border-blue-800/50 cursor-pointer">
               <Trophy className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
               <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">My Stats</div>
               <div className="text-xs text-blue-600 dark:text-blue-300">View performance</div>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-4 rounded-2xl border border-green-200/50 dark:border-green-800/50 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
+            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 p-4 rounded-2xl border border-green-200/50 dark:border-green-800/50 cursor-pointer">
               <Settings className="w-6 h-6 text-green-600 dark:text-green-400 mb-2" />
               <div className="text-sm font-semibold text-green-900 dark:text-green-100">Settings</div>
               <div className="text-xs text-green-600 dark:text-green-300">Preferences</div>

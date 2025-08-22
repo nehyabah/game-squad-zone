@@ -226,10 +226,10 @@ const SquadManager = () => {
           <p className="text-muted-foreground text-sm">Manage your fantasy squads and create new ones</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
-              <Button className="gap-2 w-full sm:w-auto">
+              <Button className="gap-2 flex-1 sm:w-auto">
                 <Plus className="w-4 h-4" />
                 Create Squad
               </Button>
@@ -371,7 +371,7 @@ const SquadManager = () => {
 
           <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 w-full sm:w-auto">
+              <Button variant="outline" className="gap-2 flex-1 sm:w-auto">
                 <UserPlus className="w-4 h-4" />
                 Join Squad
               </Button>

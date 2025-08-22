@@ -184,29 +184,29 @@ const SquadManager = () => {
               Create Squad
             </Button>
           </DialogTrigger>
-          <DialogContent className="w-[95vw] max-w-sm mx-auto p-0 gap-0 border-0 bg-white rounded-2xl shadow-2xl">
+          <DialogContent className="w-[95vw] max-w-xs mx-auto p-0 gap-0 border-0 bg-white rounded-2xl shadow-2xl">
             {!createdSquad ? (
               // Squad Creation Form
               <>
-                <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 border-b border-border/50">
+                <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 p-3 border-b border-border/50">
                   <DialogHeader className="space-y-0">
-                    <DialogTitle className="text-lg font-semibold text-center">Create Squad</DialogTitle>
+                    <DialogTitle className="text-base font-semibold text-center">Create Squad</DialogTitle>
                   </DialogHeader>
                 </div>
                 
-                <div className="p-4 space-y-3">
-                  <div className="space-y-1.5">
+                <div className="p-3 space-y-2.5">
+                  <div className="space-y-1">
                     <Label htmlFor="squad-name" className="text-xs font-medium text-muted-foreground">Squad Name</Label>
                     <Input
                       id="squad-name"
                       placeholder="Enter squad name"
                       value={newSquad.name}
                       onChange={(e) => setNewSquad({ ...newSquad, name: e.target.value })}
-                      className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
+                      className="h-9 border-border/50 rounded-lg focus:ring-1 focus:ring-primary/50 text-sm"
                     />
                   </div>
                   
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label htmlFor="squad-description" className="text-xs font-medium text-muted-foreground">Description (Optional)</Label>
                     <Textarea
                       id="squad-description"
@@ -214,11 +214,11 @@ const SquadManager = () => {
                       value={newSquad.description}
                       onChange={(e) => setNewSquad({ ...newSquad, description: e.target.value })}
                       rows={2}
-                      className="border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm resize-none"
+                      className="border-border/50 rounded-lg focus:ring-1 focus:ring-primary/50 text-sm resize-none"
                     />
                   </div>
                   
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     <Label htmlFor="max-members" className="text-xs font-medium text-muted-foreground">Max Members</Label>
                     <Input
                       id="max-members"
@@ -227,21 +227,21 @@ const SquadManager = () => {
                       max="50"
                       value={newSquad.maxMembers}
                       onChange={(e) => setNewSquad({ ...newSquad, maxMembers: parseInt(e.target.value) })}
-                      className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
+                      className="h-9 border-border/50 rounded-lg focus:ring-1 focus:ring-primary/50 text-sm"
                     />
                   </div>
                   
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 pt-1">
                     <Button 
                       variant="outline"
                       onClick={() => setShowCreateDialog(false)}
-                      className="flex-1 h-10 rounded-xl border-border/50 text-sm"
+                      className="flex-1 h-9 rounded-lg border-border/50 text-sm"
                     >
                       Cancel
                     </Button>
                     <Button 
                       onClick={handleCreateSquad} 
-                      className="flex-1 h-10 rounded-xl text-sm font-medium"
+                      className="flex-1 h-9 rounded-lg text-sm font-medium"
                       disabled={!newSquad.name.trim()}
                     >
                       Create
@@ -252,47 +252,47 @@ const SquadManager = () => {
             ) : (
               // Squad Sharing View
               <>
-                <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 p-4 border-b border-border/50">
+                <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 p-3 border-b border-border/50">
                   <DialogHeader className="space-y-0">
-                    <DialogTitle className="text-lg font-semibold text-center">🎉 Squad Created!</DialogTitle>
+                    <DialogTitle className="text-base font-semibold text-center">🎉 Squad Created!</DialogTitle>
                   </DialogHeader>
                 </div>
                 
-                <div className="p-4 space-y-4">
+                <div className="p-3 space-y-3">
                   {/* Squad Info */}
-                  <div className="text-center space-y-2">
-                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mx-auto">
+                  <div className="text-center space-y-1.5">
+                    <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center text-white font-bold text-base mx-auto">
                       {createdSquad.name.charAt(0).toUpperCase()}
                     </div>
-                    <h3 className="font-semibold text-base">{createdSquad.name}</h3>
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <p className="text-xs text-muted-foreground mb-1">Join Code</p>
-                      <p className="font-mono font-bold text-lg tracking-wider text-primary">{createdSquad.joinCode}</p>
+                    <h3 className="font-semibold text-sm">{createdSquad.name}</h3>
+                    <div className="bg-gray-50 rounded-lg p-2">
+                      <p className="text-xs text-muted-foreground mb-0.5">Join Code</p>
+                      <p className="font-mono font-bold text-base tracking-wider text-primary">{createdSquad.joinCode}</p>
                     </div>
                   </div>
                   
                   {/* Sharing Options */}
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     <p className="text-xs font-medium text-muted-foreground text-center">Share with friends</p>
                     
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => copyJoinCode(createdSquad.joinCode)}
-                        className="h-10 rounded-xl border-border/50 text-sm gap-2"
+                        className="h-8 rounded-lg border-border/50 text-xs gap-1.5"
                       >
-                        <Copy className="w-4 h-4" />
-                        Copy Code
+                        <Copy className="w-3.5 h-3.5" />
+                        Copy
                       </Button>
                       
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => shareToWhatsApp(createdSquad)}
-                        className="h-10 rounded-xl border-border/50 text-sm gap-2 text-green-600 border-green-200 hover:bg-green-50"
+                        className="h-8 rounded-lg border-border/50 text-xs gap-1.5 text-green-600 border-green-200 hover:bg-green-50"
                       >
-                        <MessageCircle className="w-4 h-4" />
+                        <MessageCircle className="w-3.5 h-3.5" />
                         WhatsApp
                       </Button>
                     </div>
@@ -300,16 +300,16 @@ const SquadManager = () => {
                     <Button
                       variant="outline"
                       onClick={() => shareGeneric(createdSquad)}
-                      className="w-full h-10 rounded-xl border-border/50 text-sm gap-2"
+                      className="w-full h-8 rounded-lg border-border/50 text-xs gap-1.5"
                     >
-                      <Share2 className="w-4 h-4" />
+                      <Share2 className="w-3.5 h-3.5" />
                       Share Squad
                     </Button>
                   </div>
                   
                   <Button 
                     onClick={handleFinishSharing}
-                    className="w-full h-10 rounded-xl text-sm font-medium"
+                    className="w-full h-9 rounded-lg text-sm font-medium"
                   >
                     Done
                   </Button>

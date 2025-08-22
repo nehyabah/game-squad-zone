@@ -147,55 +147,62 @@ const SquadManager = () => {
 
       <div className="space-y-2 sm:space-y-3">
         {squads.map((squad) => (
-          <Card key={squad.id} className="relative overflow-hidden border-0 shadow-card bg-card hover:shadow-hover transition-smooth group">
+          <Card key={squad.id} className="relative overflow-hidden border border-white/20 bg-white/10 backdrop-blur-md shadow-xl hover:shadow-2xl hover:bg-white/15 transition-all duration-300 group">
             <CardContent className="p-0">
-              <div className="p-3 sm:p-4">
-                <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-base sm:text-lg text-foreground truncate">{squad.name}</h3>
-                      {squad.createdBy === "You" && (
-                        <Badge variant="default" className="text-xs px-1.5 py-0.5 flex-shrink-0">Owner</Badge>
-                      )}
-                    </div>
-                    <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs px-1.5 py-0.5 mb-2">
-                      {squad.isPublic ? "Public" : "Private"}
-                    </Badge>
-                  </div>
-                  
-                  <Button variant="default" size="sm" className="text-xs px-2 sm:px-3 h-7 sm:h-8 flex-shrink-0">
-                    <span className="hidden sm:inline">Go to Squad Dashboard</span>
-                    <span className="sm:hidden">Dashboard</span>
-                  </Button>
-                </div>
+              <div className="p-3 sm:p-4 relative">
+                {/* Glass overlay effect */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none"></div>
                 
-                <p className="text-muted-foreground text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-1">{squad.description}</p>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      <span className="font-medium text-foreground">{squad.memberCount}/{squad.maxMembers}</span>
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-base sm:text-lg text-white truncate">{squad.name}</h3>
+                        {squad.createdBy === "You" && (
+                          <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex-shrink-0 bg-white/20 text-white border-white/30">Owner</Badge>
+                        )}
+                      </div>
+                      <Badge variant="outline" className={`text-xs px-1.5 py-0.5 mb-2 border-white/30 text-white ${
+                        squad.isPublic ? 'bg-green-500/20' : 'bg-orange-500/20'
+                      }`}>
+                        {squad.isPublic ? "Public" : "Private"}
+                      </Badge>
                     </div>
                     
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
-                      <span className="font-mono font-medium text-foreground bg-muted/50 px-1.5 py-0.5 rounded text-xs">
-                        {squad.joinCode}
-                      </span>
-                    </div>
+                    <Button variant="secondary" size="sm" className="text-xs px-2 sm:px-3 h-7 sm:h-8 flex-shrink-0 bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm">
+                      <span className="hidden sm:inline">Go to Squad Dashboard</span>
+                      <span className="sm:hidden">Dashboard</span>
+                    </Button>
                   </div>
                   
-                  {squad.createdBy === "You" && (
-                    <Button variant="ghost" size="sm" className="text-xs px-2 h-6 sm:h-7">
-                      Manage
-                    </Button>
-                  )}
+                  <p className="text-white/80 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-1">{squad.description}</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                      <div className="flex items-center gap-1">
+                        <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/90" />
+                        <span className="font-medium text-white">{squad.memberCount}/{squad.maxMembers}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/90" />
+                        <span className="font-mono font-medium text-white bg-white/15 backdrop-blur-sm px-1.5 py-0.5 rounded text-xs border border-white/20">
+                          {squad.joinCode}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {squad.createdBy === "You" && (
+                      <Button variant="ghost" size="sm" className="text-xs px-2 h-6 sm:h-7 text-white/80 hover:text-white hover:bg-white/10">
+                        Manage
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               
-              {/* Subtle accent */}
-              <div className="h-0.5 bg-gradient-primary"></div>
+              {/* Glass accent */}
+              <div className="h-0.5 bg-gradient-to-r from-white/40 via-white/60 to-white/40"></div>
             </CardContent>
           </Card>
         ))}

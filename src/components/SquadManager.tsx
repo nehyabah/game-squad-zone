@@ -8,6 +8,7 @@ import { Plus, Users, Trophy, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import SquadDashboard from "./SquadDashboard";
 
 interface Squad {
   id: string;
@@ -56,6 +57,7 @@ const mockSquads: Squad[] = [
 const SquadManager = () => {
   const [squads, setSquads] = useState<Squad[]>(mockSquads);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedSquad, setSelectedSquad] = useState<Squad | null>(null);
   const [newSquad, setNewSquad] = useState({
     name: "",
     description: "",
@@ -79,6 +81,19 @@ const SquadManager = () => {
     setNewSquad({ name: "", description: "", maxMembers: 10, isPublic: true });
     setShowCreateDialog(false);
   };
+
+  const handleViewSquad = (squad: Squad) => {
+    setSelectedSquad(squad);
+  };
+
+  const handleBackToSquads = () => {
+    setSelectedSquad(null);
+  };
+
+  // If a squad is selected, show the dashboard
+  if (selectedSquad) {
+    return <SquadDashboard squad={selectedSquad} onBack={handleBackToSquads} />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
@@ -179,7 +194,11 @@ const SquadManager = () => {
                         Manage
                       </Button>
                     )}
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7">
+                    <Button 
+                      size="sm" 
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7"
+                      onClick={() => handleViewSquad(squad)}
+                    >
                       <span className="hidden sm:inline">Dashboard</span>
                       <span className="sm:hidden">View</span>
                     </Button>

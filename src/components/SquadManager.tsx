@@ -145,50 +145,49 @@ const SquadManager = () => {
         </Dialog>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         {squads.map((squad) => (
           <Card key={squad.id} className="relative overflow-hidden border-0 shadow-card bg-card hover:shadow-hover transition-smooth group">
             <CardContent className="p-0">
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-lg text-foreground">{squad.name}</h3>
-                    <div className="flex gap-1.5">
+              <div className="p-3 sm:p-4">
+                <div className="flex items-start justify-between mb-2 sm:mb-3 gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-base sm:text-lg text-foreground truncate">{squad.name}</h3>
                       {squad.createdBy === "You" && (
-                        <Badge variant="default" className="text-xs px-2 py-0.5">Owner</Badge>
+                        <Badge variant="default" className="text-xs px-1.5 py-0.5 flex-shrink-0">Owner</Badge>
                       )}
-                      <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs px-2 py-0.5">
-                        {squad.isPublic ? "Public" : "Private"}
-                      </Badge>
                     </div>
+                    <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs px-1.5 py-0.5 mb-2">
+                      {squad.isPublic ? "Public" : "Private"}
+                    </Badge>
                   </div>
                   
-                  <Button variant="default" size="sm" className="text-xs px-3">
-                    Go to Squad Dashboard
+                  <Button variant="default" size="sm" className="text-xs px-2 sm:px-3 h-7 sm:h-8 flex-shrink-0">
+                    <span className="hidden sm:inline">Go to Squad Dashboard</span>
+                    <span className="sm:hidden">Dashboard</span>
                   </Button>
                 </div>
                 
-                <p className="text-muted-foreground text-sm mb-3 line-clamp-1">{squad.description}</p>
+                <p className="text-muted-foreground text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-1">{squad.description}</p>
                 
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-sm font-medium text-foreground">{squad.memberCount}/{squad.maxMembers}</span>
-                      <span className="text-xs text-muted-foreground">members</span>
+                  <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                      <span className="font-medium text-foreground">{squad.memberCount}/{squad.maxMembers}</span>
                     </div>
                     
-                    <div className="flex items-center gap-1.5">
-                      <Trophy className="w-3.5 h-3.5 text-primary" />
-                      <span className="text-xs text-muted-foreground">Code:</span>
-                      <span className="text-sm font-mono font-medium text-foreground bg-muted/50 px-2 py-0.5 rounded text-xs">
+                    <div className="flex items-center gap-1">
+                      <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-primary" />
+                      <span className="font-mono font-medium text-foreground bg-muted/50 px-1.5 py-0.5 rounded text-xs">
                         {squad.joinCode}
                       </span>
                     </div>
                   </div>
                   
                   {squad.createdBy === "You" && (
-                    <Button variant="ghost" size="sm" className="text-xs px-2 h-7">
+                    <Button variant="ghost" size="sm" className="text-xs px-2 h-6 sm:h-7">
                       Manage
                     </Button>
                   )}

@@ -147,18 +147,18 @@ const GameSelection = () => {
                       <img 
                         src={game.awayTeam.logo} 
                         alt={`${game.awayTeam.name} logo`}
-                        className="relative w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-lg"
+                        className="relative w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-lg"
                         onError={(e) => {
                           e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
                         }}
                       />
                     </div>
                     <div className="flex flex-col">
-                      <div className="font-display font-bold text-foreground text-sm sm:text-xl tracking-wide">
+                      <div className="font-display font-bold text-foreground text-xs sm:text-base tracking-wide">
                         {game.awayTeam.name}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+                        <span className="text-xs text-muted-foreground font-medium">
                           {game.awayTeam.code}
                         </span>
                         {game.awayTeam.name === underdogTeam && (
@@ -179,7 +179,7 @@ const GameSelection = () => {
                   {/* Home Team */}
                   <div className="flex items-center gap-3 sm:gap-4 flex-1 justify-end">
                     <div className="flex flex-col text-right">
-                      <div className="font-display font-bold text-foreground text-sm sm:text-xl tracking-wide">
+                      <div className="font-display font-bold text-foreground text-xs sm:text-base tracking-wide">
                         {game.homeTeam.name}
                       </div>
                       <div className="flex items-center gap-2 mt-1 justify-end">
@@ -188,7 +188,7 @@ const GameSelection = () => {
                             -{spreadValue}
                           </div>
                         )}
-                        <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+                        <span className="text-xs text-muted-foreground font-medium">
                           {game.homeTeam.code}
                         </span>
                       </div>
@@ -198,7 +198,7 @@ const GameSelection = () => {
                       <img 
                         src={game.homeTeam.logo} 
                         alt={`${game.homeTeam.name} logo`}
-                        className="relative w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-lg"
+                        className="relative w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-lg"
                         onError={(e) => {
                           e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
                         }}

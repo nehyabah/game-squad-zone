@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
-import SquadManager from "@/components/SquadManager";
+import SquadCreation from "@/components/SquadCreation";
 import GameSelection from "@/components/GameSelection";
 import Leaderboard from "@/components/Leaderboard";
 import AuthModal from "@/components/AuthModal";
@@ -104,7 +104,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="create" className="space-y-8">
-            <SquadManager />
+            <SquadCreation />
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">

@@ -51,104 +51,88 @@ const getRankIcon = (rank: number) => {
 };
 
 const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
-  <Card className="shadow-hover border-0 bg-gradient-card">
-    <CardContent className="p-0">
-      <div className="space-y-0">
-        {data.map((entry) => (
-          <div 
-            key={entry.rank}
-            className={`flex items-center justify-between p-2 sm:p-3 hover:bg-background/50 transition-smooth border-l-2 ${
-              entry.isCurrentUser 
-                ? 'border-primary bg-primary/5' 
-                : entry.rank <= 3 
-                ? 'border-accent' 
-                : 'border-transparent'
-            }`}
-          >
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Rank */}
-              <div className="w-6 flex justify-center">
-                {getRankIcon(entry.rank)}
-              </div>
-
-              {/* User Info */}
-              <div className="flex items-center gap-2">
-                <Avatar className="w-6 h-6 sm:w-7 sm:h-7">
-                  <AvatarFallback className="text-xs">
-                    {entry.username.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className={`text-sm font-medium ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+  <div className="bg-card border border-border rounded-lg shadow-sm">
+    <div className="p-4 border-b border-border">
+      <h3 className="font-semibold text-foreground">Rankings</h3>
+    </div>
+    <div className="divide-y divide-border">
+      {data.map((entry, index) => (
+        <div 
+          key={entry.rank}
+          className={`flex items-center justify-between p-4 hover:bg-muted/50 transition-colors ${
+            entry.isCurrentUser ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+          } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
+            index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
+          } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-8 h-8">
+              {getRankIcon(entry.rank)}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <Avatar className="w-8 h-8">
+                <AvatarFallback className="text-sm font-medium">
+                  {entry.username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <div className={`font-semibold ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
                   {entry.username}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {entry.wins}W - {entry.losses}L
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Stats */}
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="text-center">
-                <div className="text-xs text-muted-foreground">W/L</div>
-                <div className="text-sm font-medium text-foreground">{entry.wins}-{entry.losses}</div>
-              </div>
-              
-              <div className="text-center">
-                <div className="text-xs text-muted-foreground">Win %</div>
-                <Badge variant={entry.winPercentage >= 60 ? "default" : "secondary"} className="text-xs px-1.5 py-0.5">
-                  {entry.winPercentage}%
-                </Badge>
-              </div>
-
-              <div className="text-center">
-                <div className="text-xs text-muted-foreground">Pts</div>
-                <div className="text-sm font-bold text-primary">{entry.points}</div>
-              </div>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <div className="font-semibold text-foreground">{entry.winPercentage}%</div>
+              <div className="text-xs text-muted-foreground">Win Rate</div>
+            </div>
+            
+            <div className="text-right">
+              <div className="font-bold text-lg text-primary">{entry.points}</div>
+              <div className="text-xs text-muted-foreground">Points</div>
             </div>
           </div>
-        ))}
-      </div>
-    </CardContent>
-  </Card>
+        </div>
+      ))}
+    </div>
+  </div>
 );
 
 const Leaderboard = () => {
   const [activeTab, setActiveTab] = useState("week");
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Squad Leaderboard</h2>
-        <p className="text-sm text-muted-foreground">See how you stack up against the competition</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Squad Leaderboard</h2>
+        <p className="text-muted-foreground">See how you stack up against the competition</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-4 h-10 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
-          <TabsTrigger 
-            value="week" 
-            className="font-medium text-sm px-3 py-1.5 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
-          >
-            This Week
-          </TabsTrigger>
-          <TabsTrigger 
-            value="season" 
-            className="font-medium text-sm px-3 py-1.5 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
-          >
-            Season Total
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 max-w-sm mx-auto mb-6">
+          <TabsTrigger value="week">This Week</TabsTrigger>
+          <TabsTrigger value="season">Season Total</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="week" className="space-y-3">
+        <TabsContent value="week">
           <LeaderboardTable data={mockWeeklyLeaderboard} />
         </TabsContent>
 
-        <TabsContent value="season" className="space-y-3">
+        <TabsContent value="season">
           <LeaderboardTable data={mockSeasonLeaderboard} />
         </TabsContent>
       </Tabs>
 
       {/* Points System Info */}
-      <Card className="shadow-card border-0 bg-muted/30">
-        <CardContent className="p-3">
-          <div className="text-center text-xs text-muted-foreground">
+      <Card className="bg-muted/30 border-border">
+        <CardContent className="p-4">
+          <div className="text-center text-sm text-muted-foreground">
             <p><strong>Points System:</strong> Win = 20 points • Perfect Week (3-0) = 30 bonus points</p>
           </div>
         </CardContent>

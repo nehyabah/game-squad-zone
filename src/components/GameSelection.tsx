@@ -155,7 +155,7 @@ const GameSelection = () => {
                     </div>
 
                     {/* VS Separator */}
-                    <div className="text-muted-foreground font-bold text-sm opacity-40">@</div>
+                    <div className="text-muted-foreground font-bold text-sm opacity-60">VS</div>
 
                     {/* Home Team */}
                     <div className="flex flex-col items-center gap-1">

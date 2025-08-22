@@ -136,9 +136,24 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card/90 hover:via-card/85 hover:to-primary/10"
+              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card/90 hover:via-card/85 hover:to-primary/10 relative overflow-hidden"
+              onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+                e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+              }}
             >
               <CardContent className="p-3 sm:p-4 relative overflow-hidden">
+                {/* Mouse spotlight effect */}
+                <div 
+                  className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full blur-xl bg-primary/10 w-32 h-32 -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    left: 'var(--mouse-x, 50%)',
+                    top: 'var(--mouse-y, 50%)',
+                  }}
+                />
                 {/* Main content */}
                 <div className="relative flex flex-col items-center gap-2">
                   {/* Teams Layout - Logo Centered */}
@@ -250,14 +265,16 @@ const GameSelection = () => {
         <div className="text-center">
           <Button 
             variant="default"
-            size="lg"
+            size="sm"
             onClick={submitPicks}
-            className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 min-w-48 group"
+            className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 px-6 py-2 group"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
-            <div className="relative flex items-center gap-2">
-              {selectedPicks.size === maxGames && <Sparkles className="w-4 h-4" />}
-              {selectedPicks.size === maxGames ? 'Submit Picks' : `Select ${maxGames - selectedPicks.size} More`}
+            <div className="relative flex items-center gap-1.5">
+              {selectedPicks.size === maxGames && <Sparkles className="w-3.5 h-3.5" />}
+              <span className="text-sm font-medium">
+                {selectedPicks.size === maxGames ? 'Submit Picks' : `Select ${maxGames - selectedPicks.size} More`}
+              </span>
             </div>
           </Button>
         </div>

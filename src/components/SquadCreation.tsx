@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Users, Share2, Trophy } from "lucide-react";
+import { Copy, Users, Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const SquadCreation = () => {
@@ -80,8 +80,8 @@ const SquadCreation = () => {
                     <p className="text-xs text-white/80">Squad Created</p>
                   </div>
                 </div>
-                <div className="w-6 h-6 bg-accent rounded-full flex items-center justify-center">
-                  <Trophy className="w-3 h-3 text-white" />
+                <div className="w-6 h-6 bg-primary/30 rounded-full flex items-center justify-center">
+                  <Users className="w-3 h-3 text-white" />
                 </div>
               </div>
 
@@ -117,7 +117,7 @@ const SquadCreation = () => {
 
               {/* Status */}
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
                 <p className="text-xs text-white/80">Ready to receive members</p>
               </div>
             </div>
@@ -126,7 +126,7 @@ const SquadCreation = () => {
           {/* Bottom Action */}
           <CardContent className="p-3 sm:p-4 bg-white">
             <Button variant="squad" className="w-full h-9 text-sm font-semibold">
-              <Trophy className="w-4 h-4 mr-2" />
+              <Users className="w-4 h-4 mr-2" />
               Go to Squad Dashboard
             </Button>
           </CardContent>

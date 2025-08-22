@@ -101,59 +101,141 @@ const Index = () => {
           </TabsList>
 
           {/* Mobile Bottom Tabs */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-primary/20 sm:hidden">
-            <div className="grid grid-cols-4 h-16 max-w-full mx-auto">
+          <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden">
+            {/* Glass morphism background */}
+            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-white/20"></div>
+            
+            {/* Active tab indicator */}
+            <div className="absolute top-0 left-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 transition-all duration-300 ease-out"
+                 style={{
+                   width: '25%',
+                   transform: `translateX(${
+                     activeTab === 'fixtures' ? '0%' : 
+                     activeTab === 'create' ? '100%' : 
+                     activeTab === 'games' ? '200%' : '300%'
+                   })`
+                 }}>
+            </div>
+            
+            <div className="relative grid grid-cols-4 h-20 max-w-full mx-auto">
               <button
                 onClick={() => setActiveTab("fixtures")}
-                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
-                  activeTab === "fixtures" ? "text-primary" : "text-muted-foreground"
+                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
+                  activeTab === "fixtures" 
+                    ? "transform -translate-y-1" 
+                    : "hover:transform hover:-translate-y-0.5"
                 }`}
               >
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
-                  activeTab === "fixtures" ? "bg-primary/20 text-primary" : ""
+                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
+                  activeTab === "fixtures" 
+                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
+                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
                 }`}>
-                  📅
+                  <span className={`text-lg transition-all duration-300 ${
+                    activeTab === "fixtures" ? "scale-110" : "group-hover:scale-105"
+                  }`}>📅</span>
+                  
+                  {activeTab === "fixtures" && (
+                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
+                  )}
                 </div>
-                <span className="text-[10px] leading-none">Fixtures</span>
+                <span className={`text-xs font-medium transition-all duration-300 ${
+                  activeTab === "fixtures" 
+                    ? "text-primary font-semibold" 
+                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
+                }`}>
+                  Fixtures
+                </span>
               </button>
+              
               <button
                 onClick={() => setActiveTab("create")}
-                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
-                  activeTab === "create" ? "text-primary" : "text-muted-foreground"
+                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
+                  activeTab === "create" 
+                    ? "transform -translate-y-1" 
+                    : "hover:transform hover:-translate-y-0.5"
                 }`}
               >
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
-                  activeTab === "create" ? "bg-primary/20 text-primary" : ""
+                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
+                  activeTab === "create" 
+                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
+                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
                 }`}>
-                  👥
+                  <span className={`text-lg transition-all duration-300 ${
+                    activeTab === "create" ? "scale-110" : "group-hover:scale-105"
+                  }`}>👥</span>
+                  
+                  {activeTab === "create" && (
+                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
+                  )}
                 </div>
-                <span className="text-[10px] leading-none">Squads</span>
+                <span className={`text-xs font-medium transition-all duration-300 ${
+                  activeTab === "create" 
+                    ? "text-primary font-semibold" 
+                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
+                }`}>
+                  Squads
+                </span>
               </button>
+              
               <button
                 onClick={() => setActiveTab("games")}
-                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
-                  activeTab === "games" ? "text-primary" : "text-muted-foreground"
+                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
+                  activeTab === "games" 
+                    ? "transform -translate-y-1" 
+                    : "hover:transform hover:-translate-y-0.5"
                 }`}
               >
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
-                  activeTab === "games" ? "bg-primary/20 text-primary" : ""
+                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
+                  activeTab === "games" 
+                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
+                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
                 }`}>
-                  🎯
+                  <span className={`text-lg transition-all duration-300 ${
+                    activeTab === "games" ? "scale-110" : "group-hover:scale-105"
+                  }`}>🎯</span>
+                  
+                  {activeTab === "games" && (
+                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
+                  )}
                 </div>
-                <span className="text-[10px] leading-none">My Picks</span>
+                <span className={`text-xs font-medium transition-all duration-300 ${
+                  activeTab === "games" 
+                    ? "text-primary font-semibold" 
+                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
+                }`}>
+                  My Picks
+                </span>
               </button>
+              
               <button
                 onClick={() => setActiveTab("leaderboard")}
-                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
-                  activeTab === "leaderboard" ? "text-primary" : "text-muted-foreground"
+                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
+                  activeTab === "leaderboard" 
+                    ? "transform -translate-y-1" 
+                    : "hover:transform hover:-translate-y-0.5"
                 }`}
               >
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
-                  activeTab === "leaderboard" ? "bg-primary/20 text-primary" : ""
+                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
+                  activeTab === "leaderboard" 
+                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
+                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
                 }`}>
-                  🏆
+                  <span className={`text-lg transition-all duration-300 ${
+                    activeTab === "leaderboard" ? "scale-110" : "group-hover:scale-105"
+                  }`}>🏆</span>
+                  
+                  {activeTab === "leaderboard" && (
+                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
+                  )}
                 </div>
-                <span className="text-[10px] leading-none">Ranking</span>
+                <span className={`text-xs font-medium transition-all duration-300 ${
+                  activeTab === "leaderboard" 
+                    ? "text-primary font-semibold" 
+                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
+                }`}>
+                  Ranking
+                </span>
               </button>
             </div>
           </div>

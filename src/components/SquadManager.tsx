@@ -173,10 +173,17 @@ const SquadManager = () => {
                     </div>
                   </div>
                   
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7 flex-shrink-0">
-                    <span className="hidden sm:inline">Dashboard</span>
-                    <span className="sm:hidden">View</span>
-                  </Button>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {squad.createdBy === "You" && (
+                      <Button variant="outline" size="sm" className="text-xs px-2 h-7 text-gray-600 hover:text-gray-700 bg-white border-gray-200">
+                        Manage
+                      </Button>
+                    )}
+                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7">
+                      <span className="hidden sm:inline">Dashboard</span>
+                      <span className="sm:hidden">View</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -198,12 +205,6 @@ const SquadManager = () => {
                       <span className="font-mono font-medium text-sm text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded">{squad.joinCode}</span>
                     </div>
                   </div>
-
-                  {squad.createdBy === "You" && (
-                    <Button variant="ghost" size="sm" className="text-xs px-2 h-6 text-gray-500 hover:text-gray-700">
-                      Manage
-                    </Button>
-                  )}
                 </div>
               </div>
             </CardContent>

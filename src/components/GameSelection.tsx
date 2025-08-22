@@ -154,9 +154,7 @@ const GameSelection = () => {
 
                   {/* VS Separator with spread buttons */}
                   <div className="flex flex-col items-center gap-2 px-2">
-                    <div className="px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
-                      <span className="text-primary font-medium text-xs">VS</span>
-                    </div>
+                    <div className="text-muted-foreground font-bold text-sm opacity-40">VS</div>
                     
                     {/* Spread Selection Buttons */}
                     <div className="flex items-center gap-1">

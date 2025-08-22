@@ -117,14 +117,7 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
               key={gameId}
               className="group border-border/50 bg-gradient-to-br from-card via-card/95 to-primary/5 hover:from-card hover:to-primary/10 transition-all duration-300 shadow-sm hover:shadow-md relative overflow-hidden"
             >
-              {/* Pick Number Badge */}
-              <div className="absolute top-2 sm:top-4 left-2 sm:left-4 z-10">
-                <Badge variant="secondary" className="text-xs font-medium bg-primary/20 text-primary border-primary/30 px-1.5 sm:px-2 py-0.5">
-                  Pick #{index + 1}
-                </Badge>
-              </div>
-
-              <CardContent className="p-3 sm:p-6 pt-8 sm:pt-12">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-6">
                   {/* Picked Team Logo - Responsive sizing */}
                   <div className="flex-shrink-0">

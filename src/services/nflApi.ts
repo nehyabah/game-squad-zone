@@ -59,8 +59,10 @@ class NFLApiService {
   }
 
   async getGames(season: number = 2023, week: number = 1): Promise<Game[]> {
+    console.log('Attempting to fetch games...');
     try {
       const data = await this.makeRequest(`/games?league=1&season=${season}&week=${week}`);
+      console.log('API response:', data);
       
       // Transform API response to our Game interface
       const games = data.response?.map((apiGame: any) => ({
@@ -83,9 +85,14 @@ class NFLApiService {
         season: apiGame.game.season,
       })) || [];
 
+      if (games.length === 0) {
+        console.log('No games returned from API, using fallback');
+        return this.getFallbackGames();
+      }
+
       return games;
     } catch (error) {
-      console.error('Error fetching games:', error);
+      console.error('API request failed (likely CORS), using fallback games:', error);
       return this.getFallbackGames();
     }
   }

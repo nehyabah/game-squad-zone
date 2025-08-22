@@ -20,11 +20,13 @@ const GameSelection = () => {
 
   const loadGames = async () => {
     setIsLoading(true);
+    console.log('GameSelection: Loading games...');
     try {
       const gameData = await nflApi.getGames(2023, 1);
+      console.log('GameSelection: Received games:', gameData);
       setGames(gameData);
     } catch (error) {
-      console.error('Error loading games:', error);
+      console.error('GameSelection: Error loading games:', error);
     } finally {
       setIsLoading(false);
     }

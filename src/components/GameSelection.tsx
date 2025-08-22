@@ -95,16 +95,16 @@ const GameSelection = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">Select 3 games against the spread. Picks lock at kickoff.</p>
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <Badge variant={selectedGames.size === maxGames ? "default" : "secondary"} className="text-sm px-3 py-1">
+      <div className="text-center space-y-3 sm:space-y-4">
+        <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base px-4">Select 3 games against the spread. Picks lock at kickoff.</p>
+        <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap px-4">
+          <Badge variant={selectedGames.size === maxGames ? "default" : "secondary"} className="text-xs sm:text-sm px-2 sm:px-3 py-1">
             {selectedGames.size}/{maxGames} games selected
           </Badge>
-          <Badge variant="outline" className="text-muted-foreground text-sm px-3 py-1">
+          <Badge variant="outline" className="text-muted-foreground text-xs sm:text-sm px-2 sm:px-3 py-1">
             <Clock className="w-3 h-3 mr-1" />
-            Picks lock: Saturday 12:00 PM EST
+            <span className="hidden sm:inline">Picks lock: </span>Sat 12:00 PM EST
           </Badge>
         </div>
       </div>
@@ -126,26 +126,26 @@ const GameSelection = () => {
               }`}
               onClick={() => toggleGameSelection(game.id)}
             >
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   {/* Game Info */}
-                  <div className="flex items-center gap-8">
-                    <div className="flex items-center gap-4">
-                      <div className="text-3xl">{game.awayLogo}</div>
-                      <div className="text-center">
-                        <div className="font-display font-semibold text-foreground text-lg">{game.awayTeam}</div>
+                  <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-8">
+                    <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+                      <div className="text-2xl sm:text-3xl">{game.awayLogo}</div>
+                      <div className="text-center sm:text-left">
+                        <div className="font-display font-semibold text-foreground text-base sm:text-lg">{game.awayTeam}</div>
                         <div className="text-sm font-medium text-muted-foreground">
                           {game.awayTeam === underdogTeam && `+${spreadValue}`}
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-muted-foreground font-bold">@</div>
+                    <div className="text-muted-foreground font-bold text-lg">@</div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-3xl">{game.homeLogo}</div>
-                      <div className="text-center">
-                        <div className="font-display font-semibold text-foreground text-lg">{game.homeTeam}</div>
+                    <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
+                      <div className="text-2xl sm:text-3xl">{game.homeLogo}</div>
+                      <div className="text-center sm:text-left">
+                        <div className="font-display font-semibold text-foreground text-base sm:text-lg">{game.homeTeam}</div>
                         <div className="text-sm font-medium text-muted-foreground">
                           {game.homeTeam === favoriteTeam && `-${spreadValue}`}
                         </div>
@@ -154,14 +154,14 @@ const GameSelection = () => {
                   </div>
 
                   {/* Time & Selection */}
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground font-medium">{game.time}</div>
+                  <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
+                    <div className="text-center sm:text-right">
+                      <div className="text-xs sm:text-sm text-muted-foreground font-medium">{game.time}</div>
                     </div>
                     
                     {isSelected && (
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-glow">
-                        <Check className="w-5 h-5 text-primary-foreground" />
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center shadow-glow">
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
                       </div>
                     )}
                   </div>

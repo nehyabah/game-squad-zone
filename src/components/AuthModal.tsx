@@ -115,9 +115,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-sm sm:max-w-md mx-4">
         <DialogHeader>
-          <DialogTitle className="text-center font-display text-2xl">Join SquadPot</DialogTitle>
+          <DialogTitle className="text-center font-display text-xl sm:text-2xl">Join SquadPot</DialogTitle>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

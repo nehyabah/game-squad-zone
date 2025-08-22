@@ -69,38 +69,38 @@ const CountdownTimer = () => {
   }
 
   return (
-    <div className="text-center mb-8">
-      <p className="text-sm text-muted-foreground mb-4">Picks lock in:</p>
-      <div className="grid grid-cols-4 gap-4 max-w-md mx-auto">
+    <div className="text-center mb-6 sm:mb-8">
+      <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Picks lock in:</p>
+      <div className="grid grid-cols-4 gap-2 sm:gap-4 max-w-xs sm:max-w-md mx-auto">
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{timeLeft.days}</div>
-            <div className="text-xs text-muted-foreground">Days</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-primary">{timeLeft.days}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Days</div>
           </CardContent>
         </Card>
         
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{timeLeft.hours}</div>
-            <div className="text-xs text-muted-foreground">Hours</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-primary">{timeLeft.hours}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Hours</div>
           </CardContent>
         </Card>
         
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{timeLeft.minutes}</div>
-            <div className="text-xs text-muted-foreground">Minutes</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-primary">{timeLeft.minutes}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Minutes</div>
           </CardContent>
         </Card>
         
         <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{timeLeft.seconds}</div>
-            <div className="text-xs text-muted-foreground">Seconds</div>
+          <CardContent className="p-2 sm:p-4 text-center">
+            <div className="text-lg sm:text-2xl font-bold text-primary">{timeLeft.seconds}</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Seconds</div>
           </CardContent>
         </Card>
       </div>
-      <p className="text-xs text-muted-foreground mt-2">Saturday 12:00 PM EST</p>
+      <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">Saturday 12:00 PM EST</p>
     </div>
   );
 };

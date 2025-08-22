@@ -19,17 +19,9 @@ const GameSelection = () => {
 
   const loadGames = async () => {
     setIsLoading(true);
-    try {
-      const gameData = await nflApi.getGames();
-      setGames(gameData);
-    } catch (error) {
-      console.error('Error loading games:', error);
-      // Fallback to mock data
-      const fallbackGames = await nflApi.getGames();
-      setGames(fallbackGames);
-    } finally {
-      setIsLoading(false);
-    }
+    const gameData = await nflApi.getGames();
+    setGames(gameData);
+    setIsLoading(false);
   };
 
 

@@ -59,33 +59,33 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
           </div>
 
           <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-primary/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-primary/20 transition-all duration-200 group-hover:scale-110">
                 <User className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <div className="text-sm font-medium">Profile Settings</div>
-                <div className="text-xs text-muted-foreground">Update your information</div>
+                <div className="text-xs text-muted-foreground group-hover:text-foreground/70">Update your information</div>
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-orange-500/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
               <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-orange-500/20 transition-all duration-200 group-hover:scale-110">
                 <Bell className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
                 <div className="text-sm font-medium">Notifications</div>
-                <div className="text-xs text-muted-foreground">Manage alerts</div>
+                <div className="text-xs text-muted-foreground group-hover:text-foreground/70">Manage alerts</div>
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-muted/50 rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-purple-500/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
               <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-purple-500/20 transition-all duration-200 group-hover:scale-110">
                 <HelpCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <div className="text-sm font-medium">Help & Support</div>
-                <div className="text-xs text-muted-foreground">Get assistance</div>
+                <div className="text-xs text-muted-foreground group-hover:text-foreground/70">Get assistance</div>
               </div>
             </Button>
           </div>

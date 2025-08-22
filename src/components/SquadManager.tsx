@@ -145,61 +145,58 @@ const SquadManager = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-4">
+      <div className="space-y-3">
         {squads.map((squad) => (
           <Card key={squad.id} className="relative overflow-hidden border-0 shadow-card bg-card hover:shadow-hover transition-smooth group">
             <CardContent className="p-0">
-               <div className="p-4 sm:p-6">
-                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-                   <div className="flex-1 w-full">
-                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
-                       <h3 className="font-semibold text-lg sm:text-xl text-foreground">{squad.name}</h3>
-                       <div className="flex gap-2">
-                         {squad.createdBy === "You" && (
-                           <Badge variant="default" className="text-xs font-medium">Owner</Badge>
-                         )}
-                         <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs">
-                           {squad.isPublic ? "Public" : "Private"}
-                         </Badge>
-                       </div>
-                     </div>
-                     
-                     <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{squad.description}</p>
-                     
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                       <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                         <Users className="w-4 h-4 text-primary" />
-                         <div>
-                           <div className="text-sm font-medium text-foreground">{squad.memberCount}/{squad.maxMembers}</div>
-                           <div className="text-xs text-muted-foreground">Members</div>
-                         </div>
-                       </div>
-                       
-                       <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                         <Trophy className="w-4 h-4 text-primary" />
-                         <div>
-                           <div className="text-sm font-mono font-medium text-foreground">{squad.joinCode}</div>
-                           <div className="text-xs text-muted-foreground">Join Code</div>
-                         </div>
-                       </div>
-                     </div>
-                   </div>
-                   
-                   <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto sm:ml-6">
-                     <Button variant="default" size="sm" className="flex-1 sm:flex-none">
-                       View Details
-                     </Button>
-                     {squad.createdBy === "You" && (
-                       <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                         Manage
-                       </Button>
-                     )}
-                   </div>
-                 </div>
-               </div>
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-semibold text-lg text-foreground">{squad.name}</h3>
+                    <div className="flex gap-1.5">
+                      {squad.createdBy === "You" && (
+                        <Badge variant="default" className="text-xs px-2 py-0.5">Owner</Badge>
+                      )}
+                      <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs px-2 py-0.5">
+                        {squad.isPublic ? "Public" : "Private"}
+                      </Badge>
+                    </div>
+                  </div>
+                  
+                  <Button variant="default" size="sm" className="text-xs px-3">
+                    Go to Squad Dashboard
+                  </Button>
+                </div>
+                
+                <p className="text-muted-foreground text-sm mb-3 line-clamp-1">{squad.description}</p>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-sm font-medium text-foreground">{squad.memberCount}/{squad.maxMembers}</span>
+                      <span className="text-xs text-muted-foreground">members</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-1.5">
+                      <Trophy className="w-3.5 h-3.5 text-primary" />
+                      <span className="text-xs text-muted-foreground">Code:</span>
+                      <span className="text-sm font-mono font-medium text-foreground bg-muted/50 px-2 py-0.5 rounded text-xs">
+                        {squad.joinCode}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {squad.createdBy === "You" && (
+                    <Button variant="ghost" size="sm" className="text-xs px-2 h-7">
+                      Manage
+                    </Button>
+                  )}
+                </div>
+              </div>
               
-              {/* Accent bar */}
-              <div className="h-1 bg-gradient-primary"></div>
+              {/* Subtle accent */}
+              <div className="h-0.5 bg-gradient-primary"></div>
             </CardContent>
           </Card>
         ))}

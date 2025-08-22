@@ -51,7 +51,7 @@ const TeamLogosBanner = () => {
           {duplicatedTeams.map((team, index) => (
             <div
               key={`${team.code}-${index}`}
-              className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 opacity-60 hover:opacity-100 transition-opacity duration-300"
+              className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 hover:scale-110 transition-transform duration-300"
             >
               <img
                 src={team.logo}

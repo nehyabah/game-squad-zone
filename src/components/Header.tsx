@@ -13,16 +13,16 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-background border-b border-border px-4 sm:px-6 py-4 sticky top-0 z-50">
+    <header className="bg-background border-b border-border px-3 py-3 sm:px-6 sm:py-4 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-card">
-            <Trophy className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-primary rounded-lg sm:rounded-xl flex items-center justify-center shadow-card">
+            <Trophy className="w-4 h-4 sm:w-7 sm:h-7 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-lg sm:text-2xl font-display font-bold text-foreground">SquadPot</h1>
-            <p className="text-xs sm:text-sm font-medium text-muted-foreground hidden sm:block">NFL Fantasy Squads</p>
+            <h1 className="text-base sm:text-2xl font-display font-bold text-foreground">SquadPot</h1>
+            <p className="text-[10px] sm:text-sm font-medium text-muted-foreground hidden sm:block">NFL Fantasy Squads</p>
           </div>
         </div>
 
@@ -59,9 +59,9 @@ const Header = ({ onAuthClick }: HeaderProps) => {
         </div>
 
         {/* Mobile Menu Button */}
-        <div className="flex sm:hidden items-center gap-2">
+        <div className="flex sm:hidden items-center gap-1">
           {user && (
-            <Avatar className="w-8 h-8">
+            <Avatar className="w-7 h-7">
               <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                 {user.username.charAt(0).toUpperCase()}
               </AvatarFallback>
@@ -71,35 +71,35 @@ const Header = ({ onAuthClick }: HeaderProps) => {
             variant="ghost" 
             size="sm" 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2"
+            className="p-1 h-8 w-8"
           >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </Button>
         </div>
       </div>
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden mt-4 pb-4 border-t border-border">
-          <div className="space-y-4 pt-4">
+        <div className="sm:hidden mt-3 pb-3 border-t border-border">
+          <div className="space-y-3 pt-3">
             {user ? (
               <>
-                <div className="text-center pb-2">
-                  <p className="text-sm text-muted-foreground">Welcome back,</p>
-                  <p className="font-semibold text-foreground">{user.username}</p>
+                <div className="text-center pb-1">
+                  <p className="text-xs text-muted-foreground">Welcome,</p>
+                  <p className="font-semibold text-sm text-foreground">{user.username}</p>
                 </div>
-                <nav className="space-y-2">
-                  <a href="#" className="block text-center py-2 text-foreground hover:text-primary font-medium transition-smooth">My Picks</a>
-                  <a href="#" className="block text-center py-2 text-foreground hover:text-primary font-medium transition-smooth">Leaderboard</a>
-                  <a href="#" className="block text-center py-2 text-foreground hover:text-primary font-medium transition-smooth">My Squads</a>
+                <nav className="space-y-1">
+                  <a href="#" className="block text-center py-2 text-sm text-foreground hover:text-primary font-medium transition-smooth">My Picks</a>
+                  <a href="#" className="block text-center py-2 text-sm text-foreground hover:text-primary font-medium transition-smooth">Leaderboard</a>
+                  <a href="#" className="block text-center py-2 text-sm text-foreground hover:text-primary font-medium transition-smooth">My Squads</a>
                 </nav>
-                <Button variant="outline" size="sm" onClick={logout} className="w-full">
-                  <LogOut className="w-4 h-4 mr-2" />
+                <Button variant="outline" size="sm" onClick={logout} className="w-full h-8 text-xs">
+                  <LogOut className="w-3 h-3 mr-1" />
                   Logout
                 </Button>
               </>
             ) : (
-              <Button variant="squad" size="sm" onClick={onAuthClick} className="w-full">
+              <Button variant="squad" size="sm" onClick={onAuthClick} className="w-full h-8 text-xs">
                 Login / Sign Up
               </Button>
             )}

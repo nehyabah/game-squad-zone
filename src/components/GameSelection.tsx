@@ -95,16 +95,16 @@ const GameSelection = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center space-y-3 sm:space-y-4">
-        <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto text-sm sm:text-base px-4">Select 3 games against the spread. Picks lock at kickoff.</p>
-        <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap px-4">
-          <Badge variant={selectedGames.size === maxGames ? "default" : "secondary"} className="text-xs sm:text-sm px-2 sm:px-3 py-1">
-            {selectedGames.size}/{maxGames} games selected
+      <div className="text-center space-y-2 sm:space-y-4">
+        <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">Select 3 games against the spread</p>
+        <div className="flex items-center justify-center gap-2 flex-wrap px-3">
+          <Badge variant={selectedGames.size === maxGames ? "default" : "secondary"} className="text-xs px-2 py-0.5">
+            {selectedGames.size}/{maxGames} picked
           </Badge>
-          <Badge variant="outline" className="text-muted-foreground text-xs sm:text-sm px-2 sm:px-3 py-1">
-            <Clock className="w-3 h-3 mr-1" />
-            <span className="hidden sm:inline">Picks lock: </span>Sat 12:00 PM EST
+          <Badge variant="outline" className="text-muted-foreground text-xs px-2 py-0.5">
+            <Clock className="w-2 h-2 mr-1" />
+            <span className="hidden sm:inline">Lock: </span>Sat 12PM EST
           </Badge>
         </div>
       </div>
@@ -119,49 +119,48 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className={`cursor-pointer transition-smooth hover:shadow-hover border-2 rounded-xl ${
+              className={`cursor-pointer transition-smooth hover:shadow-hover border rounded-lg ${
                 isSelected 
-                  ? 'border-primary shadow-glow bg-primary/5 scale-[1.02]' 
+                  ? 'border-primary shadow-glow bg-primary/5' 
                   : 'border-border hover:border-primary/50 hover:bg-card/50'
               }`}
               onClick={() => toggleGameSelection(game.id)}
             >
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center justify-between gap-2 sm:gap-4">
                   {/* Game Info */}
-                  <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-8">
-                    <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-                      <div className="text-2xl sm:text-3xl">{game.awayLogo}</div>
-                      <div className="text-center sm:text-left">
-                        <div className="font-display font-semibold text-foreground text-base sm:text-lg">{game.awayTeam}</div>
-                        <div className="text-sm font-medium text-muted-foreground">
+                  <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 sm:gap-3">
+                      <div className="text-lg sm:text-3xl">{game.awayLogo}</div>
+                      <div className="text-left">
+                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.awayTeam}</div>
+                        <div className="text-xs font-medium text-muted-foreground">
                           {game.awayTeam === underdogTeam && `+${spreadValue}`}
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-muted-foreground font-bold text-lg">@</div>
+                    <div className="text-muted-foreground font-bold text-xs sm:text-lg">@</div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-                      <div className="text-2xl sm:text-3xl">{game.homeLogo}</div>
-                      <div className="text-center sm:text-left">
-                        <div className="font-display font-semibold text-foreground text-base sm:text-lg">{game.homeTeam}</div>
-                        <div className="text-sm font-medium text-muted-foreground">
+                    <div className="flex items-center gap-1.5 sm:gap-3">
+                      <div className="text-lg sm:text-3xl">{game.homeLogo}</div>
+                      <div className="text-left">
+                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.homeTeam}</div>
+                        <div className="text-xs font-medium text-muted-foreground">
                           {game.homeTeam === favoriteTeam && `-${spreadValue}`}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Time & Selection */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6">
-                    <div className="text-center sm:text-right">
-                      <div className="text-xs sm:text-sm text-muted-foreground font-medium">{game.time}</div>
+                  {/* Selection Indicator */}
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-muted-foreground hidden sm:block">
+                      Sun 1PM
                     </div>
-                    
                     {isSelected && (
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center shadow-glow">
-                        <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+                      <div className="w-6 h-6 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center shadow-glow">
+                        <Check className="w-3 h-3 sm:w-5 sm:h-5 text-primary-foreground" />
                       </div>
                     )}
                   </div>

@@ -61,21 +61,21 @@ const Index = () => {
       <Header onAuthClick={() => setShowAuthModal(true)} />
       
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="text-center mb-6 sm:mb-8">
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-foreground mb-2">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+        <div className="text-center mb-4 sm:mb-8">
+          <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
             Welcome back, {user.username}! 👋
           </h2>
-          <p className="text-muted-foreground text-sm sm:text-base">Ready to make your picks for this week?</p>
+          <p className="text-muted-foreground text-xs sm:text-base">Ready to make your picks?</p>
         </div>
 
         <CountdownTimer />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-sm sm:max-w-lg mx-auto mb-8 sm:mb-16 h-10 sm:h-12 bg-secondary/50 border border-border/50">
-            <TabsTrigger value="create" className="font-medium text-xs sm:text-sm">Create Squad</TabsTrigger>
-            <TabsTrigger value="games" className="font-medium text-xs sm:text-sm">My Picks</TabsTrigger>
-            <TabsTrigger value="leaderboard" className="font-medium text-xs sm:text-sm">Leaderboard</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 max-w-xs sm:max-w-lg mx-auto mb-6 sm:mb-16 h-8 sm:h-12 bg-secondary/50 border border-border/50">
+            <TabsTrigger value="create" className="font-medium text-[10px] sm:text-sm px-1">Create</TabsTrigger>
+            <TabsTrigger value="games" className="font-medium text-[10px] sm:text-sm px-1">My Picks</TabsTrigger>
+            <TabsTrigger value="leaderboard" className="font-medium text-[10px] sm:text-sm px-1">Ranking</TabsTrigger>
           </TabsList>
 
           <TabsContent value="create" className="space-y-8">

@@ -81,21 +81,21 @@ const SquadManager = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground mb-1">My Squads</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-1">My Squads</h2>
           <p className="text-muted-foreground text-sm">Manage your fantasy squads and create new ones</p>
         </div>
         
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2 w-full sm:w-auto">
               <Plus className="w-4 h-4" />
               Create Squad
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md mx-4">
             <DialogHeader>
               <DialogTitle>Create New Squad</DialogTitle>
             </DialogHeader>
@@ -149,54 +149,54 @@ const SquadManager = () => {
         {squads.map((squad) => (
           <Card key={squad.id} className="relative overflow-hidden border-0 shadow-card bg-card hover:shadow-hover transition-smooth group">
             <CardContent className="p-0">
-              <div className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <h3 className="font-semibold text-xl text-foreground">{squad.name}</h3>
-                      <div className="flex gap-2">
-                        {squad.createdBy === "You" && (
-                          <Badge variant="default" className="text-xs font-medium">Owner</Badge>
-                        )}
-                        <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs">
-                          {squad.isPublic ? "Public" : "Private"}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{squad.description}</p>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                        <Users className="w-4 h-4 text-primary" />
-                        <div>
-                          <div className="text-sm font-medium text-foreground">{squad.memberCount}/{squad.maxMembers}</div>
-                          <div className="text-xs text-muted-foreground">Members</div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
-                        <Trophy className="w-4 h-4 text-primary" />
-                        <div>
-                          <div className="text-sm font-mono font-medium text-foreground">{squad.joinCode}</div>
-                          <div className="text-xs text-muted-foreground">Join Code</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2 ml-6">
-                    <Button variant="default" size="sm">
-                      View Details
-                    </Button>
-                    {squad.createdBy === "You" && (
-                      <Button variant="outline" size="sm">
-                        Manage
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
+               <div className="p-4 sm:p-6">
+                 <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                   <div className="flex-1 w-full">
+                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                       <h3 className="font-semibold text-lg sm:text-xl text-foreground">{squad.name}</h3>
+                       <div className="flex gap-2">
+                         {squad.createdBy === "You" && (
+                           <Badge variant="default" className="text-xs font-medium">Owner</Badge>
+                         )}
+                         <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs">
+                           {squad.isPublic ? "Public" : "Private"}
+                         </Badge>
+                       </div>
+                     </div>
+                     
+                     <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{squad.description}</p>
+                     
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                       <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                         <Users className="w-4 h-4 text-primary" />
+                         <div>
+                           <div className="text-sm font-medium text-foreground">{squad.memberCount}/{squad.maxMembers}</div>
+                           <div className="text-xs text-muted-foreground">Members</div>
+                         </div>
+                       </div>
+                       
+                       <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg">
+                         <Trophy className="w-4 h-4 text-primary" />
+                         <div>
+                           <div className="text-sm font-mono font-medium text-foreground">{squad.joinCode}</div>
+                           <div className="text-xs text-muted-foreground">Join Code</div>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                   
+                   <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto sm:ml-6">
+                     <Button variant="default" size="sm" className="flex-1 sm:flex-none">
+                       View Details
+                     </Button>
+                     {squad.createdBy === "You" && (
+                       <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+                         Manage
+                       </Button>
+                     )}
+                   </div>
+                 </div>
+               </div>
               
               {/* Accent bar */}
               <div className="h-1 bg-gradient-primary"></div>

@@ -59,43 +59,48 @@ const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
       {data.map((entry, index) => (
         <div 
           key={entry.rank}
-          className={`flex items-center justify-between p-2.5 hover:bg-muted/50 transition-colors ${
+          className={`flex items-center justify-between p-3 sm:p-4 hover:bg-muted/50 transition-colors ${
             entry.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
           } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
             index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
           } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
         >
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center justify-center w-6 h-6">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
               {getRankIcon(entry.rank)}
             </div>
             
             <div className="flex items-center gap-2">
-              <Avatar className="w-6 h-6">
+              <Avatar className="w-6 h-6 flex-shrink-0">
                 <AvatarFallback className="text-xs font-medium">
                   {entry.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div>
-                <div className={`text-sm font-medium ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+              <div className="min-w-0">
+                <div className={`text-sm font-medium truncate ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
                   {entry.username}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground hidden sm:block">
                   {entry.wins}W - {entry.losses}L
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="text-right">
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            <div className="text-right hidden sm:block">
               <div className="text-sm font-medium text-foreground">{entry.winPercentage}%</div>
               <div className="text-xs text-muted-foreground">Win Rate</div>
             </div>
             
             <div className="text-right">
-              <div className="font-bold text-primary">{entry.points}</div>
+              <div className="font-bold text-primary text-sm sm:text-base">{entry.points}</div>
               <div className="text-xs text-muted-foreground">Points</div>
+            </div>
+            
+            {/* Mobile compact view */}
+            <div className="text-right sm:hidden">
+              <div className="text-xs text-muted-foreground">{entry.winPercentage}%</div>
             </div>
           </div>
         </div>

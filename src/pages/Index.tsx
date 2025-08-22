@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
-import SquadCreation from "@/components/SquadCreation";
+import SquadManager from "@/components/SquadManager";
 import GameSelection from "@/components/GameSelection";
 import Leaderboard from "@/components/Leaderboard";
 import AuthModal from "@/components/AuthModal";
@@ -83,7 +83,7 @@ const Index = () => {
               value="create" 
               className="font-medium text-xs sm:text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
-              Create
+              Squads
             </TabsTrigger>
             <TabsTrigger 
               value="games" 
@@ -104,7 +104,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="create" className="space-y-8">
-            <SquadCreation />
+            <SquadManager />
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">

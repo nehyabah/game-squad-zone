@@ -5,28 +5,49 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Clock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { nflApi, Game, Team } from "@/services/nflApi";
+import ApiKeyInput from "./ApiKeyInput";
 
 
 const GameSelection = () => {
   const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasApiKey, setHasApiKey] = useState(false);
   const maxGames = 3;
 
   useEffect(() => {
-    loadGames();
+    const checkApiKey = () => {
+      const apiKey = localStorage.getItem('nfl_api_key');
+      setHasApiKey(!!apiKey);
+      if (apiKey) {
+        loadGames();
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkApiKey();
   }, []);
 
   const loadGames = async () => {
-    console.log('loadGames called');
     setIsLoading(true);
-    const gameData = await nflApi.getGames();
-    console.log('Games loaded:', gameData);
-    setGames(gameData);
-    setIsLoading(false);
-    console.log('Loading finished, isLoading set to false');
+    try {
+      const gameData = await nflApi.getGames();
+      setGames(gameData);
+    } catch (error) {
+      console.error('Error loading games:', error);
+      // Fallback to mock data
+      const fallbackGames = await nflApi.getGames();
+      setGames(fallbackGames);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  const handleApiKeySet = () => {
+    setHasApiKey(true);
+    loadGames();
+  };
 
   const toggleGameSelection = (gameId: string) => {
     const newSelected = new Set(selectedGames);
@@ -63,10 +84,18 @@ const GameSelection = () => {
     });
   };
 
-  
+  if (!hasApiKey) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center space-y-2 sm:space-y-4">
+          <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">Connect your API to get real NFL data</p>
+        </div>
+        <ApiKeyInput onApiKeySet={handleApiKeySet} />
+      </div>
+    );
+  }
 
-  console.log('GameSelection render - isLoading:', isLoading, 'games length:', games.length);
-  
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">

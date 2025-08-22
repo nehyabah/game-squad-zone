@@ -26,16 +26,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const storedUser = localStorage.getItem('squadpot_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
-    } else {
-      // Create a test user automatically for demo purposes
-      const testUser = {
-        id: 'demo-user',
-        username: 'Demo User',
-        email: 'demo@example.com',
-        createdAt: new Date().toISOString()
-      };
-      setUser(testUser);
-      localStorage.setItem('squadpot_user', JSON.stringify(testUser));
     }
     setIsLoading(false);
   }, []);

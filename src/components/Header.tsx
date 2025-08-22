@@ -8,20 +8,20 @@ const Header = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <Trophy className="w-6 h-6 text-primary-foreground" />
+          <div className="w-12 h-12 bg-gradient-primary rounded-xl flex items-center justify-center shadow-card">
+            <Trophy className="w-7 h-7 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">SquadPot</h1>
-            <p className="text-sm text-muted-foreground">NFL Fantasy Squads</p>
+            <h1 className="text-2xl font-display font-bold text-foreground">SquadPot</h1>
+            <p className="text-sm font-medium text-muted-foreground">NFL Fantasy Squads</p>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          <a href="#" className="text-foreground hover:text-primary transition-smooth">Picks</a>
-          <a href="#" className="text-foreground hover:text-primary transition-smooth">Leaderboard</a>
-          <a href="#" className="text-foreground hover:text-primary transition-smooth">My Squads</a>
+          <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">Picks</a>
+          <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">Leaderboard</a>
+          <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">My Squads</a>
         </nav>
 
         {/* User Profile */}

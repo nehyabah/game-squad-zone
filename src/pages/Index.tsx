@@ -17,12 +17,12 @@ const Index = () => {
       <HeroSection />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
+      <div className="max-w-7xl mx-auto px-6 py-20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-12">
-            <TabsTrigger value="create">Create Squad</TabsTrigger>
-            <TabsTrigger value="games">Pick Games</TabsTrigger>
-            <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto mb-16 h-12 bg-secondary/50 border border-border/50">
+            <TabsTrigger value="create" className="font-medium">Create Squad</TabsTrigger>
+            <TabsTrigger value="games" className="font-medium">Pick Games</TabsTrigger>
+            <TabsTrigger value="leaderboard" className="font-medium">Leaderboard</TabsTrigger>
           </TabsList>
 
           <TabsContent value="create" className="space-y-8">

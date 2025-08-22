@@ -9,25 +9,25 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-hover transition-smooth shadow-card",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover transition-smooth shadow-card font-medium",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 font-medium",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground font-medium",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        squad: "bg-gradient-primary text-primary-foreground hover:shadow-glow transform hover:scale-105 transition-bounce font-semibold",
-        game: "bg-background text-foreground border-2 border-primary hover:bg-primary hover:text-primary-foreground transition-smooth shadow-card",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 font-medium",
+        ghost: "hover:bg-accent hover:text-accent-foreground font-medium",
+        link: "text-primary underline-offset-4 hover:underline font-medium",
+        squad: "bg-gradient-primary text-primary-foreground hover:shadow-glow transform hover:scale-[1.02] transition-bounce font-semibold text-base shadow-card",
+        game: "bg-background text-foreground border-2 border-primary/30 hover:border-primary hover:bg-primary/5 transition-smooth shadow-card font-medium",
         join: "bg-accent text-accent-foreground hover:bg-accent/90 transition-smooth shadow-card font-medium",
-        hero: "bg-gradient-hero text-primary-foreground hover:shadow-glow transform hover:scale-105 transition-bounce font-bold text-lg",
+        hero: "bg-gradient-hero text-primary-foreground hover:shadow-glow transform hover:scale-[1.02] transition-bounce font-bold text-lg shadow-card px-8 py-4",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-11 px-6 py-2",
+        sm: "h-9 px-4 text-sm",
+        lg: "h-12 px-8 text-lg",
+        icon: "h-11 w-11",
       },
     },
     defaultVariants: {

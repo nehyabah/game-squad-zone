@@ -58,25 +58,25 @@ const SquadCreation = () => {
 
   if (isCreated) {
     return (
-      <Card className="w-full max-w-md mx-auto shadow-hover border-0 bg-gradient-card">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl text-foreground flex items-center justify-center gap-2">
-            <Users className="w-6 h-6 text-primary" />
-            Squad Created!
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="text-center">
-            <h3 className="font-semibold text-lg text-foreground mb-2">{squadName}</h3>
-            <p className="text-muted-foreground">Share this code with your friends</p>
-          </div>
-
-          <div className="bg-background/50 rounded-lg p-4 text-center">
-            <Label className="text-sm text-muted-foreground">Join Code</Label>
-            <div className="text-3xl font-mono font-bold text-primary mt-2 tracking-wider">
-              {joinCode}
+        <Card className="w-full max-w-md mx-auto shadow-hover border border-border/50 bg-card backdrop-blur-sm">
+          <CardHeader className="text-center pb-2">
+            <CardTitle className="text-2xl font-display text-foreground flex items-center justify-center gap-2">
+              <Users className="w-6 h-6 text-primary" />
+              Squad Created!
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              <h3 className="font-display font-semibold text-lg text-foreground mb-2">{squadName}</h3>
+              <p className="text-muted-foreground">Share this code with your friends</p>
             </div>
-          </div>
+
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 text-center">
+              <Label className="text-sm font-medium text-muted-foreground">Join Code</Label>
+              <div className="text-3xl font-mono font-bold text-primary mt-2 tracking-wider">
+                {joinCode}
+              </div>
+            </div>
 
           <div className="flex gap-3">
             <Button 
@@ -108,26 +108,26 @@ const SquadCreation = () => {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-hover border-0 bg-gradient-card">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl text-foreground flex items-center justify-center gap-2">
+    <Card className="w-full max-w-md mx-auto shadow-hover border border-border/50 bg-card backdrop-blur-sm">
+      <CardHeader className="text-center pb-2">
+        <CardTitle className="text-2xl font-display text-foreground flex items-center justify-center gap-2">
           <Users className="w-6 h-6 text-primary" />
           Create Squad
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="squadName">Squad Name</Label>
+          <Label htmlFor="squadName" className="font-medium">Squad Name</Label>
           <Input
             id="squadName"
             value={squadName}
             onChange={(e) => setSquadName(e.target.value)}
             placeholder="Enter your squad name"
-            className="transition-smooth focus:shadow-glow"
+            className="transition-smooth focus:shadow-glow border-border/50 focus:border-primary"
           />
         </div>
 
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
           <p>Create a squad and get a unique join code to share with friends</p>
         </div>
 

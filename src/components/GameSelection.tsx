@@ -95,16 +95,16 @@ const GameSelection = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-foreground mb-2">Week 1 Matchups</h2>
-        <p className="text-muted-foreground">Select 3 games against the spread. Picks lock at kickoff.</p>
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <Badge variant={selectedGames.size === maxGames ? "default" : "secondary"}>
+      <div className="text-center space-y-4">
+        <h2 className="text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">Select 3 games against the spread. Picks lock at kickoff.</p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <Badge variant={selectedGames.size === maxGames ? "default" : "secondary"} className="text-sm px-3 py-1">
             {selectedGames.size}/{maxGames} games selected
           </Badge>
-          <Badge variant="outline" className="text-muted-foreground">
+          <Badge variant="outline" className="text-muted-foreground text-sm px-3 py-1">
             <Clock className="w-3 h-3 mr-1" />
-            Picks lock in: Saturday 12:00 PM EST
+            Picks lock: Saturday 12:00 PM EST
           </Badge>
         </div>
       </div>
@@ -119,32 +119,34 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className={`cursor-pointer transition-smooth hover:shadow-hover border-2 ${
-                isSelected ? 'border-primary shadow-glow bg-primary/5' : 'border-border hover:border-primary/50'
+              className={`cursor-pointer transition-smooth hover:shadow-hover border-2 rounded-xl ${
+                isSelected 
+                  ? 'border-primary shadow-glow bg-primary/5 scale-[1.02]' 
+                  : 'border-border hover:border-primary/50 hover:bg-card/50'
               }`}
               onClick={() => toggleGameSelection(game.id)}
             >
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   {/* Game Info */}
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{game.awayLogo}</div>
-                      <div>
-                        <div className="font-semibold text-foreground">{game.awayTeam}</div>
-                        <div className="text-sm text-muted-foreground">
+                  <div className="flex items-center gap-8">
+                    <div className="flex items-center gap-4">
+                      <div className="text-3xl">{game.awayLogo}</div>
+                      <div className="text-center">
+                        <div className="font-display font-semibold text-foreground text-lg">{game.awayTeam}</div>
+                        <div className="text-sm font-medium text-muted-foreground">
                           {game.awayTeam === underdogTeam && `+${spreadValue}`}
                         </div>
                       </div>
                     </div>
 
-                    <div className="text-muted-foreground">vs</div>
+                    <div className="text-muted-foreground font-bold">@</div>
 
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{game.homeLogo}</div>
-                      <div>
-                        <div className="font-semibold text-foreground">{game.homeTeam}</div>
-                        <div className="text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4">
+                      <div className="text-3xl">{game.homeLogo}</div>
+                      <div className="text-center">
+                        <div className="font-display font-semibold text-foreground text-lg">{game.homeTeam}</div>
+                        <div className="text-sm font-medium text-muted-foreground">
                           {game.homeTeam === favoriteTeam && `-${spreadValue}`}
                         </div>
                       </div>
@@ -152,13 +154,13 @@ const GameSelection = () => {
                   </div>
 
                   {/* Time & Selection */}
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <div className="text-sm text-muted-foreground">{game.time}</div>
+                      <div className="text-sm text-muted-foreground font-medium">{game.time}</div>
                     </div>
                     
                     {isSelected && (
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-glow">
                         <Check className="w-5 h-5 text-primary-foreground" />
                       </div>
                     )}

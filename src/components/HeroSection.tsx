@@ -5,27 +5,28 @@ import heroImage from "@/assets/nfl-hero-banner.jpg";
 
 const HeroSection = () => {
   return (
-    <div className="relative bg-gradient-to-br from-background to-muted overflow-hidden">
+    <div className="relative bg-gradient-to-br from-background via-background to-secondary overflow-hidden min-h-[600px] flex items-center">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 opacity-10"
+        className="absolute inset-0 opacity-5"
         style={{
           backgroundImage: `url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       />
+      <div className="absolute inset-0 bg-gradient-to-r from-background/90 to-background/70" />
       
-      <div className="relative max-w-7xl mx-auto px-6 py-20">
+      <div className="relative max-w-7xl mx-auto px-6 py-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}
           <div className="text-center lg:text-left">
-            <h1 className="text-5xl lg:text-6xl font-bold text-foreground mb-6">
+            <h1 className="text-4xl lg:text-6xl font-display font-bold text-foreground mb-6 leading-tight">
               Create Your
-              <span className="text-primary block">NFL Squad</span>
+              <span className="text-primary block bg-gradient-primary bg-clip-text text-transparent">NFL Squad</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-lg">
-              Invite friends, pick 3 games, and compete for glory. The ultimate NFL fantasy experience starts here.
+            <p className="text-lg lg:text-xl text-muted-foreground mb-8 max-w-2xl leading-relaxed">
+              Invite friends with simple join codes, pick exactly 3 NFL games, and compete for glory. The ultimate social fantasy experience starts here.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">

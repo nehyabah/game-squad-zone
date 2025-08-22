@@ -17,8 +17,11 @@ const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user } = useAuth();
 
+  console.log('Index component - user:', user);
+
   // Show auth prompt for non-logged in users
   if (!user) {
+    console.log('No user found, showing auth prompt');
     return (
       <div className="min-h-screen bg-background">
         <Header onAuthClick={() => setShowAuthModal(true)} />

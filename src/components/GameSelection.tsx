@@ -18,10 +18,13 @@ const GameSelection = () => {
   }, []);
 
   const loadGames = async () => {
+    console.log('loadGames called');
     setIsLoading(true);
     const gameData = await nflApi.getGames();
+    console.log('Games loaded:', gameData);
     setGames(gameData);
     setIsLoading(false);
+    console.log('Loading finished, isLoading set to false');
   };
 
 
@@ -62,6 +65,8 @@ const GameSelection = () => {
 
   
 
+  console.log('GameSelection render - isLoading:', isLoading, 'games length:', games.length);
+  
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">

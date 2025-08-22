@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Clock, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { nflApi, Game, Team } from "@/services/nflApi";
+import { usePicks } from "@/contexts/PicksContext";
 import confetti from "canvas-confetti";
 
 
 const GameSelection = () => {
-  const [selectedPicks, setSelectedPicks] = useState<Map<string, 'home' | 'away'>>(new Map());
+  const { selectedPicks, setSelectedPicks } = usePicks();
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const maxGames = 3;

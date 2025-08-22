@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import SquadManager from "@/components/SquadManager";
 import GameSelection from "@/components/GameSelection";
+import MyPicks from "@/components/MyPicks";
 import Leaderboard from "@/components/Leaderboard";
 import AuthModal from "@/components/AuthModal";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -258,10 +259,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">
-            <div className="text-center">
-              <h3 className="text-xl font-display font-semibold text-foreground mb-4">My Current Picks</h3>
-              <p className="text-muted-foreground">Your picks for this week will appear here</p>
-            </div>
+            <MyPicks />
           </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-8">

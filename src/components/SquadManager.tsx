@@ -372,8 +372,8 @@ const SquadManager = () => {
 
           <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2 flex-1 sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary/30 hover:bg-primary/5 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/10 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+              <Button variant="outline" className="gap-2 flex-1 sm:w-auto transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-primary hover:text-primary hover:bg-background relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
                 <UserPlus className="w-4 h-4 relative z-10" />
                 <span className="relative z-10">Join Squad</span>
               </Button>

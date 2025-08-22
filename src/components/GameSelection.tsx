@@ -8,7 +8,7 @@ import { nflApi, Game, Team } from "@/services/nflApi";
 
 
 const GameSelection = () => {
-  const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
+  const [selectedPicks, setSelectedPicks] = useState<Map<string, 'home' | 'away'>>(new Map());
   const [games, setGames] = useState<Game[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const maxGames = 3;
@@ -32,13 +32,13 @@ const GameSelection = () => {
     }
   };
 
-  const toggleGameSelection = (gameId: string) => {
-    const newSelected = new Set(selectedGames);
+  const handleSpreadPick = (gameId: string, team: 'home' | 'away') => {
+    const newPicks = new Map(selectedPicks);
     
-    if (newSelected.has(gameId)) {
-      newSelected.delete(gameId);
-    } else if (newSelected.size < maxGames) {
-      newSelected.add(gameId);
+    if (newPicks.has(gameId)) {
+      newPicks.delete(gameId);
+    } else if (newPicks.size < maxGames) {
+      newPicks.set(gameId, team);
     } else {
       toast({
         title: "Maximum games selected",
@@ -48,11 +48,11 @@ const GameSelection = () => {
       return;
     }
     
-    setSelectedGames(newSelected);
+    setSelectedPicks(newPicks);
   };
 
   const submitPicks = () => {
-    if (selectedGames.size < 3) {
+    if (selectedPicks.size < 3) {
       toast({
         title: "Select 3 games",
         description: "You must select exactly 3 games to submit your picks",
@@ -107,8 +107,8 @@ const GameSelection = () => {
         <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
         <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">Select 3 games against the spread</p>
         <div className="flex items-center justify-center gap-2 flex-wrap px-3">
-          <Badge variant={selectedGames.size === maxGames ? "default" : "secondary"} className="text-xs px-2 py-0.5">
-            {selectedGames.size}/{maxGames} picked
+          <Badge variant={selectedPicks.size === maxGames ? "default" : "secondary"} className="text-xs px-2 py-0.5">
+            {selectedPicks.size}/{maxGames} picked
           </Badge>
           <Badge variant="outline" className="text-muted-foreground text-xs px-2 py-0.5">
             <Clock className="w-2 h-2 mr-1" />
@@ -119,7 +119,7 @@ const GameSelection = () => {
 
       <div className="grid gap-4">
         {games.map((game) => {
-          const isSelected = selectedGames.has(game.id);
+          const selectedPick = selectedPicks.get(game.id);
           const favoriteTeam = game.spread < 0 ? game.homeTeam.name : game.awayTeam.name;
           const underdogTeam = game.spread < 0 ? game.awayTeam.name : game.homeTeam.name;
           const spreadValue = Math.abs(game.spread);
@@ -127,14 +127,9 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className={`group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] ${
-                isSelected 
-                  ? 'border-primary/40 shadow-glow bg-gradient-to-br from-primary/8 via-primary/4 to-transparent ring-1 ring-primary/20' 
-                  : 'border-border/50 bg-gradient-to-br from-card via-card/90 to-card/50 hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card hover:via-card/95 hover:to-primary/5'
-              } backdrop-blur-sm`}
-              onClick={() => toggleGameSelection(game.id)}
+              className="group transition-all duration-300 border-border/50 bg-gradient-to-br from-card via-card/90 to-card/50 backdrop-blur-sm"
             >
-              <CardContent className="p-4 sm:p-8 relative overflow-hidden">
+              <CardContent className="p-4 sm:p-6 relative overflow-hidden">
                 {/* Subtle background pattern */}
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/2 to-accent/3 opacity-50" />
                 
@@ -143,27 +138,24 @@ const GameSelection = () => {
                   {/* Teams Layout - Logo Centered */}
                   <div className="flex items-center justify-center gap-6 sm:gap-12 w-full">
                     {/* Away Team */}
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="relative group-hover:scale-110 transition-transform duration-300">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative">
                         <img 
                           src={game.awayTeam.logo} 
                           alt={`${game.awayTeam.name} logo`}
-                          className="relative w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
+                          className="w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
                           onError={(e) => {
                             e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
                           }}
                         />
                       </div>
-                      <div className="text-center">
+                      <div className="text-center space-y-1">
                         <div className="font-medium text-foreground text-xs tracking-wide">
                           {game.awayTeam.code}
                         </div>
-                        {game.awayTeam.name === underdogTeam && (
-                          <div className="mt-1 px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-semibold rounded-full border border-green-500/20">
-                            +{spreadValue}
-                          </div>
-                        )}
+                        <div className="text-muted-foreground text-[10px]">
+                          {game.awayTeam.name}
+                        </div>
                       </div>
                     </div>
 
@@ -174,46 +166,80 @@ const GameSelection = () => {
                     </div>
 
                     {/* Home Team */}
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="relative group-hover:scale-110 transition-transform duration-300">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative">
                         <img 
                           src={game.homeTeam.logo} 
                           alt={`${game.homeTeam.name} logo`}
-                          className="relative w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
+                          className="w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
                           onError={(e) => {
                             e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
                           }}
                         />
                       </div>
-                      <div className="text-center">
+                      <div className="text-center space-y-1">
                         <div className="font-medium text-foreground text-xs tracking-wide">
                           {game.homeTeam.code}
                         </div>
-                        {game.homeTeam.name === favoriteTeam && (
-                          <div className="mt-1 px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-semibold rounded-full border border-red-500/20">
-                            -{spreadValue}
-                          </div>
-                        )}
+                        <div className="text-muted-foreground text-[10px]">
+                          {game.homeTeam.name}
+                        </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Spread Selection Buttons */}
+                  <div className="flex items-center gap-3 mt-2">
+                    {game.spread < 0 ? (
+                      <>
+                        <Button
+                          variant={selectedPick === 'away' ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleSpreadPick(game.id, 'away')}
+                          className="min-w-16 text-xs"
+                        >
+                          +{spreadValue}
+                        </Button>
+                        <span className="text-muted-foreground text-xs">|</span>
+                        <Button
+                          variant={selectedPick === 'home' ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleSpreadPick(game.id, 'home')}
+                          className="min-w-16 text-xs"
+                        >
+                          -{spreadValue}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant={selectedPick === 'away' ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleSpreadPick(game.id, 'away')}
+                          className="min-w-16 text-xs"
+                        >
+                          -{spreadValue}
+                        </Button>
+                        <span className="text-muted-foreground text-xs">|</span>
+                        <Button
+                          variant={selectedPick === 'home' ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleSpreadPick(game.id, 'home')}
+                          className="min-w-16 text-xs"
+                        >
+                          +{spreadValue}
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 {/* Minimal Footer */}
-                <div className="relative flex items-center justify-between mt-4 pt-3 border-t border-border/20">
+                <div className="relative flex items-center justify-center mt-4 pt-3 border-t border-border/20">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="w-3 h-3" />
                     <span className="text-xs">Sun 1PM</span>
                   </div>
-                  
-                  {/* Selection Status */}
-                  {isSelected && (
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/20 text-primary rounded-full border border-primary/30">
-                      <Check className="w-3 h-3" />
-                      <span className="text-xs font-medium">Picked</span>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -221,7 +247,7 @@ const GameSelection = () => {
         })}
       </div>
 
-      {selectedGames.size > 0 && (
+      {selectedPicks.size > 0 && (
         <div className="text-center">
           <Button 
             variant="squad" 
@@ -229,7 +255,7 @@ const GameSelection = () => {
             onClick={submitPicks}
             className="min-w-48"
           >
-            {selectedGames.size === maxGames ? 'Submit Picks' : `Select ${maxGames - selectedGames.size} More`}
+            {selectedPicks.size === maxGames ? 'Submit Picks' : `Select ${maxGames - selectedPicks.size} More`}
           </Button>
         </div>
       )}

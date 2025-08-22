@@ -461,17 +461,19 @@ const SquadManager = () => {
                   
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {squad.createdBy === "You" && (
-                      <Button variant="outline" size="sm" className="text-xs px-2 h-7 text-gray-600 hover:text-gray-700 bg-white border-gray-200">
-                        Manage
+                      <Button variant="outline" size="sm" className="text-xs px-2 h-7 text-gray-600 hover:text-primary bg-white border-gray-200 hover:border-primary hover:bg-background transition-all duration-300 hover:scale-105 hover:shadow-md relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+                        <span className="relative z-10">Manage</span>
                       </Button>
                     )}
                     <Button 
                       size="sm" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7"
+                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7 transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group"
                       onClick={() => handleViewSquad(squad)}
                     >
-                      <span className="hidden sm:inline">Dashboard</span>
-                      <span className="sm:hidden">View</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+                      <span className="hidden sm:inline relative z-10">Dashboard</span>
+                      <span className="sm:hidden relative z-10">View</span>
                     </Button>
                   </div>
                 </div>

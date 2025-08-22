@@ -40,7 +40,7 @@ const TeamLogosBanner = () => {
   const duplicatedTeams = [...nflTeams, ...nflTeams];
 
   return (
-    <div className="w-full overflow-hidden bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 py-3 sm:py-4 relative">
+    <div className="w-full overflow-hidden py-3 sm:py-4 relative">
       {/* Gradient overlays for fade effect */}
       <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-background to-transparent z-10"></div>
       <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-background to-transparent z-10"></div>

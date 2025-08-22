@@ -127,51 +127,61 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card hover:via-card/95 hover:to-primary/5"
+              className="group transition-all duration-300 border-border/50 bg-gradient-to-br from-card via-card/90 to-card/50 backdrop-blur-sm"
             >
-              <CardContent className="p-3 sm:p-4 relative overflow-hidden">
+              <CardContent className="p-4 sm:p-6 relative overflow-hidden">
+                {/* Subtle background pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/2 to-accent/3 opacity-50" />
+                
                 {/* Main content */}
-                <div className="relative flex flex-col items-center gap-2">
+                <div className="relative flex flex-col items-center gap-4 sm:gap-6">
                   {/* Teams Layout - Logo Centered */}
-                  <div className="flex items-center justify-center gap-4 sm:gap-8 w-full">
+                  <div className="flex items-center justify-center gap-6 sm:gap-12 w-full">
                     {/* Away Team */}
-                    <div className="flex flex-col items-center gap-1">
-                      <img 
-                        src={game.awayTeam.logo} 
-                        alt={`${game.awayTeam.name} logo`}
-                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                        }}
-                      />
-                      <div className="text-center">
-                        <div className="font-medium text-foreground text-[10px] sm:text-xs">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative">
+                        <img 
+                          src={game.awayTeam.logo} 
+                          alt={`${game.awayTeam.name} logo`}
+                          className="w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                          }}
+                        />
+                      </div>
+                      <div className="text-center space-y-1">
+                        <div className="font-medium text-foreground text-xs tracking-wide">
                           {game.awayTeam.code}
                         </div>
-                        <div className="text-muted-foreground text-[8px] sm:text-[10px] leading-tight">
+                        <div className="text-muted-foreground text-[10px]">
                           {game.awayTeam.name}
                         </div>
                       </div>
                     </div>
 
                     {/* VS Separator */}
-                    <div className="text-muted-foreground font-bold text-sm opacity-40">@</div>
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="text-muted-foreground font-bold text-lg sm:text-2xl opacity-40">VS</div>
+                      <div className="w-16 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+                    </div>
 
                     {/* Home Team */}
-                    <div className="flex flex-col items-center gap-1">
-                      <img 
-                        src={game.homeTeam.logo} 
-                        alt={`${game.homeTeam.name} logo`}
-                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                        }}
-                      />
-                      <div className="text-center">
-                        <div className="font-medium text-foreground text-[10px] sm:text-xs">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative">
+                        <img 
+                          src={game.homeTeam.logo} 
+                          alt={`${game.homeTeam.name} logo`}
+                          className="w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                          }}
+                        />
+                      </div>
+                      <div className="text-center space-y-1">
+                        <div className="font-medium text-foreground text-xs tracking-wide">
                           {game.homeTeam.code}
                         </div>
-                        <div className="text-muted-foreground text-[8px] sm:text-[10px] leading-tight">
+                        <div className="text-muted-foreground text-[10px]">
                           {game.homeTeam.name}
                         </div>
                       </div>
@@ -179,54 +189,56 @@ const GameSelection = () => {
                   </div>
 
                   {/* Spread Selection Buttons */}
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-3 mt-2">
                     {game.spread < 0 ? (
                       <>
-                        <button
+                        <Button
+                          variant={selectedPick === 'away' ? "default" : "outline"}
+                          size="sm"
                           onClick={() => handleSpreadPick(game.id, 'away')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
-                            selectedPick === 'away' 
-                              ? 'bg-primary text-primary-foreground shadow-sm' 
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                          }`}
+                          className="min-w-16 text-xs"
                         >
                           +{spreadValue}
-                        </button>
-                        <button
+                        </Button>
+                        <span className="text-muted-foreground text-xs">|</span>
+                        <Button
+                          variant={selectedPick === 'home' ? "default" : "outline"}
+                          size="sm"
                           onClick={() => handleSpreadPick(game.id, 'home')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
-                            selectedPick === 'home' 
-                              ? 'bg-primary text-primary-foreground shadow-sm' 
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                          }`}
+                          className="min-w-16 text-xs"
                         >
                           -{spreadValue}
-                        </button>
+                        </Button>
                       </>
                     ) : (
                       <>
-                        <button
+                        <Button
+                          variant={selectedPick === 'away' ? "default" : "outline"}
+                          size="sm"
                           onClick={() => handleSpreadPick(game.id, 'away')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
-                            selectedPick === 'away' 
-                              ? 'bg-primary text-primary-foreground shadow-sm' 
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                          }`}
+                          className="min-w-16 text-xs"
                         >
                           -{spreadValue}
-                        </button>
-                        <button
+                        </Button>
+                        <span className="text-muted-foreground text-xs">|</span>
+                        <Button
+                          variant={selectedPick === 'home' ? "default" : "outline"}
+                          size="sm"
                           onClick={() => handleSpreadPick(game.id, 'home')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
-                            selectedPick === 'home' 
-                              ? 'bg-primary text-primary-foreground shadow-sm' 
-                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                          }`}
+                          className="min-w-16 text-xs"
                         >
                           +{spreadValue}
-                        </button>
+                        </Button>
                       </>
                     )}
+                  </div>
+                </div>
+
+                {/* Minimal Footer */}
+                <div className="relative flex items-center justify-center mt-4 pt-3 border-t border-border/20">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-xs">Sun 1PM</span>
                   </div>
                 </div>
               </CardContent>

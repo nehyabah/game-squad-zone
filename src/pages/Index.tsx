@@ -72,22 +72,22 @@ const Index = () => {
         <CountdownTimer />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-sm sm:max-w-lg mx-auto mb-6 sm:mb-16 h-11 sm:h-12 bg-black/5 backdrop-blur-md border border-black/10 rounded-xl p-1 shadow-lg">
+          <TabsList className="grid w-full grid-cols-3 max-w-sm sm:max-w-lg mx-auto mb-6 sm:mb-16 h-11 sm:h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
             <TabsTrigger 
               value="create" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-white/60 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-white/40 data-[state=active]:shadow-md transition-all duration-200 text-foreground/70 data-[state=active]:text-foreground hover:text-foreground/90"
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               Create Squad
             </TabsTrigger>
             <TabsTrigger 
               value="games" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-white/60 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-white/40 data-[state=active]:shadow-md transition-all duration-200 text-foreground/70 data-[state=active]:text-foreground hover:text-foreground/90"
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               My Picks
             </TabsTrigger>
             <TabsTrigger 
               value="leaderboard" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-white/60 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-white/40 data-[state=active]:shadow-md transition-all duration-200 text-foreground/70 data-[state=active]:text-foreground hover:text-foreground/90"
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               Ranking
             </TabsTrigger>

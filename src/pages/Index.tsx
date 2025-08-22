@@ -72,10 +72,25 @@ const Index = () => {
         <CountdownTimer />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-xs sm:max-w-lg mx-auto mb-6 sm:mb-16 h-8 sm:h-12 bg-secondary/50 border border-border/50">
-            <TabsTrigger value="create" className="font-medium text-[10px] sm:text-sm px-1">Create</TabsTrigger>
-            <TabsTrigger value="games" className="font-medium text-[10px] sm:text-sm px-1">My Picks</TabsTrigger>
-            <TabsTrigger value="leaderboard" className="font-medium text-[10px] sm:text-sm px-1">Ranking</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 max-w-sm sm:max-w-lg mx-auto mb-6 sm:mb-16 h-11 sm:h-12 bg-background border border-border rounded-lg p-1">
+            <TabsTrigger 
+              value="create" 
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+            >
+              Create Squad
+            </TabsTrigger>
+            <TabsTrigger 
+              value="games" 
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+            >
+              My Picks
+            </TabsTrigger>
+            <TabsTrigger 
+              value="leaderboard" 
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all"
+            >
+              Ranking
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="create" className="space-y-8">

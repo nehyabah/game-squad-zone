@@ -65,6 +65,7 @@ class NFLApiService {
   }
 
   async getGames(season: number = 2024, week: number = 1): Promise<Game[]> {
+    console.log('getGames called, attempting API request...');
     try {
       const data = await this.makeRequest(`/games?league=1&season=${season}&week=${week}`);
       
@@ -89,10 +90,13 @@ class NFLApiService {
         season: apiGame.game.season,
       })) || [];
 
+      console.log('API games:', games);
       return games;
     } catch (error) {
-      console.error('Error fetching games:', error);
-      return this.getFallbackGames();
+      console.log('API failed, returning fallback games');
+      const fallbackGames = this.getFallbackGames();
+      console.log('Fallback games:', fallbackGames);
+      return fallbackGames;
     }
   }
 

@@ -119,20 +119,16 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
             >
               <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-6">
-                  {/* Picked Team Logo - Responsive sizing */}
+                  {/* Picked Team Logo - Clean without background */}
                   <div className="flex-shrink-0">
-                    <div className="relative">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-inner">
-                        <img 
-                          src={selectedTeam.logo} 
-                          alt={`${selectedTeam.name} logo`}
-                          className="w-8 h-8 sm:w-12 sm:h-12 md:w-16 md:h-16 object-contain drop-shadow-sm"
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <img 
+                      src={selectedTeam.logo} 
+                      alt={`${selectedTeam.name} logo`}
+                      className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                      }}
+                    />
                   </div>
                   
                   {/* Game Info - Compact Typography */}

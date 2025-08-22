@@ -5,11 +5,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Copy, Users, Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import confetti from "canvas-confetti";
 
 const SquadCreation = () => {
   const [squadName, setSquadName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [isCreated, setIsCreated] = useState(false);
+
+  const triggerConfetti = () => {
+    // Burst from left
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { x: 0.2, y: 0.6 },
+      colors: ['#3b82f6', '#1d4ed8', '#2563eb', '#60a5fa', '#93c5fd']
+    });
+    
+    // Burst from right
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { x: 0.8, y: 0.6 },
+      colors: ['#3b82f6', '#1d4ed8', '#2563eb', '#60a5fa', '#93c5fd']
+    });
+    
+    // Center burst
+    setTimeout(() => {
+      confetti({
+        particleCount: 150,
+        spread: 60,
+        origin: { x: 0.5, y: 0.5 },
+        colors: ['#3b82f6', '#1d4ed8', '#2563eb', '#60a5fa', '#93c5fd']
+      });
+    }, 200);
+  };
 
   const generateJoinCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -28,6 +57,10 @@ const SquadCreation = () => {
     const code = generateJoinCode();
     setJoinCode(code);
     setIsCreated(true);
+    
+    // Trigger confetti celebration
+    triggerConfetti();
+    
     toast({
       title: "Squad created!",
       description: `${squadName} is ready for members`,

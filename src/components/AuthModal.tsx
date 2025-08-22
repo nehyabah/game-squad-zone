@@ -169,7 +169,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                 </form>
 
                 <p className="text-center text-sm text-muted-foreground">
-                  Demo: Use any email/password, or create a new account
+                  Demo Mode: Login with any email and password!
                 </p>
               </CardContent>
             </Card>

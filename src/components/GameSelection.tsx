@@ -155,10 +155,8 @@ const GameSelection = () => {
                     </div>
 
                     {/* VS Separator */}
-                    <div className="flex items-center justify-center">
-                      <div className="bg-primary/10 rounded-full px-2 py-1 border border-primary/20">
-                        <span className="text-primary font-bold text-xs">VS</span>
-                      </div>
+                    <div className="text-muted-foreground/60 text-xs font-medium">
+                      vs
                     </div>
 
                     {/* Home Team */}

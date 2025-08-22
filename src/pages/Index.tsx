@@ -61,7 +61,7 @@ const Index = () => {
       <Header onAuthClick={() => setShowAuthModal(true)} />
       
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-20 sm:pb-8">
         <div className="text-center mb-4 sm:mb-8">
           <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
             Welcome back, {user.username}! 👋
@@ -72,32 +72,91 @@ const Index = () => {
         <CountdownTimer />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 max-w-full sm:max-w-2xl mx-auto mb-4 sm:mb-16 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg overflow-x-auto">
+          {/* Desktop Tabs */}
+          <TabsList className="hidden sm:grid w-full grid-cols-4 max-w-2xl mx-auto mb-16 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
             <TabsTrigger 
               value="fixtures" 
-              className="font-medium text-xs sm:text-sm px-1 sm:px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80 min-w-0 whitespace-nowrap"
+              className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               Fixtures
             </TabsTrigger>
             <TabsTrigger 
               value="create" 
-              className="font-medium text-xs sm:text-sm px-1 sm:px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80 min-w-0 whitespace-nowrap"
+              className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               Squads
             </TabsTrigger>
             <TabsTrigger 
               value="games" 
-              className="font-medium text-xs sm:text-sm px-1 sm:px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80 min-w-0 whitespace-nowrap"
+              className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               My Picks
             </TabsTrigger>
             <TabsTrigger 
               value="leaderboard" 
-              className="font-medium text-xs sm:text-sm px-1 sm:px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80 min-w-0 whitespace-nowrap"
+              className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               Ranking
             </TabsTrigger>
           </TabsList>
+
+          {/* Mobile Bottom Tabs */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-primary/20 sm:hidden">
+            <div className="grid grid-cols-4 h-16 max-w-full mx-auto">
+              <button
+                onClick={() => setActiveTab("fixtures")}
+                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
+                  activeTab === "fixtures" ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
+                  activeTab === "fixtures" ? "bg-primary/20 text-primary" : ""
+                }`}>
+                  📅
+                </div>
+                <span className="text-[10px] leading-none">Fixtures</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("create")}
+                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
+                  activeTab === "create" ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
+                  activeTab === "create" ? "bg-primary/20 text-primary" : ""
+                }`}>
+                  👥
+                </div>
+                <span className="text-[10px] leading-none">Squads</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("games")}
+                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
+                  activeTab === "games" ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
+                  activeTab === "games" ? "bg-primary/20 text-primary" : ""
+                }`}>
+                  🎯
+                </div>
+                <span className="text-[10px] leading-none">My Picks</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("leaderboard")}
+                className={`flex flex-col items-center justify-center text-xs font-medium transition-colors px-1 ${
+                  activeTab === "leaderboard" ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center mb-1 ${
+                  activeTab === "leaderboard" ? "bg-primary/20 text-primary" : ""
+                }`}>
+                  🏆
+                </div>
+                <span className="text-[10px] leading-none">Ranking</span>
+              </button>
+            </div>
+          </div>
 
           <TabsContent value="fixtures" className="space-y-8">
             <GameSelection />

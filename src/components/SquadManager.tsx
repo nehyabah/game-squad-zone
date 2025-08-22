@@ -145,24 +145,24 @@ const SquadManager = () => {
         </Dialog>
       </div>
 
-      <div className="space-y-2 sm:space-y-3">
+      <div className="space-y-2">
         {squads.map((squad) => (
           <Card key={squad.id} className="relative overflow-hidden border-0 bg-white shadow-md hover:shadow-lg transition-all duration-300 group">
             <CardContent className="p-0">
-              {/* Header Section */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 sm:p-4 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base">
+              {/* Compact Header */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 border-b border-gray-100">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                       {squad.name.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-base sm:text-lg text-gray-900">{squad.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-sm text-gray-900 truncate">{squad.name}</h3>
+                      <div className="flex items-center gap-2">
                         {squad.createdBy === "You" && (
-                          <Badge variant="default" className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 border-0">Owner</Badge>
+                          <Badge variant="default" className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 border-0">Owner</Badge>
                         )}
-                        <Badge variant="secondary" className={`text-xs px-2 py-0.5 border-0 ${
+                        <Badge variant="secondary" className={`text-xs px-1.5 py-0.5 border-0 ${
                           squad.isPublic 
                             ? 'bg-green-100 text-green-700' 
                             : 'bg-orange-100 text-orange-700'
@@ -173,44 +173,38 @@ const SquadManager = () => {
                     </div>
                   </div>
                   
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7 flex-shrink-0">
                     <span className="hidden sm:inline">Dashboard</span>
                     <span className="sm:hidden">View</span>
                   </Button>
                 </div>
               </div>
 
-              {/* Content Section */}
-              <div className="p-3 sm:p-4">
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{squad.description}</p>
+              {/* Compact Content */}
+              <div className="p-3">
+                <p className="text-gray-600 text-xs mb-2 line-clamp-1">{squad.description}</p>
                 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Users className="w-4 h-4 text-blue-500" />
-                      <span className="text-xs text-gray-500">Members</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-blue-500" />
+                      <span className="text-xs text-gray-500">Members:</span>
+                      <span className="font-medium text-sm text-gray-900">{squad.memberCount}/{squad.maxMembers}</span>
                     </div>
-                    <div className="font-semibold text-lg text-gray-900">{squad.memberCount}/{squad.maxMembers}</div>
-                  </div>
-                  
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Trophy className="w-4 h-4 text-purple-500" />
-                      <span className="text-xs text-gray-500">Join Code</span>
+                    
+                    <div className="flex items-center gap-1">
+                      <Trophy className="w-3.5 h-3.5 text-purple-500" />
+                      <span className="text-xs text-gray-500">Code:</span>
+                      <span className="font-mono font-medium text-sm text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded">{squad.joinCode}</span>
                     </div>
-                    <div className="font-mono font-semibold text-lg text-gray-900">{squad.joinCode}</div>
                   </div>
-                </div>
 
-                {/* Action Section */}
-                {squad.createdBy === "You" && (
-                  <div className="pt-3 border-t border-gray-100">
-                    <Button variant="outline" size="sm" className="w-full text-gray-600 hover:text-gray-900 hover:bg-gray-50">
-                      Manage Squad Settings
+                  {squad.createdBy === "You" && (
+                    <Button variant="ghost" size="sm" className="text-xs px-2 h-6 text-gray-500 hover:text-gray-700">
+                      Manage
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

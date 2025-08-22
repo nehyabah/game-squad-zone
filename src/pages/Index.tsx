@@ -72,22 +72,22 @@ const Index = () => {
         <CountdownTimer />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-sm sm:max-w-lg mx-auto mb-6 sm:mb-16 h-11 sm:h-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-1 shadow-lg">
+          <TabsList className="grid w-full grid-cols-3 max-w-sm sm:max-w-lg mx-auto mb-6 sm:mb-16 h-11 sm:h-12 bg-muted/30 backdrop-blur-md border border-border/50 rounded-xl p-1 shadow-lg">
             <TabsTrigger 
               value="create" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-white/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-white/30 data-[state=active]:shadow-sm transition-all duration-200 text-foreground data-[state=active]:text-foreground"
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-background/80 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-border data-[state=active]:shadow-md transition-all duration-200 text-muted-foreground data-[state=active]:text-foreground"
             >
               Create Squad
             </TabsTrigger>
             <TabsTrigger 
               value="games" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-white/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-white/30 data-[state=active]:shadow-sm transition-all duration-200 text-foreground data-[state=active]:text-foreground"
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-background/80 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-border data-[state=active]:shadow-md transition-all duration-200 text-muted-foreground data-[state=active]:text-foreground"
             >
               My Picks
             </TabsTrigger>
             <TabsTrigger 
               value="leaderboard" 
-              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-white/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-white/30 data-[state=active]:shadow-sm transition-all duration-200 text-foreground data-[state=active]:text-foreground"
+              className="font-medium text-xs sm:text-sm px-3 py-2 rounded-lg data-[state=active]:bg-background/80 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-border data-[state=active]:shadow-md transition-all duration-200 text-muted-foreground data-[state=active]:text-foreground"
             >
               Ranking
             </TabsTrigger>

@@ -127,62 +127,107 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className={`cursor-pointer transition-smooth hover:shadow-hover border rounded-lg ${
+              className={`group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] ${
                 isSelected 
-                  ? 'border-primary shadow-glow bg-primary/5' 
-                  : 'border-border hover:border-primary/50 hover:bg-card/50'
-              }`}
+                  ? 'border-primary/40 shadow-glow bg-gradient-to-br from-primary/8 via-primary/4 to-transparent ring-1 ring-primary/20' 
+                  : 'border-border/50 bg-gradient-to-br from-card via-card/90 to-card/50 hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card hover:via-card/95 hover:to-primary/5'
+              } backdrop-blur-sm`}
               onClick={() => toggleGameSelection(game.id)}
             >
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center justify-between gap-2 sm:gap-4">
-                  {/* Game Info */}
-                  <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 sm:gap-3">
+              <CardContent className="p-4 sm:p-8 relative overflow-hidden">
+                {/* Subtle background pattern */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/2 to-accent/3 opacity-50" />
+                
+                {/* Main content */}
+                <div className="relative flex items-center justify-between gap-3 sm:gap-6">
+                  {/* Away Team */}
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <div className="relative group-hover:scale-105 transition-transform duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
                       <img 
                         src={game.awayTeam.logo} 
                         alt={`${game.awayTeam.name} logo`}
-                        className="w-8 h-8 sm:w-12 sm:h-12 object-contain"
+                        className="relative w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-lg"
                         onError={(e) => {
                           e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
                         }}
                       />
-                      <div className="text-left">
-                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.awayTeam.name}</div>
-                        <div className="text-xs font-medium text-muted-foreground">
-                          {game.awayTeam.name === underdogTeam && `+${spreadValue}`}
-                        </div>
-                      </div>
                     </div>
-
-                    <div className="text-muted-foreground font-bold text-xs sm:text-lg">@</div>
-
-                    <div className="flex items-center gap-1.5 sm:gap-3">
-                      <img 
-                        src={game.homeTeam.logo} 
-                        alt={`${game.homeTeam.name} logo`}
-                        className="w-8 h-8 sm:w-12 sm:h-12 object-contain"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                        }}
-                      />
-                      <div className="text-left">
-                        <div className="font-display font-semibold text-foreground text-xs sm:text-lg truncate">{game.homeTeam.name}</div>
-                        <div className="text-xs font-medium text-muted-foreground">
-                          {game.homeTeam.name === favoriteTeam && `-${spreadValue}`}
-                        </div>
+                    <div className="flex flex-col">
+                      <div className="font-display font-bold text-foreground text-sm sm:text-xl tracking-wide">
+                        {game.awayTeam.name}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+                          {game.awayTeam.code}
+                        </span>
+                        {game.awayTeam.name === underdogTeam && (
+                          <div className="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-semibold rounded-full border border-green-500/20">
+                            +{spreadValue}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Selection Indicator */}
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs text-muted-foreground hidden sm:block">
-                      Sun 1PM
+                  {/* VS Separator */}
+                  <div className="flex flex-col items-center gap-1 px-2">
+                    <div className="text-muted-foreground font-bold text-sm sm:text-lg opacity-60">VS</div>
+                    <div className="w-12 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+                  </div>
+
+                  {/* Home Team */}
+                  <div className="flex items-center gap-3 sm:gap-4 flex-1 justify-end">
+                    <div className="flex flex-col text-right">
+                      <div className="font-display font-bold text-foreground text-sm sm:text-xl tracking-wide">
+                        {game.homeTeam.name}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 justify-end">
+                        {game.homeTeam.name === favoriteTeam && (
+                          <div className="px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-semibold rounded-full border border-red-500/20">
+                            -{spreadValue}
+                          </div>
+                        )}
+                        <span className="text-xs sm:text-sm text-muted-foreground font-medium">
+                          {game.homeTeam.code}
+                        </span>
+                      </div>
                     </div>
-                    {isSelected && (
-                      <div className="w-6 h-6 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center shadow-glow">
-                        <Check className="w-3 h-3 sm:w-5 sm:h-5 text-primary-foreground" />
+                    <div className="relative group-hover:scale-105 transition-transform duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
+                      <img 
+                        src={game.homeTeam.logo} 
+                        alt={`${game.homeTeam.name} logo`}
+                        className="relative w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow-lg"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Game Details Footer */}
+                <div className="relative flex items-center justify-between mt-4 pt-4 border-t border-border/30">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="text-xs sm:text-sm font-medium">Sunday 1:00 PM</span>
+                    </div>
+                    <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
+                    <span className="text-xs sm:text-sm text-muted-foreground font-medium">Week 1</span>
+                  </div>
+                  
+                  {/* Selection Status */}
+                  <div className="flex items-center gap-2">
+                    {isSelected ? (
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded-full border border-primary/30 backdrop-blur-sm">
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span className="text-xs sm:text-sm font-semibold">Selected</span>
+                      </div>
+                    ) : (
+                      <div className="px-3 py-1.5 bg-muted/20 text-muted-foreground rounded-full border border-muted/30 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <span className="text-xs sm:text-sm font-medium">Click to select</span>
                       </div>
                     )}
                   </div>

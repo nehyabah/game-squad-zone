@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Trophy, Users, LogOut, Menu, X } from "lucide-react";
+import { Trophy, Users, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
@@ -10,7 +10,6 @@ interface HeaderProps {
 
 const Header = ({ onAuthClick }: HeaderProps) => {
   const { user, logout } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <header className="bg-background border-b border-border px-3 py-3 sm:px-6 sm:py-4 sticky top-0 z-50">
@@ -33,20 +32,20 @@ const Header = ({ onAuthClick }: HeaderProps) => {
           <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">My Squads</a>
         </nav>
 
-        {/* Desktop User Actions */}
-        <div className="hidden sm:flex items-center gap-4">
+        {/* User Actions */}
+        <div className="flex items-center gap-4">
           {user ? (
             <>
               <div className="hidden md:flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Welcome,</span>
                 <span className="font-semibold text-foreground">{user.username}</span>
               </div>
-              <Button variant="ghost" size="sm" onClick={logout}>
+              <Button variant="ghost" size="sm" onClick={logout} className="hidden sm:flex">
                 <LogOut className="w-4 h-4 mr-2" />
                 Logout
               </Button>
-              <Avatar>
-                <AvatarFallback className="bg-primary text-primary-foreground">
+              <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
                   {user.username.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -57,55 +56,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
             </Button>
           )}
         </div>
-
-        {/* Mobile Menu Button */}
-        <div className="flex sm:hidden items-center gap-1">
-          {user && (
-            <Avatar className="w-7 h-7">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                {user.username.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-1 h-8 w-8"
-          >
-            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </Button>
-        </div>
       </div>
-
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div className="sm:hidden mt-3 pb-3 border-t border-border">
-          <div className="space-y-3 pt-3">
-            {user ? (
-              <>
-                <div className="text-center pb-1">
-                  <p className="text-xs text-muted-foreground">Welcome,</p>
-                  <p className="font-semibold text-sm text-foreground">{user.username}</p>
-                </div>
-                <nav className="space-y-1">
-                  <a href="#" className="block text-center py-2 text-sm text-foreground hover:text-primary font-medium transition-smooth">My Picks</a>
-                  <a href="#" className="block text-center py-2 text-sm text-foreground hover:text-primary font-medium transition-smooth">Leaderboard</a>
-                  <a href="#" className="block text-center py-2 text-sm text-foreground hover:text-primary font-medium transition-smooth">My Squads</a>
-                </nav>
-                <Button variant="outline" size="sm" onClick={logout} className="w-full h-8 text-xs">
-                  <LogOut className="w-3 h-3 mr-1" />
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Button variant="squad" size="sm" onClick={onAuthClick} className="w-full h-8 text-xs">
-                Login / Sign Up
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
     </header>
   );
 };

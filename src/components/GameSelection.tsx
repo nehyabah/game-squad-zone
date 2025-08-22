@@ -139,98 +139,81 @@ const GameSelection = () => {
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent via-primary/2 to-accent/3 opacity-50" />
                 
                 {/* Main content */}
-                <div className="relative flex items-center justify-between gap-3 sm:gap-6">
-                  {/* Away Team */}
-                  <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                    <div className="relative group-hover:scale-105 transition-transform duration-300">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
-                      <img 
-                        src={game.awayTeam.logo} 
-                        alt={`${game.awayTeam.name} logo`}
-                        className="relative w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <div className="font-display font-bold text-foreground text-xs sm:text-base tracking-wide">
-                        {game.awayTeam.name}
+                <div className="relative flex flex-col items-center gap-4 sm:gap-6">
+                  {/* Teams Layout - Logo Centered */}
+                  <div className="flex items-center justify-center gap-6 sm:gap-12 w-full">
+                    {/* Away Team */}
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="relative group-hover:scale-110 transition-transform duration-300">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
+                        <img 
+                          src={game.awayTeam.logo} 
+                          alt={`${game.awayTeam.name} logo`}
+                          className="relative w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                          }}
+                        />
                       </div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground font-medium">
+                      <div className="text-center">
+                        <div className="font-medium text-foreground text-xs tracking-wide">
                           {game.awayTeam.code}
-                        </span>
+                        </div>
                         {game.awayTeam.name === underdogTeam && (
-                          <div className="px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-semibold rounded-full border border-green-500/20">
+                          <div className="mt-1 px-2 py-0.5 bg-green-500/10 text-green-600 text-xs font-semibold rounded-full border border-green-500/20">
                             +{spreadValue}
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  {/* VS Separator */}
-                  <div className="flex flex-col items-center gap-1 px-2">
-                    <div className="text-muted-foreground font-bold text-sm sm:text-lg opacity-60">VS</div>
-                    <div className="w-12 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
-                  </div>
+                    {/* VS Separator */}
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="text-muted-foreground font-bold text-lg sm:text-2xl opacity-40">VS</div>
+                      <div className="w-16 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+                    </div>
 
-                  {/* Home Team */}
-                  <div className="flex items-center gap-3 sm:gap-4 flex-1 justify-end">
-                    <div className="flex flex-col text-right">
-                      <div className="font-display font-bold text-foreground text-xs sm:text-base tracking-wide">
-                        {game.homeTeam.name}
+                    {/* Home Team */}
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="relative group-hover:scale-110 transition-transform duration-300">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
+                        <img 
+                          src={game.homeTeam.logo} 
+                          alt={`${game.homeTeam.name} logo`}
+                          className="relative w-20 h-20 sm:w-28 sm:h-28 object-contain drop-shadow-xl"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                          }}
+                        />
                       </div>
-                      <div className="flex items-center gap-2 mt-1 justify-end">
+                      <div className="text-center">
+                        <div className="font-medium text-foreground text-xs tracking-wide">
+                          {game.homeTeam.code}
+                        </div>
                         {game.homeTeam.name === favoriteTeam && (
-                          <div className="px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-semibold rounded-full border border-red-500/20">
+                          <div className="mt-1 px-2 py-0.5 bg-red-500/10 text-red-600 text-xs font-semibold rounded-full border border-red-500/20">
                             -{spreadValue}
                           </div>
                         )}
-                        <span className="text-xs text-muted-foreground font-medium">
-                          {game.homeTeam.code}
-                        </span>
                       </div>
-                    </div>
-                    <div className="relative group-hover:scale-105 transition-transform duration-300">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-110"></div>
-                      <img 
-                        src={game.homeTeam.logo} 
-                        alt={`${game.homeTeam.name} logo`}
-                        className="relative w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-lg"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                        }}
-                      />
                     </div>
                   </div>
                 </div>
 
-                {/* Game Details Footer */}
-                <div className="relative flex items-center justify-between mt-4 pt-4 border-t border-border/30">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                      <span className="text-xs sm:text-sm font-medium">Sunday 1:00 PM</span>
-                    </div>
-                    <div className="w-1 h-1 bg-muted-foreground/30 rounded-full"></div>
-                    <span className="text-xs sm:text-sm text-muted-foreground font-medium">Week 1</span>
+                {/* Minimal Footer */}
+                <div className="relative flex items-center justify-between mt-4 pt-3 border-t border-border/20">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span className="text-xs">Sun 1PM</span>
                   </div>
                   
                   {/* Selection Status */}
-                  <div className="flex items-center gap-2">
-                    {isSelected ? (
-                      <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 text-primary rounded-full border border-primary/30 backdrop-blur-sm">
-                        <Check className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span className="text-xs sm:text-sm font-semibold">Selected</span>
-                      </div>
-                    ) : (
-                      <div className="px-3 py-1.5 bg-muted/20 text-muted-foreground rounded-full border border-muted/30 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <span className="text-xs sm:text-sm font-medium">Click to select</span>
-                      </div>
-                    )}
-                  </div>
+                  {isSelected && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/20 text-primary rounded-full border border-primary/30">
+                      <Check className="w-3 h-3" />
+                      <span className="text-xs font-medium">Picked</span>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

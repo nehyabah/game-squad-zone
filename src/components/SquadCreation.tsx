@@ -7,7 +7,11 @@ import { Copy, Users, Share2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import confetti from "canvas-confetti";
 
-const SquadCreation = () => {
+interface SquadCreationProps {
+  onSquadCreated?: (squad: { name: string; joinCode: string }) => void;
+}
+
+const SquadCreation = ({ onSquadCreated }: SquadCreationProps) => {
   const [squadName, setSquadName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [isCreated, setIsCreated] = useState(false);
@@ -62,6 +66,9 @@ const SquadCreation = () => {
     
     // Trigger confetti celebration
     triggerConfetti();
+    
+    // Notify parent component
+    onSquadCreated?.({ name: squadName, joinCode: code });
     
     toast({
       title: "Squad created!",

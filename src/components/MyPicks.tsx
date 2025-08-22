@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Target, Calendar, Trash2, Edit } from "lucide-react";
 import { usePicks } from "@/contexts/PicksContext";
 import { nflApi, Game } from "@/services/nflApi";
+import PastPicks from "./PastPicks";
 
 interface MyPicksProps {
   onEditPicks?: () => void;
@@ -180,6 +181,11 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
           </Button>
         </div>
       )}
+
+      {/* Past Picks Section */}
+      <div className="mt-8 sm:mt-12">
+        <PastPicks />
+      </div>
     </div>
   );
 };

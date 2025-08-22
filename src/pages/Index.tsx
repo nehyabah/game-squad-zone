@@ -68,18 +68,20 @@ const Index = () => {
       
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-24 sm:pb-8">
-        {/* Welcome Message - Only on Fixtures tab */}
+        {/* Welcome Message and Team Logos Banner - Only on Fixtures tab */}
         {activeTab === "fixtures" && (
-          <div className="text-center mb-4 sm:mb-8">
-            <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
-              Welcome back, {user.username}! 👋
-            </h2>
-            <p className="text-muted-foreground text-xs sm:text-base">Ready to make your picks?</p>
-          </div>
-        )}
+          <>
+            <div className="text-center mb-4 sm:mb-8">
+              <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
+                Welcome back, {user.username}! 👋
+              </h2>
+              <p className="text-muted-foreground text-xs sm:text-base">Ready to make your picks?</p>
+            </div>
 
-        {/* Team Logos Banner */}
-        <TeamLogosBanner />
+            {/* Team Logos Banner */}
+            <TeamLogosBanner />
+          </>
+        )}
 
         {activeTab !== "create" && <CountdownTimer />}
 

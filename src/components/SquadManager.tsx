@@ -110,34 +110,39 @@ const SquadManager = () => {
               Create Squad
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md mx-4">
-            <DialogHeader>
-              <DialogTitle>Create New Squad</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="squad-name">Squad Name</Label>
+          <DialogContent className="w-[95vw] max-w-sm mx-auto p-0 gap-0 border-0 bg-white rounded-2xl shadow-2xl">
+            <div className="bg-gradient-to-r from-primary/10 to-purple-500/10 p-4 border-b border-border/50">
+              <DialogHeader className="space-y-0">
+                <DialogTitle className="text-lg font-semibold text-center">Create Squad</DialogTitle>
+              </DialogHeader>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="squad-name" className="text-xs font-medium text-muted-foreground">Squad Name</Label>
                 <Input
                   id="squad-name"
                   placeholder="Enter squad name"
                   value={newSquad.name}
                   onChange={(e) => setNewSquad({ ...newSquad, name: e.target.value })}
+                  className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
                 />
               </div>
               
-              <div>
-                <Label htmlFor="squad-description">Description</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="squad-description" className="text-xs font-medium text-muted-foreground">Description (Optional)</Label>
                 <Textarea
                   id="squad-description"
-                  placeholder="Describe your squad"
+                  placeholder="What's your squad about?"
                   value={newSquad.description}
                   onChange={(e) => setNewSquad({ ...newSquad, description: e.target.value })}
-                  rows={3}
+                  rows={2}
+                  className="border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm resize-none"
                 />
               </div>
               
-              <div>
-                <Label htmlFor="max-members">Max Members</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="max-members" className="text-xs font-medium text-muted-foreground">Max Members</Label>
                 <Input
                   id="max-members"
                   type="number"
@@ -145,16 +150,26 @@ const SquadManager = () => {
                   max="50"
                   value={newSquad.maxMembers}
                   onChange={(e) => setNewSquad({ ...newSquad, maxMembers: parseInt(e.target.value) })}
+                  className="h-10 border-border/50 rounded-xl focus:ring-1 focus:ring-primary/50 text-sm"
                 />
               </div>
               
-              <Button 
-                onClick={handleCreateSquad} 
-                className="w-full"
-                disabled={!newSquad.name.trim()}
-              >
-                Create Squad
-              </Button>
+              <div className="flex gap-2 pt-2">
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                  className="flex-1 h-10 rounded-xl border-border/50 text-sm"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateSquad} 
+                  className="flex-1 h-10 rounded-xl text-sm font-medium"
+                  disabled={!newSquad.name.trim()}
+                >
+                  Create
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

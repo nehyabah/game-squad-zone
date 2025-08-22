@@ -22,12 +22,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is stored in localStorage on app load
-    const storedUser = localStorage.getItem('squadpot_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    // No auto-login - user must authenticate first
+    // Clear any existing user sessions to force login
+    localStorage.removeItem('squadpot_user');
+    localStorage.removeItem('squadpot_users');
+    setUser(null);
     setIsLoading(false);
   }, []);
 

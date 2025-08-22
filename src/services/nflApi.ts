@@ -20,8 +20,8 @@ class NFLApiService {
   private apiKey: string | null = null;
 
   constructor() {
-    // Get API key from localStorage for now (until Supabase integration)
-    this.apiKey = localStorage.getItem('nfl_api_key');
+    // Use the provided API key directly
+    this.apiKey = '3c0e011b07d02537bbbb1ce5e26227e3';
   }
 
   setApiKey(key: string) {
@@ -36,8 +36,8 @@ class NFLApiService {
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       headers: {
-        'X-API-Key': this.apiKey,
-        'Content-Type': 'application/json',
+        'X-RapidAPI-Key': this.apiKey,
+        'X-RapidAPI-Host': 'v1.american-football.api-sports.io',
       },
     });
 
@@ -58,7 +58,7 @@ class NFLApiService {
     }
   }
 
-  async getGames(season: number = 2024, week: number = 1): Promise<Game[]> {
+  async getGames(season: number = 2023, week: number = 1): Promise<Game[]> {
     try {
       const data = await this.makeRequest(`/games?league=1&season=${season}&week=${week}`);
       

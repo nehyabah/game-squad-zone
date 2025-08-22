@@ -40,24 +40,24 @@ const mockSeasonLeaderboard: LeaderboardEntry[] = [
 const getRankIcon = (rank: number) => {
   switch (rank) {
     case 1:
-      return <Trophy className="w-5 h-5 text-yellow-500" />;
+      return <Trophy className="w-4 h-4 text-yellow-500" />;
     case 2:
-      return <Medal className="w-5 h-5 text-gray-400" />;
+      return <Medal className="w-4 h-4 text-gray-400" />;
     case 3:
-      return <Award className="w-5 h-5 text-amber-600" />;
+      return <Award className="w-4 h-4 text-amber-600" />;
     default:
-      return <span className="w-5 h-5 flex items-center justify-center text-muted-foreground font-bold">{rank}</span>;
+      return <span className="w-4 h-4 flex items-center justify-center text-muted-foreground font-bold text-xs">{rank}</span>;
   }
 };
 
 const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
   <Card className="shadow-hover border-0 bg-gradient-card">
     <CardContent className="p-0">
-      <div className="space-y-1">
+      <div className="space-y-0">
         {data.map((entry) => (
           <div 
             key={entry.rank}
-            className={`flex items-center justify-between p-4 hover:bg-background/50 transition-smooth border-l-4 ${
+            className={`flex items-center justify-between p-2 sm:p-3 hover:bg-background/50 transition-smooth border-l-2 ${
               entry.isCurrentUser 
                 ? 'border-primary bg-primary/5' 
                 : entry.rank <= 3 
@@ -65,44 +65,42 @@ const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
                 : 'border-transparent'
             }`}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-3">
               {/* Rank */}
-              <div className="w-8 flex justify-center">
+              <div className="w-6 flex justify-center">
                 {getRankIcon(entry.rank)}
               </div>
 
               {/* User Info */}
-              <div className="flex items-center gap-3">
-                <Avatar className="w-8 h-8">
+              <div className="flex items-center gap-2">
+                <Avatar className="w-6 h-6 sm:w-7 sm:h-7">
                   <AvatarFallback className="text-xs">
                     {entry.username.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <div className={`font-semibold ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
-                    {entry.username}
-                  </div>
+                <div className={`text-sm font-medium ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+                  {entry.username}
                 </div>
               </div>
             </div>
 
             {/* Stats */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 sm:gap-4">
               <div className="text-center">
-                <div className="text-sm text-muted-foreground">W/L</div>
-                <div className="font-semibold text-foreground">{entry.wins}-{entry.losses}</div>
+                <div className="text-xs text-muted-foreground">W/L</div>
+                <div className="text-sm font-medium text-foreground">{entry.wins}-{entry.losses}</div>
               </div>
               
               <div className="text-center">
-                <div className="text-sm text-muted-foreground">Win %</div>
-                <Badge variant={entry.winPercentage >= 60 ? "default" : "secondary"}>
+                <div className="text-xs text-muted-foreground">Win %</div>
+                <Badge variant={entry.winPercentage >= 60 ? "default" : "secondary"} className="text-xs px-1.5 py-0.5">
                   {entry.winPercentage}%
                 </Badge>
               </div>
 
               <div className="text-center">
-                <div className="text-sm text-muted-foreground">Points</div>
-                <div className="font-bold text-primary">{entry.points}</div>
+                <div className="text-xs text-muted-foreground">Pts</div>
+                <div className="text-sm font-bold text-primary">{entry.points}</div>
               </div>
             </div>
           </div>
@@ -116,41 +114,41 @@ const Leaderboard = () => {
   const [activeTab, setActiveTab] = useState("week");
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-4">
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-foreground mb-2">Squad Leaderboard</h2>
-        <p className="text-muted-foreground">See how you stack up against the competition</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Squad Leaderboard</h2>
+        <p className="text-sm text-muted-foreground">See how you stack up against the competition</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-8 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
+        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto mb-4 h-10 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
           <TabsTrigger 
             value="week" 
-            className="font-medium text-sm px-4 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+            className="font-medium text-sm px-3 py-1.5 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
           >
             This Week
           </TabsTrigger>
           <TabsTrigger 
             value="season" 
-            className="font-medium text-sm px-4 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+            className="font-medium text-sm px-3 py-1.5 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
           >
             Season Total
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="week" className="space-y-6">
+        <TabsContent value="week" className="space-y-3">
           <LeaderboardTable data={mockWeeklyLeaderboard} />
         </TabsContent>
 
-        <TabsContent value="season" className="space-y-6">
+        <TabsContent value="season" className="space-y-3">
           <LeaderboardTable data={mockSeasonLeaderboard} />
         </TabsContent>
       </Tabs>
 
       {/* Points System Info */}
       <Card className="shadow-card border-0 bg-muted/30">
-        <CardContent className="p-4">
-          <div className="text-center text-sm text-muted-foreground">
+        <CardContent className="p-3">
+          <div className="text-center text-xs text-muted-foreground">
             <p><strong>Points System:</strong> Win = 20 points • Perfect Week (3-0) = 30 bonus points</p>
           </div>
         </CardContent>

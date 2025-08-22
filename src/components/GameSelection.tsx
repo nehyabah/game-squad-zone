@@ -71,8 +71,8 @@ const GameSelection = () => {
     });
 
     toast({
-      title: "Picks submitted!",
-      description: "Your picks have been locked in for this week",
+      title: "🎉 Picks submitted!",
+      description: "Your picks have been locked in for this week. View them in My Picks!",
     });
   };
 

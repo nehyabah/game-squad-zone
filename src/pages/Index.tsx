@@ -100,142 +100,100 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
 
-          {/* Mobile Bottom Tabs */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden">
-            {/* Glass morphism background */}
-            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-t border-white/20"></div>
-            
-            {/* Active tab indicator */}
-            <div className="absolute top-0 left-0 h-0.5 bg-gradient-to-r from-primary to-primary/60 transition-all duration-300 ease-out"
-                 style={{
-                   width: '25%',
-                   transform: `translateX(${
-                     activeTab === 'fixtures' ? '0%' : 
-                     activeTab === 'create' ? '100%' : 
-                     activeTab === 'games' ? '200%' : '300%'
-                   })`
-                 }}>
-            </div>
-            
-            <div className="relative grid grid-cols-4 h-20 max-w-full mx-auto">
+          {/* Mobile Bottom Tabs - iOS Style */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200/50 dark:border-gray-700/50 sm:hidden">
+            <div className="grid grid-cols-4 h-20 safe-area-pb">
               <button
                 onClick={() => setActiveTab("fixtures")}
-                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
-                  activeTab === "fixtures" 
-                    ? "transform -translate-y-1" 
-                    : "hover:transform hover:-translate-y-0.5"
-                }`}
+                className="flex flex-col items-center justify-center py-2 transition-colors duration-200"
               >
-                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
-                  activeTab === "fixtures" 
-                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
-                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
-                }`}>
-                  <span className={`text-lg transition-all duration-300 ${
-                    activeTab === "fixtures" ? "scale-110" : "group-hover:scale-105"
-                  }`}>📅</span>
-                  
-                  {activeTab === "fixtures" && (
-                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
-                  )}
+                <div className="flex flex-col items-center space-y-1">
+                  <div className={`w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                    activeTab === "fixtures" ? "text-primary" : "text-gray-400 dark:text-gray-500"
+                  }`}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                      <line x1="16" y1="2" x2="16" y2="6"/>
+                      <line x1="8" y1="2" x2="8" y2="6"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                  </div>
+                  <span className={`text-xs font-medium transition-colors duration-200 ${
+                    activeTab === "fixtures" ? "text-primary" : "text-gray-500 dark:text-gray-400"
+                  }`}>
+                    Fixtures
+                  </span>
                 </div>
-                <span className={`text-xs font-medium transition-all duration-300 ${
-                  activeTab === "fixtures" 
-                    ? "text-primary font-semibold" 
-                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
-                }`}>
-                  Fixtures
-                </span>
               </button>
               
               <button
                 onClick={() => setActiveTab("create")}
-                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
-                  activeTab === "create" 
-                    ? "transform -translate-y-1" 
-                    : "hover:transform hover:-translate-y-0.5"
-                }`}
+                className="flex flex-col items-center justify-center py-2 transition-colors duration-200"
               >
-                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
-                  activeTab === "create" 
-                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
-                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
-                }`}>
-                  <span className={`text-lg transition-all duration-300 ${
-                    activeTab === "create" ? "scale-110" : "group-hover:scale-105"
-                  }`}>👥</span>
-                  
-                  {activeTab === "create" && (
-                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
-                  )}
+                <div className="flex flex-col items-center space-y-1">
+                  <div className={`w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                    activeTab === "create" ? "text-primary" : "text-gray-400 dark:text-gray-500"
+                  }`}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  </div>
+                  <span className={`text-xs font-medium transition-colors duration-200 ${
+                    activeTab === "create" ? "text-primary" : "text-gray-500 dark:text-gray-400"
+                  }`}>
+                    Squads
+                  </span>
                 </div>
-                <span className={`text-xs font-medium transition-all duration-300 ${
-                  activeTab === "create" 
-                    ? "text-primary font-semibold" 
-                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
-                }`}>
-                  Squads
-                </span>
               </button>
               
               <button
                 onClick={() => setActiveTab("games")}
-                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
-                  activeTab === "games" 
-                    ? "transform -translate-y-1" 
-                    : "hover:transform hover:-translate-y-0.5"
-                }`}
+                className="flex flex-col items-center justify-center py-2 transition-colors duration-200"
               >
-                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
-                  activeTab === "games" 
-                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
-                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
-                }`}>
-                  <span className={`text-lg transition-all duration-300 ${
-                    activeTab === "games" ? "scale-110" : "group-hover:scale-105"
-                  }`}>🎯</span>
-                  
-                  {activeTab === "games" && (
-                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
-                  )}
+                <div className="flex flex-col items-center space-y-1">
+                  <div className={`w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                    activeTab === "games" ? "text-primary" : "text-gray-400 dark:text-gray-500"
+                  }`}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <circle cx="12" cy="12" r="6"/>
+                      <circle cx="12" cy="12" r="2"/>
+                    </svg>
+                  </div>
+                  <span className={`text-xs font-medium transition-colors duration-200 ${
+                    activeTab === "games" ? "text-primary" : "text-gray-500 dark:text-gray-400"
+                  }`}>
+                    My Picks
+                  </span>
                 </div>
-                <span className={`text-xs font-medium transition-all duration-300 ${
-                  activeTab === "games" 
-                    ? "text-primary font-semibold" 
-                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
-                }`}>
-                  My Picks
-                </span>
               </button>
               
               <button
                 onClick={() => setActiveTab("leaderboard")}
-                className={`group flex flex-col items-center justify-center transition-all duration-300 ease-out ${
-                  activeTab === "leaderboard" 
-                    ? "transform -translate-y-1" 
-                    : "hover:transform hover:-translate-y-0.5"
-                }`}
+                className="flex flex-col items-center justify-center py-2 transition-colors duration-200"
               >
-                <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center mb-1 transition-all duration-300 ease-out ${
-                  activeTab === "leaderboard" 
-                    ? "bg-gradient-to-br from-primary/20 to-primary/10 shadow-lg scale-110 border border-primary/30" 
-                    : "bg-white/10 dark:bg-gray-800/20 group-hover:bg-white/20 group-hover:scale-105"
-                }`}>
-                  <span className={`text-lg transition-all duration-300 ${
-                    activeTab === "leaderboard" ? "scale-110" : "group-hover:scale-105"
-                  }`}>🏆</span>
-                  
-                  {activeTab === "leaderboard" && (
-                    <div className="absolute -inset-2 bg-primary/20 rounded-3xl animate-pulse"></div>
-                  )}
+                <div className="flex flex-col items-center space-y-1">
+                  <div className={`w-6 h-6 flex items-center justify-center transition-colors duration-200 ${
+                    activeTab === "leaderboard" ? "text-primary" : "text-gray-400 dark:text-gray-500"
+                  }`}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                      <path d="M4 22h16"/>
+                      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                    </svg>
+                  </div>
+                  <span className={`text-xs font-medium transition-colors duration-200 ${
+                    activeTab === "leaderboard" ? "text-primary" : "text-gray-500 dark:text-gray-400"
+                  }`}>
+                    Ranking
+                  </span>
                 </div>
-                <span className={`text-xs font-medium transition-all duration-300 ${
-                  activeTab === "leaderboard" 
-                    ? "text-primary font-semibold" 
-                    : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200"
-                }`}>
-                  Ranking
-                </span>
               </button>
             </div>
           </div>

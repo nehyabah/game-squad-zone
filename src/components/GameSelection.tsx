@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock } from "lucide-react";
+import { Check, Clock, Sparkles } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { nflApi, Game, Team } from "@/services/nflApi";
+import confetti from "canvas-confetti";
 
 
 const GameSelection = () => {
@@ -60,6 +61,14 @@ const GameSelection = () => {
       });
       return;
     }
+
+    // Trigger confetti animation
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b']
+    });
 
     toast({
       title: "Picks submitted!",
@@ -240,12 +249,16 @@ const GameSelection = () => {
       {selectedPicks.size > 0 && (
         <div className="text-center">
           <Button 
-            variant="squad" 
+            variant="default"
             size="lg"
             onClick={submitPicks}
-            className="min-w-48"
+            className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 min-w-48 group"
           >
-            {selectedPicks.size === maxGames ? 'Submit Picks' : `Select ${maxGames - selectedPicks.size} More`}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+            <div className="relative flex items-center gap-2">
+              {selectedPicks.size === maxGames && <Sparkles className="w-4 h-4" />}
+              {selectedPicks.size === maxGames ? 'Submit Picks' : `Select ${maxGames - selectedPicks.size} More`}
+            </div>
           </Button>
         </div>
       )}

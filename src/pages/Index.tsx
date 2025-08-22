@@ -64,7 +64,7 @@ const Index = () => {
       <Header onAuthClick={() => setShowAuthModal(true)} />
       
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-20 sm:pb-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-24 sm:pb-8">
         <div className="text-center mb-4 sm:mb-8">
           <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
             Welcome back, {user.username}! 👋
@@ -104,7 +104,7 @@ const Index = () => {
           </TabsList>
 
           {/* Mobile Bottom Tabs - iOS Style with Glass Effect */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden">
+          <div className="fixed bottom-0 left-0 right-0 z-[100] sm:hidden">
             {/* Glass morphism background with layered effects */}
             <div className="absolute inset-0 bg-gradient-to-t from-white/95 to-white/80 dark:from-gray-900/95 dark:to-gray-800/80 backdrop-blur-2xl"></div>
             <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/40 dark:via-gray-700/20 dark:to-gray-600/40"></div>

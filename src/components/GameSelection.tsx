@@ -127,7 +127,7 @@ const GameSelection = () => {
           return (
             <Card 
               key={game.id}
-              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card/90 hover:via-card/85 hover:to-primary/10"
+              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border/50 bg-card/80 backdrop-blur-sm hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-card hover:via-card/95 hover:to-primary/5"
             >
               <CardContent className="p-3 sm:p-4 relative overflow-hidden">
                 {/* Main content */}
@@ -155,11 +155,7 @@ const GameSelection = () => {
                     </div>
 
                     {/* VS Separator */}
-                    <div className="flex items-center justify-center">
-                      <div className="bg-primary/10 rounded-full px-2 py-1 border border-primary/20">
-                        <span className="text-primary font-bold text-xs">VS</span>
-                      </div>
-                    </div>
+                    <div className="text-muted-foreground font-bold text-sm opacity-40">@</div>
 
                     {/* Home Team */}
                     <div className="flex flex-col items-center gap-1">

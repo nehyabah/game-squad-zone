@@ -17,6 +17,8 @@ const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { user } = useAuth();
 
+  console.log("Index component rendering, user:", user);
+
   // Show auth prompt for non-logged in users
   if (!user) {
     return (

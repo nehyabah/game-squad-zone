@@ -1,20 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, Trophy, Target } from "lucide-react";
-import heroImage from "@/assets/nfl-hero-banner.jpg";
 
 const HeroSection = () => {
   return (
     <div className="relative bg-gradient-to-br from-background via-background to-secondary overflow-hidden min-h-[400px] lg:min-h-[600px] flex items-center">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 opacity-5"
-        style={{
-          backgroundImage: `url(${heroImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
-        }}
-      />
+      {/* Background Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5"></div>
       <div className="absolute inset-0 bg-gradient-to-r from-background/90 to-background/70" />
       
       <div className="relative max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-16">

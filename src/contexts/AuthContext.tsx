@@ -26,6 +26,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const storedUser = localStorage.getItem('squadpot_user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    } else {
+      // Auto-create a test user for demo
+      const testUser = {
+        id: 'demo-user-123',
+        username: 'demo_user',
+        email: 'demo@squadpot.app',
+        createdAt: new Date().toISOString()
+      };
+      setUser(testUser);
+      localStorage.setItem('squadpot_user', JSON.stringify(testUser));
     }
     setIsLoading(false);
   }, []);

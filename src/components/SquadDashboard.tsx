@@ -81,7 +81,7 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6 px-3 sm:px-0">
+    <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6 px-3 sm:px-0 pb-16 sm:pb-0">
       {/* Compact Header */}
       <div className="flex items-center gap-3 py-2">
         <Button variant="ghost" onClick={onBack} className="p-1.5 h-8 w-8">
@@ -121,7 +121,7 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
 
       {/* Compact Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10 mb-3 sm:mb-6">
+        <TabsList className="grid w-full grid-cols-2 h-9 sm:h-10 mb-3 sm:mb-6 fixed bottom-0 left-0 right-0 z-10 rounded-none border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sm:relative sm:bottom-auto sm:left-auto sm:right-auto sm:z-auto sm:rounded-md sm:border-t-0 sm:bg-muted">
           <TabsTrigger value="chat" className="text-xs sm:text-sm">💬 Squad Chat</TabsTrigger>
           <TabsTrigger value="leaderboard" className="text-xs sm:text-sm">🏆 Leaderboard</TabsTrigger>
         </TabsList>

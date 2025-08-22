@@ -259,7 +259,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">
-            <MyPicks />
+            <MyPicks onEditPicks={() => setActiveTab("fixtures")} />
           </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-8">

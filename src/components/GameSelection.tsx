@@ -212,7 +212,7 @@ const GameSelection = () => {
                       <>
                         <button
                           onClick={() => handleSpreadPick(game.id, 'away')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
                             selectedPick === 'away' 
                               ? 'bg-primary text-primary-foreground shadow-sm' 
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -222,7 +222,7 @@ const GameSelection = () => {
                         </button>
                         <button
                           onClick={() => handleSpreadPick(game.id, 'home')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
                             selectedPick === 'home' 
                               ? 'bg-primary text-primary-foreground shadow-sm' 
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -235,7 +235,7 @@ const GameSelection = () => {
                       <>
                         <button
                           onClick={() => handleSpreadPick(game.id, 'away')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
                             selectedPick === 'away' 
                               ? 'bg-primary text-primary-foreground shadow-sm' 
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -245,7 +245,7 @@ const GameSelection = () => {
                         </button>
                         <button
                           onClick={() => handleSpreadPick(game.id, 'home')}
-                          className={`px-2 py-1 rounded text-[10px] sm:text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
                             selectedPick === 'home' 
                               ? 'bg-primary text-primary-foreground shadow-sm' 
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted'

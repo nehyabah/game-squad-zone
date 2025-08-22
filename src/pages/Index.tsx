@@ -74,7 +74,7 @@ const Index = () => {
           <p className="text-muted-foreground text-xs sm:text-base">Ready to make your picks?</p>
         </div>
 
-        <CountdownTimer />
+        {activeTab !== "create" && <CountdownTimer />}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Desktop Tabs */}

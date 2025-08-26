@@ -31,4 +31,32 @@ export function registerPickRoutes(app: FastifyInstance) {
     { schema: { body: submitPicksSchema } },
     (req: FastifyRequest, reply: FastifyReply) => controller.submit(req, reply),
   );
+
+  // Add GET endpoint to retrieve user's picks for a week
+  app.get(
+    '/picks/me',
+    {
+      schema: {
+        querystring: {
+          type: 'object',
+          required: ['weekId'],
+          properties: {
+            weekId: { type: 'string' }
+          }
+        }
+      }
+    },
+    async (req: FastifyRequest<{ Querystring: { weekId: string } }>, reply: FastifyReply) => {
+      const userId = (req as { user?: { id?: string } }).user?.id ?? '';
+      const picks = await service.getUserPicks(userId, req.query.weekId);
+      if (!picks) {
+        return reply.code(404).send({
+          type: 'https://errors.game-squad-zone/picks-not-found',
+          title: 'No picks found for this week',
+          status: 404,
+        });
+      }
+      return reply.send(picks);
+    }
+  );
 }

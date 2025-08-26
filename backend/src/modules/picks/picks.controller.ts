@@ -25,4 +25,3 @@ export class PickController {
     return reply.code(201).send(result);
   }
 }
-

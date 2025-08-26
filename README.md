@@ -267,3 +267,4 @@ This layout separates concerns for easier scaling:
 
 ---
 This plan elevates the backend from a minimal prototype to a robust, league‑agnostic platform capable of powering SquadPot as it grows.
+

@@ -1,11 +1,17 @@
 import type { PrismaClient } from '@prisma/client';
 
+export interface SquadMemberRecord {
+  id: string;
+  squadId: string;
+  userId: string;
+}
+
 export interface SquadRecord {
   id: string;
   name: string;
   joinCode: string;
   ownerId: string;
-  members?: unknown[];
+  members?: SquadMemberRecord[];
 }
 
 /**
@@ -23,7 +29,11 @@ export class SquadRepo {
   findSquadById(id: string): Promise<SquadRecord | null> {
     return this.prisma.squad.findUnique({
       where: { id },
-      include: { members: true },
+      include: {
+        members: {
+          select: { id: true, squadId: true, userId: true },
+        },
+      },
     }) as unknown as Promise<SquadRecord | null>;
   }
 
@@ -37,5 +47,13 @@ export class SquadRepo {
     await this.prisma.squadMember.create({
       data: { squadId, userId },
     });
+  }
+
+  async isMember(squadId: string, userId: string): Promise<boolean> {
+    const member = await this.prisma.squadMember.findUnique({
+      where: { squadId_userId: { squadId, userId } },
+      select: { id: true },
+    });
+    return Boolean(member);
   }
 }

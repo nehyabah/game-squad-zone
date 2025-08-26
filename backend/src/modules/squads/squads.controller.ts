@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { CreateSquadInput, JoinSquadInput } from './squads.dto';
+import type { CreateSquadInput, JoinSquadInput, CreateSquadDto } from './squads.dto';
 import {
   AlreadyMemberError,
   InvalidJoinCodeError,

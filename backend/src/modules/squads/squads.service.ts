@@ -47,9 +47,11 @@ export class SquadService {
     if (!squad) {
       throw new InvalidJoinCodeError();
     }
+
     if (await this.repo.isMember(squad.id, userId)) {
       throw new AlreadyMemberError();
     }
+
     await this.repo.addMember(squad.id, userId);
     return squad;
   }

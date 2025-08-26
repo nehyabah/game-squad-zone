@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import type { CreatePickInput } from './picks.dto';
+import type { SubmitPicksInput } from './picks.dto';
 import { PickService } from './picks.service';
 
 /**
@@ -8,12 +8,20 @@ import { PickService } from './picks.service';
 export class PickController {
   constructor(private readonly service: PickService) {}
 
-  async create(
-    req: FastifyRequest<{ Body: CreatePickInput }>,
+  async submit(
+    req: FastifyRequest<{
+      Body: SubmitPicksInput;
+      Headers: { 'idempotency-key'?: string };
+    }>,
     reply: FastifyReply,
   ) {
     const userId = (req as { user?: { id?: string } }).user?.id ?? '';
-    const pick = await this.service.create(req.body, userId);
-    return reply.code(201).send(pick);
+    const idempotencyKey = req.headers['idempotency-key'];
+    const result = await this.service.submitWeeklyPicks(
+      req.body,
+      userId,
+      idempotencyKey,
+    );
+    return reply.code(201).send(result);
   }
 }

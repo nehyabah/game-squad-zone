@@ -7,7 +7,7 @@ import { LeaderboardService } from './leaderboards.service';
 export class LeaderboardController {
   constructor(private readonly service: LeaderboardService) {}
 
-  async get(_query: LeaderboardQueryDto) {
-    // TODO: handle leaderboard request
+  async get(query: LeaderboardQueryDto) {
+    return this.service.getLeaderboard(query);
   }
 }

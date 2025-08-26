@@ -1,0 +1,11 @@
+{
+  "name": "game-squad-backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "ts-node src/main.server.ts",
+    "worker": "ts-node src/main.worker.ts",
+    "build": "tsc -p tsconfig.json"
+  }
+}

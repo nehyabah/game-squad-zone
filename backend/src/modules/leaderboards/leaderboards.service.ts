@@ -1,10 +1,14 @@
 import type { LeaderboardQueryDto } from './leaderboards.dto';
+import { LeaderboardRepo } from './leaderboards.repo';
+import type { LeaderboardEntry } from './leaderboards.repo';
 
 /**
  * Leaderboards module business logic.
  */
 export class LeaderboardService {
-  async getLeaderboard(_query: LeaderboardQueryDto) {
-    // TODO: get leaderboard data
+  constructor(private readonly repo: LeaderboardRepo) {}
+
+  getLeaderboard(query: LeaderboardQueryDto): Promise<LeaderboardEntry[]> {
+    return this.repo.fetchLeaderboard(query.scope ?? 'global', query.week);
   }
 }

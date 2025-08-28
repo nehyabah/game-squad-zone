@@ -12,10 +12,11 @@ import Leaderboard from "@/components/Leaderboard";
 import AuthModal from "@/components/AuthModal";
 import AccountMenu from "@/components/AccountMenu";
 import CountdownTimer from "@/components/CountdownTimer";
+import Wallet from "@/components/Wallet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, Users } from "lucide-react";
+import { Lock, Users, Wallet as WalletIcon } from "lucide-react";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("fixtures");
@@ -68,7 +69,7 @@ const Index = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Desktop Tabs */}
-          <TabsList className="hidden sm:grid w-full grid-cols-3 max-w-2xl mx-auto mb-16 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
+          <TabsList className="hidden sm:grid w-full grid-cols-4 max-w-3xl mx-auto mb-16 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
             <TabsTrigger 
               value="fixtures" 
               className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
@@ -87,6 +88,12 @@ const Index = () => {
             >
               My Picks
             </TabsTrigger>
+            <TabsTrigger 
+              value="wallet" 
+              className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+            >
+              Wallet
+            </TabsTrigger>
           </TabsList>
 
           {/* Mobile Bottom Tabs - iOS Style with Glass Effect */}
@@ -96,7 +103,7 @@ const Index = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/20 to-white/40 dark:via-gray-700/20 dark:to-gray-600/40"></div>
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-gray-400/60"></div>
             
-            <div className="relative grid grid-cols-4 h-20 safe-area-pb">
+            <div className="relative grid grid-cols-5 h-20 safe-area-pb">
               <button
                 onClick={() => setActiveTab("fixtures")}
                 className="flex flex-col items-center justify-center py-2 group transition-all duration-300"
@@ -199,6 +206,35 @@ const Index = () => {
               </button>
               
               <button
+                onClick={() => setActiveTab("wallet")}
+                className="flex flex-col items-center justify-center py-2 group transition-all duration-300"
+              >
+                <div className="flex flex-col items-center space-y-1">
+                  <div className={`relative w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                    activeTab === "wallet" 
+                      ? "bg-white/30 dark:bg-white/20 shadow-lg backdrop-blur-sm border border-white/40 dark:border-white/30 scale-110" 
+                      : "bg-white/10 dark:bg-white/5 group-hover:bg-white/20 dark:group-hover:bg-white/10 group-hover:scale-105 backdrop-blur-sm"
+                  }`}>
+                    <div className={`w-5 h-5 flex items-center justify-center transition-colors duration-300 ${
+                      activeTab === "wallet" ? "text-primary" : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
+                    }`}>
+                      <WalletIcon width="20" height="20" />
+                    </div>
+                    
+                    {/* Glass shine effect */}
+                    <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
+                  </div>
+                  <span className={`text-xs font-medium transition-all duration-300 ${
+                    activeTab === "wallet" 
+                      ? "text-primary font-semibold" 
+                      : "text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-300"
+                  }`}>
+                    Wallet
+                  </span>
+                </div>
+              </button>
+              
+              <button
                 onClick={() => setShowAccountMenu(true)}
                 className="flex flex-col items-center justify-center py-2 group transition-all duration-300"
               >
@@ -232,6 +268,10 @@ const Index = () => {
 
           <TabsContent value="games" className="space-y-8">
             <MyPicks onEditPicks={() => setActiveTab("fixtures")} />
+          </TabsContent>
+
+          <TabsContent value="wallet" className="space-y-8">
+            <Wallet />
           </TabsContent>
         </Tabs>
       </div>

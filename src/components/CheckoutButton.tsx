@@ -41,6 +41,8 @@ export default function CheckoutButton({
         const stripe = await stripePromise;
         if (stripe) {
           await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        } else {
+          throw new Error('Stripe not initialized');
         }
       } else if (data.url) {
         window.location.href = data.url;

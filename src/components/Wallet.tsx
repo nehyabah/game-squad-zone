@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import StripeCardForm from "./StripeCardForm";
 import { 
   Wallet as WalletIcon,
   Plus,
@@ -20,6 +22,7 @@ import { formatDistanceToNow } from "date-fns";
 const Wallet = () => {
   const { balance, transactions, addFunds, isLoading } = useWallet();
   const [depositAmount, setDepositAmount] = useState("");
+  const [showCardForm, setShowCardForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
@@ -30,7 +33,7 @@ const Wallet = () => {
     }).format(amount);
   };
 
-  const handleDeposit = async () => {
+  const handleDepositClick = () => {
     const amount = parseFloat(depositAmount);
     
     if (!amount || amount <= 0) {
@@ -51,26 +54,22 @@ const Wallet = () => {
       return;
     }
 
-    setIsProcessing(true);
+    setShowCardForm(true);
+  };
 
+  const handlePaymentSuccess = async () => {
+    const amount = parseFloat(depositAmount);
+    setShowCardForm(false);
+    
     try {
-      // In a real implementation, this would redirect to Stripe Checkout
-      // For demo purposes, we'll simulate the payment process
       await addFunds(amount);
-      
       setDepositAmount("");
-      toast({
-        title: "Funds Added Successfully",
-        description: `${formatCurrency(amount)} has been added to your wallet`,
-      });
     } catch (error) {
       toast({
         title: "Deposit Failed",
         description: "Failed to process your deposit. Please try again.",
         variant: "destructive"
       });
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -127,18 +126,12 @@ const Wallet = () => {
                 className="flex-1"
               />
               <Button 
-                onClick={handleDeposit}
-                disabled={isProcessing || isLoading}
+                onClick={handleDepositClick}
+                disabled={isLoading}
                 className="shrink-0"
               >
-                {isProcessing ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Funds
-                  </>
-                )}
+                <Plus className="w-4 h-4 mr-1" />
+                Add Funds
               </Button>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -207,6 +200,17 @@ const Wallet = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Stripe Card Form Dialog */}
+      <Dialog open={showCardForm} onOpenChange={setShowCardForm}>
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <StripeCardForm
+            amount={parseFloat(depositAmount) || 0}
+            onSuccess={handlePaymentSuccess}
+            onCancel={() => setShowCardForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

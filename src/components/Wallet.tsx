@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import StripeCardForm from "./StripeCardForm";
+import CheckoutButton from "./CheckoutButton";
 import { 
   Wallet as WalletIcon,
   Plus,
@@ -115,7 +116,7 @@ const Wallet = () => {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-4">
-            <div className="flex gap-2">
+            <div className="space-y-3">
               <Input
                 type="number"
                 placeholder="Enter amount"
@@ -123,16 +124,26 @@ const Wallet = () => {
                 onChange={(e) => setDepositAmount(e.target.value)}
                 min="5"
                 step="0.01"
-                className="flex-1"
+                className="w-full"
               />
-              <Button 
-                onClick={handleDepositClick}
-                disabled={isLoading}
-                className="shrink-0"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Add Funds
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleDepositClick}
+                  disabled={isLoading || !depositAmount || parseFloat(depositAmount) < 5}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Mock Payment
+                </Button>
+                <CheckoutButton 
+                  amount={depositAmount ? Math.round(parseFloat(depositAmount) * 100) : 500}
+                  className="flex-1"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Real Stripe
+                </CheckoutButton>
+              </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CreditCard className="w-4 h-4" />

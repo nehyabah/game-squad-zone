@@ -7,6 +7,10 @@ interface User {
   createdAt: string;
 }
 
+interface StoredUser extends User {
+  password: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
@@ -38,12 +42,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Demo mode - accept any email/password combination
     if (email && password) {
       // Check if user exists first
-      const users = JSON.parse(localStorage.getItem('squadpot_users') || '[]');
-      let existingUser = users.find((u: any) => u.email === email);
+      const users: StoredUser[] = JSON.parse(localStorage.getItem('squadpot_users') || '[]');
+      let existingUser = users.find((u) => u.email === email);
       
       // If user doesn't exist, create one automatically
       if (!existingUser) {
-        const newUser = {
+        const newUser: StoredUser = {
           id: Math.random().toString(36).substr(2, 9),
           username: email.split('@')[0], // Use email prefix as username
           email,
@@ -74,8 +78,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Check if user already exists
-    const users = JSON.parse(localStorage.getItem('squadpot_users') || '[]');
-    const existingUser = users.find((u: any) => u.email === email);
+    const users: StoredUser[] = JSON.parse(localStorage.getItem('squadpot_users') || '[]');
+    const existingUser = users.find((u) => u.email === email);
     
     if (existingUser) {
       setIsLoading(false);
@@ -83,7 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
     
     // Create new user
-    const newUser = {
+    const newUser: StoredUser = {
       id: Math.random().toString(36).substr(2, 9),
       username,
       email,

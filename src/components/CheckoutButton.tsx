@@ -19,7 +19,7 @@ export default function CheckoutButton({
 
   const handleClick = async () => {
     try {
-      // This will fail until you have a backend API endpoint
+      // Create a checkout session on the backend
       const res = await fetch('/api/checkout/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,4 +60,3 @@ export default function CheckoutButton({
       {children}
     </Button>
   );
-}

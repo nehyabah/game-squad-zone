@@ -15,6 +15,14 @@ interface Game {
   season: number;
 }
 
+interface ApiGame {
+  game: { id: number; date: { date: string }; week: number; season: number };
+  teams: {
+    home: Team;
+    away: Team;
+  };
+}
+
 class NFLApiService {
   private baseUrl = 'https://v1.american-football.api-sports.io';
   private apiKey: string | null = null;
@@ -65,7 +73,7 @@ class NFLApiService {
       console.log('API response:', data);
       
       // Transform API response to our Game interface
-      const games = data.response?.map((apiGame: any) => ({
+      const games = data.response?.map((apiGame: ApiGame) => ({
         id: apiGame.game.id.toString(),
         homeTeam: {
           id: apiGame.teams.home.id,
@@ -97,7 +105,7 @@ class NFLApiService {
     }
   }
 
-  private calculateSpread(apiGame: any): number {
+  private calculateSpread(apiGame: ApiGame): number {
     // This would need to be adapted based on the actual API response structure
     // For now, return a random spread between -7 and 7
     return Math.round((Math.random() - 0.5) * 14 * 2) / 2;

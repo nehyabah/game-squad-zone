@@ -58,17 +58,23 @@ class NFLApiService {
     }
   }
 
-  async getGames(season: number = 2023): Promise<Game[]> {
+  async getGames(season: number = 2025): Promise<Game[]> {
     console.log('Attempting to fetch games for season:', season);
     try {
-      // Try different endpoints to find upcoming games
+      // Try to get current/upcoming games for 2025 season
       let data = await this.makeRequest(`/games?league=1&season=${season}`);
       console.log('API response:', data);
       
-      // If no games or error, try without season parameter
+      // If no 2025 games, try getting current week's games
       if (!data.response || data.response.length === 0 || data.errors) {
-        console.log('Trying alternative endpoint...');
-        data = await this.makeRequest('/games?league=1');
+        console.log('Trying current games endpoint...');
+        data = await this.makeRequest('/games?league=1&current=true');
+      }
+      
+      // If still no data, try live games
+      if (!data.response || data.response.length === 0) {
+        console.log('Trying live games endpoint...');
+        data = await this.makeRequest('/games?league=1&live=all');
       }
       
       // Transform API response to our Game interface
@@ -109,13 +115,16 @@ class NFLApiService {
         }
       }).slice(0, 8); // Limit to 8 upcoming games
 
-      if (upcomingGames.length === 0) {
-        console.log('No upcoming games found, using fallback');
-        return this.getFallbackGames();
+      console.log(`Found ${games.length} total games, ${upcomingGames.length} upcoming games`);
+      
+      // With paid API, prioritize real data over fallbacks
+      if (games.length > 0) {
+        console.log('Using real API games data');
+        return upcomingGames.length > 0 ? upcomingGames : games.slice(0, 8);
       }
 
-      console.log(`Found ${upcomingGames.length} upcoming games`);
-      return upcomingGames;
+      console.log('No games found in API, using fallback');
+      return this.getFallbackGames();
     } catch (error) {
       console.error('API request failed, using fallback games:', error);
       return this.getFallbackGames();
@@ -196,7 +205,7 @@ class NFLApiService {
         spread: -2.5,
         time: getUpcomingNFLSunday(0),
         week: 2,
-        season: 2023
+        season: 2025
       },
       {
         id: "2",
@@ -215,7 +224,7 @@ class NFLApiService {
         spread: -4.5,
         time: getUpcomingNFLSunday(0),
         week: 2,
-        season: 2023
+        season: 2025
       },
       {
         id: "3",
@@ -234,7 +243,7 @@ class NFLApiService {
         spread: -3.0,
         time: getUpcomingNFLSunday(1),
         week: 2,
-        season: 2023
+        season: 2025
       },
       {
         id: "4",
@@ -253,7 +262,7 @@ class NFLApiService {
         spread: -2.0,
         time: getUpcomingNFLSunday(1),
         week: 2,
-        season: 2023
+        season: 2025
       },
       {
         id: "5",
@@ -272,7 +281,7 @@ class NFLApiService {
         spread: -1.0,
         time: getUpcomingNFLSunday(1),
         week: 2,
-        season: 2023
+        season: 2025
       },
       {
         id: "6",
@@ -291,7 +300,7 @@ class NFLApiService {
         spread: -5.5,
         time: getUpcomingNFLSunday(2),
         week: 2,
-        season: 2023
+        season: 2025
       }
     ];
   }

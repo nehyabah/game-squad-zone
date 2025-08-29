@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { buildApp } from "./app";
 import "dotenv/config";
 
@@ -36,21 +35,3 @@ main().catch((err) => {
   console.error("Fatal error during startup:", err);
   process.exit(1);
 });
-=======
-import { buildApp } from './app';
-import process from 'node:process';
-
-/**
- * HTTP server entrypoint.
- */
-export async function startServer() {
-  const app = buildApp();
-  const port = Number(process.env.PORT) || 3000;
-  await app.listen({ port, host: '0.0.0.0' });
-  return app;
-}
-
-if (process.env.NODE_ENV !== 'test') {
-  startServer();
-}
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7

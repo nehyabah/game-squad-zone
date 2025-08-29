@@ -1,49 +1,68 @@
-generator client {
-  provider = "prisma-client-js"
+// Update your schema.prisma with Okta-specific fields
+
+enum UserStatus {
+  active
+  suspended
+  deleted
 }
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+enum AuthProvider {
+  okta
+  local  // optional: if you want to support both Okta and local auth
 }
 
-enum PickSetStatus {
-  draft
-  submitted
-  locked
+model User {
+  id              String    @id @default(uuid())
+  
+  // Okta-specific fields
+  oktaId          String    @unique  // Okta user ID (sub claim)
+  email           String    @unique
+  username        String    @unique
+  firstName       String?
+  lastName        String?
+  avatarUrl       String?
+  
+  // Auth metadata
+  authProvider    AuthProvider @default(okta)
+  emailVerified   Boolean   @default(false)
+  
+  // Status and timestamps
+  status          UserStatus @default(active)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastLoginAt     DateTime?
+  
+  // Relations
+  pickSets        PickSet[]
+  squadMembers    SquadMember[]
+  ownedSquads     Squad[]    @relation("SquadOwner")
+  sessions        Session[]
+  
+  @@index([email])
+  @@index([username])
+  @@index([oktaId])
+  @@index([status])
 }
 
-enum PickChoice {
-  home
-  away
+model Session {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String   @unique
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  userAgent   String?
+  ipAddress   String?
+  
+  @@index([userId])
+  @@index([token])
 }
 
-enum SquadRole {
-  owner
-  admin
-  member
-}
-
-model Game {
-  id         String    @id
-  startAtUtc DateTime
-  weekId     String
-  lines      GameLine[]
-}
-
-model GameLine {
-  gameId      String
-  game        Game      @relation(fields: [gameId], references: [id])
-  spread      Decimal   @db.Decimal(5, 2)
-  source      String
-  fetchedAtUtc DateTime
-
-  @@id([gameId, source, fetchedAtUtc])
-}
-
+// Keep your existing models with User relations updated
 model PickSet {
   id             String      @id @default(uuid())
   userId         String
+  user           User        @relation(fields: [userId], references: [id])
   weekId         String
   submittedAtUtc DateTime?
   lockedAtUtc    DateTime?
@@ -57,25 +76,12 @@ model PickSet {
   @@index([status])
 }
 
-model Pick {
-  id           String     @id @default(uuid())
-  pickSetId    String
-  pickSet      PickSet    @relation(fields: [pickSetId], references: [id])
-  gameId       String
-  game         Game       @relation(fields: [gameId], references: [id])
-  choice       PickChoice
-  spreadAtPick Decimal   @db.Decimal(5, 2)
-  lineSource   String
-  createdAtUtc DateTime   @default(now())
-
-  @@unique([pickSetId, gameId])
-}
-
 model Squad {
   id       String       @id @default(uuid())
   name     String
   joinCode String       @unique
   ownerId  String
+  owner    User         @relation("SquadOwner", fields: [ownerId], references: [id])
   members  SquadMember[]
 }
 
@@ -84,8 +90,8 @@ model SquadMember {
   squadId String
   squad   Squad  @relation(fields: [squadId], references: [id])
   userId  String
+  user    User   @relation(fields: [userId], references: [id])
   role    SquadRole @default(member)
 
   @@unique([squadId, userId])
 }
-

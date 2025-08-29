@@ -2,7 +2,11 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
+<<<<<<< HEAD
     "module": "CommonJS",
+=======
+    "module": "ESNext",
+>>>>>>> 53aba1c646428e018703f884f0218645e12deab7
     "moduleResolution": "Node",
     "esModuleInterop": true,
     "strict": true

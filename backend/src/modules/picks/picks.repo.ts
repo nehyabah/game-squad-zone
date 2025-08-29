@@ -1,0 +1,88 @@
+import type { PrismaClient } from '@prisma/client';
+
+export interface PickSetRecord {
+  id: string;
+  userId: string;
+  weekId: string;
+  submittedAtUtc: Date;
+  lockedAtUtc?: Date;
+  tiebreakerScore?: number;
+  status: 'draft' | 'submitted' | 'locked';
+}
+
+export interface PickRecord {
+  id: string;
+  pickSetId: string;
+  gameId: string;
+  choice: 'home' | 'away';
+  spreadAtPick: number;
+  lineSource: string;
+  createdAt: Date;
+}
+
+/**
+ * Picks module data access layer.
+ */
+export class PickRepo {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  findByUserWeek(userId: string, weekId: string) {
+    return this.prisma.pickSet.findFirst({
+      where: { userId, weekId },
+      include: {
+        picks: true
+      }
+    }) as unknown as Promise<PickSetRecord | null>;
+  }
+
+  createPickSet(data: {
+    userId: string;
+    weekId: string;
+    status: 'draft' | 'submitted' | 'locked';
+    tiebreakerScore?: number;
+  }) {
+    return this.prisma.pickSet.create({
+      data,
+    }) as unknown as Promise<PickSetRecord>;
+  }
+
+  updatePickSet(id: string, data: {
+    tiebreakerScore?: number;
+    status?: 'draft' | 'submitted' | 'locked';
+  }) {
+    return this.prisma.pickSet.update({
+      where: { id },
+      data,
+    }) as unknown as Promise<PickSetRecord>;
+  }
+
+  upsertPick(data: {
+    pickSetId: string;
+    gameId: string;
+    choice: 'home' | 'away';
+    spreadAtPick: number;
+    lineSource: string;
+  }) {
+    return this.prisma.pick.upsert({
+      where: {
+        pickSetId_gameId: {
+          pickSetId: data.pickSetId,
+          gameId: data.gameId,
+        },
+      },
+      create: data,
+      update: {
+        choice: data.choice,
+        spreadAtPick: data.spreadAtPick,
+        lineSource: data.lineSource,
+      },
+    }) as unknown as Promise<PickRecord>;
+  }
+
+  async getPicksByPickSetId(pickSetId: string): Promise<PickRecord[]> {
+    return this.prisma.pick.findMany({
+      where: { pickSetId },
+      orderBy: { createdAt: 'asc' },
+    }) as unknown as Promise<PickRecord[]>;
+  }
+}

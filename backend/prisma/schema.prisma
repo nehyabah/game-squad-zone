@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PickSetStatus {
+  draft
+  submitted
+  locked
+}
+
+enum PickChoice {
+  home
+  away
+}
+
+enum SquadRole {
+  owner
+  admin
+  member
+}
+
+model Game {
+  id         String    @id
+  startAtUtc DateTime
+  weekId     String
+  lines      GameLine[]
+}
+
+model GameLine {
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id])
+  spread      Decimal   @db.Decimal(5, 2)
+  source      String
+  fetchedAtUtc DateTime
+
+  @@id([gameId, source, fetchedAtUtc])
+}
+
+model PickSet {
+  id             String      @id @default(uuid())
+  userId         String
+  weekId         String
+  submittedAtUtc DateTime?
+  lockedAtUtc    DateTime?
+  tiebreakerScore Int?
+  status         PickSetStatus @default(draft)
+  picks          Pick[]
+
+  @@unique([userId, weekId])
+  @@index([userId])
+  @@index([weekId])
+  @@index([status])
+}
+
+model Pick {
+  id           String     @id @default(uuid())
+  pickSetId    String
+  pickSet      PickSet    @relation(fields: [pickSetId], references: [id])
+  gameId       String
+  game         Game       @relation(fields: [gameId], references: [id])
+  choice       PickChoice
+  spreadAtPick Decimal   @db.Decimal(5, 2)
+  lineSource   String
+  createdAtUtc DateTime   @default(now())
+
+  @@unique([pickSetId, gameId])
+}
+
+model Squad {
+  id       String       @id @default(uuid())
+  name     String
+  joinCode String       @unique
+  ownerId  String
+  members  SquadMember[]
+}
+
+model SquadMember {
+  id      String @id @default(uuid())
+  squadId String
+  squad   Squad  @relation(fields: [squadId], references: [id])
+  userId  String
+  role    SquadRole @default(member)
+
+  @@unique([squadId, userId])
+}
+

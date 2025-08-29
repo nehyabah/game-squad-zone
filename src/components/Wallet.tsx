@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
-import StripeCardForm from "./StripeCardForm";
 import CheckoutButton from "./CheckoutButton";
 import {
   Wallet as WalletIcon,
@@ -21,57 +18,14 @@ import {
 import { formatDistanceToNow } from "date-fns";
 
 const Wallet = () => {
-  const { balance, transactions, addFunds, isLoading } = useWallet();
+  const { balance, transactions } = useWallet();
   const [depositAmount, setDepositAmount] = useState("");
-  const [showCardForm, setShowCardForm] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount);
-  };
-
-  const handleDepositClick = () => {
-    const amount = parseFloat(depositAmount);
-
-    if (!amount || amount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to deposit",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (amount < 5) {
-      toast({
-        title: "Minimum Deposit",
-        description: "Minimum deposit amount is $5.00",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setShowCardForm(true);
-  };
-
-  const handlePaymentSuccess = async () => {
-    const amount = parseFloat(depositAmount);
-    setShowCardForm(false);
-
-    try {
-      await addFunds(amount);
-      setDepositAmount("");
-    } catch (error) {
-      toast({
-        title: "Deposit Failed",
-        description: "Failed to process your deposit. Please try again.",
-        variant: "destructive",
-      });
-    }
   };
 
   const getTransactionIcon = (type: string) => {
@@ -126,30 +80,17 @@ const Wallet = () => {
                 step="0.01"
                 className="w-full"
               />
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleDepositClick}
-                  disabled={
-                    isLoading || !depositAmount || parseFloat(depositAmount) < 5
-                  }
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Mock Payment
-                </Button>
-                <CheckoutButton
-                  amount={
-                    depositAmount
-                      ? Math.round(parseFloat(depositAmount) * 100)
-                      : 500
-                  }
-                  className="flex-1"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Real Stripe
-                </CheckoutButton>
-              </div>
+              <CheckoutButton
+                amount={
+                  depositAmount
+                    ? Math.round(parseFloat(depositAmount) * 100)
+                    : 500
+                }
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Pay with Stripe
+              </CheckoutButton>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <CreditCard className="w-4 h-4" />
@@ -234,16 +175,6 @@ const Wallet = () => {
         </CardContent>
       </Card>
 
-      {/* Stripe Card Form Dialog */}
-      <Dialog open={showCardForm} onOpenChange={setShowCardForm}>
-        <DialogContent className="max-w-md p-0 overflow-hidden">
-          <StripeCardForm
-            amount={parseFloat(depositAmount) || 0}
-            onSuccess={handlePaymentSuccess}
-            onCancel={() => setShowCardForm(false)}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

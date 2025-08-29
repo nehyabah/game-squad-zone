@@ -58,43 +58,84 @@ class NFLApiService {
     }
   }
 
-  async getGames(season: number = 2023, week: number = 1): Promise<Game[]> {
-    console.log('Attempting to fetch games...');
+  async getGames(season: number = 2024): Promise<Game[]> {
+    console.log('Attempting to fetch games for season:', season);
     try {
-      const data = await this.makeRequest(`/games?league=1&season=${season}&week=${week}`);
+      // Try different endpoints to find upcoming games
+      let data = await this.makeRequest(`/games?league=1&season=${season}`);
       console.log('API response:', data);
       
+      // If no games or error, try without season parameter
+      if (!data.response || data.response.length === 0 || data.errors) {
+        console.log('Trying alternative endpoint...');
+        data = await this.makeRequest('/games?league=1');
+      }
+      
       // Transform API response to our Game interface
-      const games = data.response?.map((apiGame: any) => ({
-        id: apiGame.game.id.toString(),
-        homeTeam: {
-          id: apiGame.teams.home.id,
-          name: apiGame.teams.home.name,
-          logo: apiGame.teams.home.logo,
-          code: apiGame.teams.home.code,
-        },
-        awayTeam: {
-          id: apiGame.teams.away.id,
-          name: apiGame.teams.away.name,
-          logo: apiGame.teams.away.logo,
-          code: apiGame.teams.away.code,
-        },
-        spread: this.calculateSpread(apiGame),
-        time: new Date(apiGame.game.date.date).toLocaleString(),
-        week: apiGame.game.week,
-        season: apiGame.game.season,
-      })) || [];
+      const games = data.response?.map((apiGame: any) => {
+        // Handle different possible API response structures
+        const gameData = apiGame.game || apiGame;
+        const teamsData = apiGame.teams || {};
+        
+        return {
+          id: (gameData.id || Math.random().toString()).toString(),
+          homeTeam: {
+            id: teamsData.home?.id || 1,
+            name: teamsData.home?.name || 'Home Team',
+            logo: teamsData.home?.logo || 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png',
+            code: teamsData.home?.code || 'HOME',
+          },
+          awayTeam: {
+            id: teamsData.away?.id || 2,
+            name: teamsData.away?.name || 'Away Team',
+            logo: teamsData.away?.logo || 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png',
+            code: teamsData.away?.code || 'AWAY',
+          },
+          spread: this.calculateSpread(apiGame),
+          time: this.formatGameTime(gameData),
+          week: gameData.week || 1,
+          season: gameData.season || season,
+        };
+      }) || [];
 
-      if (games.length === 0) {
-        console.log('No games returned from API, using fallback');
+      // Filter for upcoming games (future dates)
+      const now = new Date();
+      const upcomingGames = games.filter(game => {
+        try {
+          const gameDate = new Date(game.time);
+          return gameDate > now;
+        } catch {
+          return true; // Include if we can't parse date
+        }
+      }).slice(0, 8); // Limit to 8 upcoming games
+
+      if (upcomingGames.length === 0) {
+        console.log('No upcoming games found, using fallback');
         return this.getFallbackGames();
       }
 
-      return games;
+      console.log(`Found ${upcomingGames.length} upcoming games`);
+      return upcomingGames;
     } catch (error) {
-      console.error('API request failed (likely CORS), using fallback games:', error);
+      console.error('API request failed, using fallback games:', error);
       return this.getFallbackGames();
     }
+  }
+
+  private formatGameTime(gameData: any): string {
+    if (gameData.date?.date) {
+      try {
+        return new Date(gameData.date.date).toLocaleString();
+      } catch {
+        // Fallback if date parsing fails
+      }
+    }
+    
+    // Return a placeholder time for upcoming games
+    const nextSunday = new Date();
+    nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()));
+    nextSunday.setHours(13, 0, 0, 0); // 1 PM
+    return nextSunday.toLocaleString();
   }
 
   private calculateSpread(apiGame: any): number {
@@ -104,23 +145,39 @@ class NFLApiService {
   }
 
   private getFallbackGames(): Game[] {
+    // Generate dates for the next few Sundays
+    const getNextSunday = (weeksAhead: number = 0) => {
+      const date = new Date();
+      const daysUntilSunday = (7 - date.getDay()) % 7 || 7;
+      date.setDate(date.getDate() + daysUntilSunday + (weeksAhead * 7));
+      date.setHours(13, 0, 0, 0); // 1 PM
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'short', 
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    };
+
     return [
       {
         id: "1",
         homeTeam: {
           id: 1,
-          name: "New England Patriots",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png",
-          code: "NE"
+          name: "Kansas City Chiefs",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png",
+          code: "KC"
         },
         awayTeam: {
           id: 2,
-          name: "Tampa Bay Buccaneers",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png",
-          code: "TB"
+          name: "Buffalo Bills",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png",
+          code: "BUF"
         },
-        spread: -3.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
+        spread: -2.5,
+        time: getNextSunday(),
         week: 1,
         season: 2024
       },
@@ -128,18 +185,18 @@ class NFLApiService {
         id: "2",
         homeTeam: {
           id: 3,
-          name: "Carolina Panthers",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/car.png",
-          code: "CAR"
+          name: "San Francisco 49ers",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png",
+          code: "SF"
         },
         awayTeam: {
           id: 4,
-          name: "Atlanta Falcons", 
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png",
-          code: "ATL"
+          name: "Dallas Cowboys", 
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png",
+          code: "DAL"
         },
-        spread: 2.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
+        spread: -4.5,
+        time: getNextSunday(),
         week: 1,
         season: 2024
       },
@@ -147,18 +204,18 @@ class NFLApiService {
         id: "3",
         homeTeam: {
           id: 5,
-          name: "Cleveland Browns",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png",
-          code: "CLE"
+          name: "Green Bay Packers",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
+          code: "GB"
         },
         awayTeam: {
           id: 6,
-          name: "Cincinnati Bengals",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png",
-          code: "CIN"
+          name: "Chicago Bears",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png",
+          code: "CHI"
         },
-        spread: 5.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
+        spread: -6.5,
+        time: getNextSunday(),
         week: 1,
         season: 2024
       },
@@ -166,18 +223,56 @@ class NFLApiService {
         id: "4",
         homeTeam: {
           id: 7,
-          name: "Detroit Lions",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png",
-          code: "DET"
+          name: "Miami Dolphins",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png",
+          code: "MIA"
         },
         awayTeam: {
           id: 8,
-          name: "Kansas City Chiefs",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png",
-          code: "KC"
+          name: "New York Jets",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png",
+          code: "NYJ"
+        },
+        spread: -1.5,
+        time: getNextSunday(),
+        week: 1,
+        season: 2024
+      },
+      {
+        id: "5",
+        homeTeam: {
+          id: 9,
+          name: "Philadelphia Eagles",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png",
+          code: "PHI"
+        },
+        awayTeam: {
+          id: 10,
+          name: "New York Giants",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png",
+          code: "NYG"
+        },
+        spread: -7.5,
+        time: getNextSunday(),
+        week: 1,
+        season: 2024
+      },
+      {
+        id: "6",
+        homeTeam: {
+          id: 11,
+          name: "Baltimore Ravens",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png",
+          code: "BAL"
+        },
+        awayTeam: {
+          id: 12,
+          name: "Cincinnati Bengals",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png",
+          code: "CIN"
         },
         spread: -3.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
+        time: getNextSunday(),
         week: 1,
         season: 2024
       }

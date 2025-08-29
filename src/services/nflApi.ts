@@ -58,7 +58,7 @@ class NFLApiService {
     }
   }
 
-  async getGames(season: number = 2024): Promise<Game[]> {
+  async getGames(season: number = 2025): Promise<Game[]> {
     console.log('Attempting to fetch games for season:', season);
     try {
       // Try different endpoints to find upcoming games
@@ -179,7 +179,7 @@ class NFLApiService {
         spread: -2.5,
         time: getNextSunday(),
         week: 1,
-        season: 2024
+        season: 2025
       },
       {
         id: "2",
@@ -198,7 +198,7 @@ class NFLApiService {
         spread: -4.5,
         time: getNextSunday(),
         week: 1,
-        season: 2024
+        season: 2025
       },
       {
         id: "3",
@@ -217,7 +217,7 @@ class NFLApiService {
         spread: -6.5,
         time: getNextSunday(),
         week: 1,
-        season: 2024
+        season: 2025
       },
       {
         id: "4",
@@ -236,7 +236,7 @@ class NFLApiService {
         spread: -1.5,
         time: getNextSunday(),
         week: 1,
-        season: 2024
+        season: 2025
       },
       {
         id: "5",
@@ -255,7 +255,7 @@ class NFLApiService {
         spread: -7.5,
         time: getNextSunday(),
         week: 1,
-        season: 2024
+        season: 2025
       },
       {
         id: "6",
@@ -274,7 +274,7 @@ class NFLApiService {
         spread: -3.5,
         time: getNextSunday(),
         week: 1,
-        season: 2024
+        season: 2025
       }
     ];
   }

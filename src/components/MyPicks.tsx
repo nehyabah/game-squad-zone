@@ -23,7 +23,7 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
   const loadGames = async () => {
     setIsLoading(true);
     try {
-      const gameData = await nflApi.getGames(2024);
+      const gameData = await nflApi.getGames(2025);
       setGames(gameData);
     } catch (error) {
       console.error('MyPicks: Error loading games:', error);

@@ -24,7 +24,7 @@ const GameSelection = () => {
     setIsLoading(true);
     console.log('GameSelection: Loading games...');
     try {
-      const gameData = await nflApi.getGames(2024);
+      const gameData = await nflApi.getGames(2025);
       console.log('GameSelection: Received games:', gameData);
       setGames(gameData);
     } catch (error) {

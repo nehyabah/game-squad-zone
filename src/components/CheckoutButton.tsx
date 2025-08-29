@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { stripePromise } from '../stripe';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from "@/components/ui/button";
+import { stripePromise } from "../stripe";
+import { useToast } from "@/hooks/use-toast";
 
 interface CheckoutButtonProps {
   amount?: number;
@@ -9,29 +9,33 @@ interface CheckoutButtonProps {
   className?: string;
 }
 
-export default function CheckoutButton({ 
+export default function CheckoutButton({
   amount = 1999, // $19.99 in cents
   priceId,
   children = "Pay with Stripe",
-  className 
+  className,
 }: CheckoutButtonProps) {
   const { toast } = useToast();
 
   const handleClick = async () => {
     try {
+      // Get API URL from environment variable or use default
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
       // Create a checkout session on the backend
-      const res = await fetch('/api/checkout/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${apiUrl}/api/checkout/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           priceId: priceId,
           amount: amount,
-          currency: 'usd'
+          currency: "usd",
         }),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to create checkout session');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to create checkout session");
       }
 
       const data = await res.json();
@@ -40,19 +44,27 @@ export default function CheckoutButton({
       if (data.sessionId) {
         const stripe = await stripePromise;
         if (stripe) {
-          await stripe.redirectToCheckout({ sessionId: data.sessionId });
+          const { error } = await stripe.redirectToCheckout({
+            sessionId: data.sessionId,
+          });
+          if (error) {
+            throw error;
+          }
         } else {
-          throw new Error('Stripe not initialized');
+          throw new Error("Stripe not initialized");
         }
       } else if (data.url) {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.error('Checkout error:', error);
+      console.error("Checkout error:", error);
       toast({
         title: "Payment Error",
-        description: "Backend API not available. Connect to Supabase to enable payments.",
-        variant: "destructive"
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to create checkout session. Please check that the backend server is running on port 3000.",
+        variant: "destructive",
       });
     }
   };

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { stripePromise } from "../stripe";
 import { useToast } from "@/hooks/use-toast";
@@ -16,9 +17,11 @@ export default function CheckoutButton({
   className,
 }: CheckoutButtonProps) {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleClick = async () => {
     try {
+      setIsLoading(true);
       // Get API URL from environment variable or use default
       const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -66,12 +69,19 @@ export default function CheckoutButton({
             : "Failed to create checkout session. Please check that the backend server is running on port 3000.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Button onClick={handleClick} variant="default" className={className}>
-      {children}
+    <Button
+      onClick={handleClick}
+      variant="default"
+      className={className}
+      disabled={isLoading}
+    >
+      {isLoading ? "Processing..." : children}
     </Button>
   );
 }

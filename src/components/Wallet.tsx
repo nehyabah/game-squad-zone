@@ -9,14 +9,14 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import StripeCardForm from "./StripeCardForm";
 import CheckoutButton from "./CheckoutButton";
-import { 
+import {
   Wallet as WalletIcon,
   Plus,
   ArrowUpCircle,
   ArrowDownCircle,
   CreditCard,
   RefreshCw,
-  DollarSign
+  DollarSign,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
@@ -28,20 +28,20 @@ const Wallet = () => {
   const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
   const handleDepositClick = () => {
     const amount = parseFloat(depositAmount);
-    
+
     if (!amount || amount <= 0) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid amount to deposit",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -50,7 +50,7 @@ const Wallet = () => {
       toast({
         title: "Minimum Deposit",
         description: "Minimum deposit amount is $5.00",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -61,7 +61,7 @@ const Wallet = () => {
   const handlePaymentSuccess = async () => {
     const amount = parseFloat(depositAmount);
     setShowCardForm(false);
-    
+
     try {
       await addFunds(amount);
       setDepositAmount("");
@@ -69,19 +69,19 @@ const Wallet = () => {
       toast({
         title: "Deposit Failed",
         description: "Failed to process your deposit. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'deposit':
+      case "deposit":
         return <ArrowUpCircle className="w-4 h-4 text-green-500" />;
-      case 'withdrawal':
-      case 'bet':
+      case "withdrawal":
+      case "bet":
         return <ArrowDownCircle className="w-4 h-4 text-red-500" />;
-      case 'refund':
+      case "refund":
         return <RefreshCw className="w-4 h-4 text-blue-500" />;
       default:
         return <DollarSign className="w-4 h-4 text-gray-500" />;
@@ -90,14 +90,14 @@ const Wallet = () => {
 
   const getTransactionColor = (type: string) => {
     switch (type) {
-      case 'deposit':
-      case 'refund':
-        return 'text-green-600';
-      case 'withdrawal':
-      case 'bet':
-        return 'text-red-600';
+      case "deposit":
+      case "refund":
+        return "text-green-600";
+      case "withdrawal":
+      case "bet":
+        return "text-red-600";
       default:
-        return 'text-gray-600';
+        return "text-gray-600";
     }
   };
 
@@ -127,17 +127,23 @@ const Wallet = () => {
                 className="w-full"
               />
               <div className="flex gap-2">
-                <Button 
+                <Button
                   onClick={handleDepositClick}
-                  disabled={isLoading || !depositAmount || parseFloat(depositAmount) < 5}
+                  disabled={
+                    isLoading || !depositAmount || parseFloat(depositAmount) < 5
+                  }
                   variant="outline"
                   className="flex-1"
                 >
                   <Plus className="w-4 h-4 mr-1" />
                   Mock Payment
                 </Button>
-                <CheckoutButton 
-                  amount={depositAmount ? Math.round(parseFloat(depositAmount) * 100) : 500}
+                <CheckoutButton
+                  amount={
+                    depositAmount
+                      ? Math.round(parseFloat(depositAmount) * 100)
+                      : 500
+                  }
                   className="flex-1"
                 >
                   <Plus className="w-4 h-4 mr-1" />
@@ -179,27 +185,43 @@ const Wallet = () => {
                           {transaction.description}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(transaction.timestamp), { addSuffix: true })}
+                          {formatDistanceToNow(
+                            new Date(transaction.timestamp),
+                            { addSuffix: true }
+                          )}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-semibold text-sm ${getTransactionColor(transaction.type)}`}>
-                        {transaction.type === 'deposit' || transaction.type === 'refund' ? '+' : '-'}
+                      <p
+                        className={`font-semibold text-sm ${getTransactionColor(
+                          transaction.type
+                        )}`}
+                      >
+                        {transaction.type === "deposit" ||
+                        transaction.type === "refund"
+                          ? "+"
+                          : "-"}
                         {formatCurrency(transaction.amount)}
                       </p>
-                      <Badge 
-                        variant={transaction.status === 'completed' ? 'default' : 'secondary'}
+                      <Badge
+                        variant={
+                          transaction.status === "completed"
+                            ? "default"
+                            : "secondary"
+                        }
                         className="text-xs"
                       >
                         {transaction.status}
                       </Badge>
                     </div>
                   </div>
-                  {index < transactions.slice(0, 10).length - 1 && <Separator />}
+                  {index < transactions.slice(0, 10).length - 1 && (
+                    <Separator />
+                  )}
                 </div>
               ))}
-              
+
               {transactions.length > 10 && (
                 <div className="text-center pt-4">
                   <Button variant="outline" size="sm">

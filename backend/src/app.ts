@@ -13,59 +13,36 @@ export function buildApp(): FastifyInstance {
     disableRequestLogging: false,
   });
 
-  // Log that we're registering CORS
-  console.log("Registering CORS plugin...");
-
-  // Register CORS - Allow all origins for debugging
-  app.register(fastifyCors, {
-    origin: true, // Allow all origins
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
-    allowedHeaders: ["Content-Type", "Authorization", "Accept"],
-    exposedHeaders: ["Content-Type"],
-    maxAge: 86400,
-    preflightContinue: false,
-    optionsSuccessStatus: 204,
-  });
-
-  // Add a hook to log CORS headers
-  app.addHook("onRequest", async (request, reply) => {
-    console.log(
-      `Incoming ${request.method} request to ${request.url} from origin: ${request.headers.origin}`
-    );
-  });
-
-  app.addHook("onSend", async (request, reply, payload) => {
-    console.log("Response headers:", reply.getHeaders());
-    return payload;
-  });
+  // Simple CORS setup - allows all origins in development
+  if (process.env.NODE_ENV === "production") {
+    // Production: strict CORS
+    app.register(fastifyCors, {
+      origin: ["https://yourdomain.com"], // Replace with your production domain
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    });
+  } else {
+    // Development: allow all origins
+    app.register(fastifyCors, {
+      origin: true, // Allow all origins
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    });
+  }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
-    console.warn("WARNING: STRIPE_SECRET_KEY is not set - using test mode");
-    // Use a dummy key for testing
+    throw new Error("STRIPE_SECRET_KEY is not set");
   }
-
-  const stripe = secretKey
-    ? new Stripe(secretKey, { apiVersion: "2023-10-16" })
-    : null;
+  const stripe = new Stripe(secretKey, { apiVersion: "2023-10-16" });
 
   // Health check endpoint
   app.get("/health", async (request, reply) => {
     return { status: "ok", timestamp: new Date().toISOString() };
   });
 
-  // Test CORS endpoint
-  app.options("/api/checkout/sessions", async (request, reply) => {
-    console.log("OPTIONS request received for /api/checkout/sessions");
-    reply.status(204).send();
-  });
-
   // Stripe checkout session endpoint
   app.post("/api/checkout/sessions", async (request, reply) => {
-    console.log("POST request to /api/checkout/sessions");
-    console.log("Request body:", request.body);
-
     try {
       const body = request.body as {
         amount?: number;
@@ -77,16 +54,6 @@ export function buildApp(): FastifyInstance {
       if (!body.priceId && !body.amount) {
         return reply.status(400).send({
           error: "Either priceId or amount must be provided",
-        });
-      }
-
-      // If no Stripe key, return a mock response for testing
-      if (!stripe) {
-        console.log("No Stripe key - returning mock session");
-        return reply.send({
-          sessionId: "mock_session_" + Date.now(),
-          message:
-            "Mock session - configure STRIPE_SECRET_KEY to use real Stripe",
         });
       }
 
@@ -119,7 +86,6 @@ export function buildApp(): FastifyInstance {
 
       reply.send({ sessionId: session.id });
     } catch (error) {
-      console.error("Error in checkout session:", error);
       request.log.error(error);
       reply.status(500).send({ error: "Failed to create checkout session" });
     }

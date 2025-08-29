@@ -8,7 +8,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-<<<<<<< HEAD
     // Proxy API requests to the backend dev server
     proxy: {
       "/api": {
@@ -16,14 +15,10 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
       },
     },
-=======
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
   },
-  plugins: [
-    react(),
-    mode === 'development' &&
-    componentTagger(),
-  ].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger()].filter(
+    Boolean
+  ),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

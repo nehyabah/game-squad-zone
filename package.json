@@ -11,10 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "@fastify/cors": "^11.1.0",
-=======
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
+
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

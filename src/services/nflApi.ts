@@ -58,7 +58,7 @@ class NFLApiService {
     }
   }
 
-  async getGames(season: number = 2025): Promise<Game[]> {
+  async getGames(season: number = 2023): Promise<Game[]> {
     console.log('Attempting to fetch games for season:', season);
     try {
       // Try different endpoints to find upcoming games
@@ -145,13 +145,30 @@ class NFLApiService {
   }
 
   private getFallbackGames(): Game[] {
-    // Generate dates for the next few Sundays
-    const getNextSunday = (weeksAhead: number = 0) => {
-      const date = new Date();
-      const daysUntilSunday = (7 - date.getDay()) % 7 || 7;
-      date.setDate(date.getDate() + daysUntilSunday + (weeksAhead * 7));
-      date.setHours(13, 0, 0, 0); // 1 PM
-      return date.toLocaleDateString('en-US', { 
+    // Generate dates for upcoming NFL Sundays (September through February)
+    const getUpcomingNFLSunday = (weeksAhead: number = 0) => {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      
+      // NFL season runs September (month 8) through February (month 1)
+      let targetDate = new Date();
+      
+      // If we're before September, start from September
+      if (currentMonth < 8) {
+        targetDate.setMonth(8); // September
+        targetDate.setDate(1);
+      }
+      
+      // Find the next Sunday
+      const daysUntilSunday = (7 - targetDate.getDay()) % 7 || 7;
+      targetDate.setDate(targetDate.getDate() + daysUntilSunday + (weeksAhead * 7));
+      
+      // Set to typical NFL game time (1 PM or 4:25 PM ET)
+      const gameHours = weeksAhead % 2 === 0 ? 13 : 16; // Alternate between 1 PM and 4 PM
+      const gameMinutes = gameHours === 16 ? 25 : 0;
+      targetDate.setHours(gameHours, gameMinutes, 0, 0);
+      
+      return targetDate.toLocaleDateString('en-US', { 
         weekday: 'long', 
         month: 'short', 
         day: 'numeric',
@@ -177,9 +194,9 @@ class NFLApiService {
           code: "BUF"
         },
         spread: -2.5,
-        time: getNextSunday(),
-        week: 1,
-        season: 2025
+        time: getUpcomingNFLSunday(0),
+        week: 2,
+        season: 2023
       },
       {
         id: "2",
@@ -196,85 +213,85 @@ class NFLApiService {
           code: "DAL"
         },
         spread: -4.5,
-        time: getNextSunday(),
-        week: 1,
-        season: 2025
+        time: getUpcomingNFLSunday(0),
+        week: 2,
+        season: 2023
       },
       {
         id: "3",
         homeTeam: {
           id: 5,
-          name: "Green Bay Packers",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
-          code: "GB"
+          name: "Pittsburgh Steelers",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png",
+          code: "PIT"
         },
         awayTeam: {
           id: 6,
-          name: "Chicago Bears",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png",
-          code: "CHI"
+          name: "Cleveland Browns",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png",
+          code: "CLE"
         },
-        spread: -6.5,
-        time: getNextSunday(),
-        week: 1,
-        season: 2025
+        spread: -3.0,
+        time: getUpcomingNFLSunday(1),
+        week: 2,
+        season: 2023
       },
       {
         id: "4",
         homeTeam: {
           id: 7,
-          name: "Miami Dolphins",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/mia.png",
-          code: "MIA"
+          name: "Detroit Lions",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/det.png",
+          code: "DET"
         },
         awayTeam: {
           id: 8,
-          name: "New York Jets",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png",
-          code: "NYJ"
+          name: "Green Bay Packers",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
+          code: "GB"
         },
-        spread: -1.5,
-        time: getNextSunday(),
-        week: 1,
-        season: 2025
+        spread: -2.0,
+        time: getUpcomingNFLSunday(1),
+        week: 2,
+        season: 2023
       },
       {
         id: "5",
         homeTeam: {
           id: 9,
-          name: "Philadelphia Eagles",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png",
-          code: "PHI"
+          name: "Jacksonville Jaguars",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png",
+          code: "JAX"
         },
         awayTeam: {
           id: 10,
-          name: "New York Giants",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png",
-          code: "NYG"
+          name: "Indianapolis Colts",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/ind.png",
+          code: "IND"
         },
-        spread: -7.5,
-        time: getNextSunday(),
-        week: 1,
-        season: 2025
+        spread: -1.0,
+        time: getUpcomingNFLSunday(1),
+        week: 2,
+        season: 2023
       },
       {
         id: "6",
         homeTeam: {
           id: 11,
-          name: "Baltimore Ravens",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png",
-          code: "BAL"
+          name: "Los Angeles Rams",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
+          code: "LAR"
         },
         awayTeam: {
           id: 12,
-          name: "Cincinnati Bengals",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png",
-          code: "CIN"
+          name: "Arizona Cardinals",
+          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
+          code: "ARI"
         },
-        spread: -3.5,
-        time: getNextSunday(),
-        week: 1,
-        season: 2025
+        spread: -5.5,
+        time: getUpcomingNFLSunday(2),
+        week: 2,
+        season: 2023
       }
     ];
   }

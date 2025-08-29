@@ -58,43 +58,6 @@ class NFLApiService {
     }
   }
 
-<<<<<<< HEAD
-  async getGames(season: number = 2023, week: number = 1): Promise<Game[]> {
-    console.log('Attempting to fetch games...');
-    try {
-      const data = await this.makeRequest(`/games?league=1&season=${season}&week=${week}`);
-      console.log('API response:', data);
-      
-      // Transform API response to our Game interface
-      const games = data.response?.map((apiGame: any) => ({
-        id: apiGame.game.id.toString(),
-        homeTeam: {
-          id: apiGame.teams.home.id,
-          name: apiGame.teams.home.name,
-          logo: apiGame.teams.home.logo,
-          code: apiGame.teams.home.code,
-        },
-        awayTeam: {
-          id: apiGame.teams.away.id,
-          name: apiGame.teams.away.name,
-          logo: apiGame.teams.away.logo,
-          code: apiGame.teams.away.code,
-        },
-        spread: this.calculateSpread(apiGame),
-        time: new Date(apiGame.game.date.date).toLocaleString(),
-        week: apiGame.game.week,
-        season: apiGame.game.season,
-      })) || [];
-
-      if (games.length === 0) {
-        console.log('No games returned from API, using fallback');
-        return this.getFallbackGames();
-      }
-
-      return games;
-    } catch (error) {
-      console.error('API request failed (likely CORS), using fallback games:', error);
-=======
   async getGames(season: number = 2025): Promise<Game[]> {
     console.log('Attempting to fetch games for season:', season);
     try {
@@ -164,13 +127,10 @@ class NFLApiService {
       return this.getFallbackGames();
     } catch (error) {
       console.error('API request failed, using fallback games:', error);
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
       return this.getFallbackGames();
     }
   }
 
-<<<<<<< HEAD
-=======
   private formatGameTime(gameData: any): string {
     if (gameData.date?.date) {
       try {
@@ -187,7 +147,6 @@ class NFLApiService {
     return nextSunday.toLocaleString();
   }
 
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
   private calculateSpread(apiGame: any): number {
     // This would need to be adapted based on the actual API response structure
     // For now, return a random spread between -7 and 7
@@ -195,8 +154,6 @@ class NFLApiService {
   }
 
   private getFallbackGames(): Game[] {
-<<<<<<< HEAD
-=======
     // Generate dates for upcoming NFL Sundays (September through February)
     const getUpcomingNFLSunday = (weeksAhead: number = 0) => {
       const now = new Date();
@@ -230,28 +187,11 @@ class NFLApiService {
       });
     };
 
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
     return [
       {
         id: "1",
         homeTeam: {
           id: 1,
-<<<<<<< HEAD
-          name: "New England Patriots",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png",
-          code: "NE"
-        },
-        awayTeam: {
-          id: 2,
-          name: "Tampa Bay Buccaneers",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png",
-          code: "TB"
-        },
-        spread: -3.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
-        week: 1,
-        season: 2024
-=======
           name: "Kansas City Chiefs",
           logo: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png",
           code: "KC"
@@ -266,28 +206,11 @@ class NFLApiService {
         time: getUpcomingNFLSunday(0),
         week: 2,
         season: 2025
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
       },
       {
         id: "2",
         homeTeam: {
           id: 3,
-<<<<<<< HEAD
-          name: "Carolina Panthers",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/car.png",
-          code: "CAR"
-        },
-        awayTeam: {
-          id: 4,
-          name: "Atlanta Falcons", 
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/atl.png",
-          code: "ATL"
-        },
-        spread: 2.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
-        week: 1,
-        season: 2024
-=======
           name: "San Francisco 49ers",
           logo: "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png",
           code: "SF"
@@ -302,42 +225,25 @@ class NFLApiService {
         time: getUpcomingNFLSunday(0),
         week: 2,
         season: 2025
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
       },
       {
         id: "3",
         homeTeam: {
           id: 5,
-<<<<<<< HEAD
-=======
           name: "Pittsburgh Steelers",
           logo: "https://a.espncdn.com/i/teamlogos/nfl/500/pit.png",
           code: "PIT"
         },
         awayTeam: {
           id: 6,
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
           name: "Cleveland Browns",
           logo: "https://a.espncdn.com/i/teamlogos/nfl/500/cle.png",
           code: "CLE"
         },
-<<<<<<< HEAD
-        awayTeam: {
-          id: 6,
-          name: "Cincinnati Bengals",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png",
-          code: "CIN"
-        },
-        spread: 5.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
-        week: 1,
-        season: 2024
-=======
         spread: -3.0,
         time: getUpcomingNFLSunday(1),
         week: 2,
         season: 2025
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
       },
       {
         id: "4",
@@ -349,16 +255,6 @@ class NFLApiService {
         },
         awayTeam: {
           id: 8,
-<<<<<<< HEAD
-          name: "Kansas City Chiefs",
-          logo: "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png",
-          code: "KC"
-        },
-        spread: -3.5,
-        time: "Sunday, Sep 10, 1:00 PM ET",
-        week: 1,
-        season: 2024
-=======
           name: "Green Bay Packers",
           logo: "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
           code: "GB"
@@ -405,7 +301,6 @@ class NFLApiService {
         time: getUpcomingNFLSunday(2),
         week: 2,
         season: 2025
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
       }
     ];
   }

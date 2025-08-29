@@ -24,11 +24,7 @@ const GameSelection = () => {
     setIsLoading(true);
     console.log('GameSelection: Loading games...');
     try {
-<<<<<<< HEAD
-      const gameData = await nflApi.getGames(2023, 1);
-=======
       const gameData = await nflApi.getGames(2023);
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
       console.log('GameSelection: Received games:', gameData);
       setGames(gameData);
     } catch (error) {
@@ -86,11 +82,7 @@ const GameSelection = () => {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center space-y-2 sm:space-y-4">
-<<<<<<< HEAD
-          <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
-=======
         <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Upcoming Games</h2>
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
           <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">Loading games...</p>
         </div>
         <div className="grid gap-4">
@@ -123,11 +115,7 @@ const GameSelection = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center space-y-2 sm:space-y-4">
-<<<<<<< HEAD
-        <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Week 1 Matchups</h2>
-=======
         <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">Upcoming Games</h2>
->>>>>>> 53aba1c646428e018703f884f0218645e12deab7
         <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">Select 3 games against the spread</p>
         <div className="flex items-center justify-center gap-2 flex-wrap px-3">
           <Badge variant={selectedPicks.size === maxGames ? "default" : "secondary"} className="text-xs px-2 py-0.5">

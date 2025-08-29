@@ -190,4 +190,3 @@ class NFLApiService {
 }
 
 export const nflApi = new NFLApiService();
-export type { Game, Team };

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import LoginPage from "@/components/LoginPage";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import SquadManager from "@/components/SquadManager";
@@ -24,8 +24,16 @@ const Index = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
 
   console.log("Index component rendering, user:", user);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, isLoading, navigate]);
 
   // Show loading while checking auth
   if (isLoading) {
@@ -39,9 +47,9 @@ const Index = () => {
     );
   }
 
-  // Show login page if not authenticated
+  // Don't render anything if redirecting to login
   if (!user) {
-    return <LoginPage />;
+    return null;
   }
   // Show main app if authenticated
   return (

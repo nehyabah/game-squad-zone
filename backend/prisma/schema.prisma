@@ -1,5 +1,15 @@
-// Update your schema.prisma with Okta-specific fields
+// prisma/schema.prisma
 
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
 enum UserStatus {
   active
   suspended
@@ -8,25 +18,44 @@ enum UserStatus {
 
 enum AuthProvider {
   okta
-  local  // optional: if you want to support both Okta and local auth
+  local
 }
 
+enum PickSetStatus {
+  draft
+  submitted
+  locked
+}
+
+enum PickChoice {
+  home
+  away
+}
+
+enum SquadRole {
+  owner
+  admin
+  member
+}
+
+enum PaymentStatus {
+  pending
+  completed
+  failed
+  refunded
+}
+
+// Models
 model User {
   id              String    @id @default(uuid())
-  
-  // Okta-specific fields
-  oktaId          String    @unique  // Okta user ID (sub claim)
+  oktaId          String    @unique
   email           String    @unique
   username        String    @unique
   firstName       String?
   lastName        String?
   avatarUrl       String?
-  
-  // Auth metadata
   authProvider    AuthProvider @default(okta)
   emailVerified   Boolean   @default(false)
-  
-  // Status and timestamps
   status          UserStatus @default(active)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -37,6 +66,7 @@ model User {
   squadMembers    SquadMember[]
   ownedSquads     Squad[]    @relation("SquadOwner")
   sessions        Session[]
+  squadPayments   SquadPayment[]
   
   @@index([email])
   @@index([username])
@@ -45,12 +75,13 @@ model User {
 }
 
 model Session {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token       String   @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token       String    @unique
   expiresAt   DateTime
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  revokedAt   DateTime?
   userAgent   String?
   ipAddress   String?
   
@@ -58,7 +89,24 @@ model Session {
   @@index([token])
 }
 
-// Keep your existing models with User relations updated
+model Game {
+  id         String    @id
+  startAtUtc DateTime
+  weekId     String
+  lines      GameLine[]
+  picks      Pick[]
+}
+
+model GameLine {
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id])
+  spread      Float
+  source      String
+  fetchedAtUtc DateTime
+
+  @@id([gameId, source, fetchedAtUtc])
+}
+
 model PickSet {
   id             String      @id @default(uuid())
   userId         String
@@ -76,22 +124,72 @@ model PickSet {
   @@index([status])
 }
 
+model Pick {
+  id           String     @id @default(uuid())
+  pickSetId    String
+  pickSet      PickSet    @relation(fields: [pickSetId], references: [id])
+  gameId       String
+  game         Game       @relation(fields: [gameId], references: [id])
+  choice       PickChoice
+  spreadAtPick Float
+  lineSource   String
+  createdAtUtc DateTime   @default(now())
+
+  @@unique([pickSetId, gameId])
+}
+
 model Squad {
-  id       String       @id @default(uuid())
-  name     String
-  joinCode String       @unique
-  ownerId  String
-  owner    User         @relation("SquadOwner", fields: [ownerId], references: [id])
-  members  SquadMember[]
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  imageUrl    String?
+  joinCode    String       @unique
+  ownerId     String
+  owner       User         @relation("SquadOwner", fields: [ownerId], references: [id])
+  
+  // Optional pot/prize settings
+  potEnabled  Boolean      @default(false)
+  potAmount   Float?
+  potCurrency String       @default("usd")
+  potDeadline DateTime?
+  
+  // Stripe IDs (only used if pot is enabled)
+  stripePriceId    String?
+  stripeProductId  String?
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  members     SquadMember[]
+  payments    SquadPayment[]
 }
 
 model SquadMember {
   id      String @id @default(uuid())
   squadId String
-  squad   Squad  @relation(fields: [squadId], references: [id])
+  squad   Squad  @relation(fields: [squadId], references: [id], onDelete: Cascade)
   userId  String
   user    User   @relation(fields: [userId], references: [id])
   role    SquadRole @default(member)
 
   @@unique([squadId, userId])
+}
+
+model SquadPayment {
+  id                String   @id @default(uuid())
+  squadId           String
+  squad             Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  amount            Float
+  currency          String
+  stripePaymentId   String?
+  stripeSessionId   String?
+  status            PaymentStatus @default(pending)
+  paidAt            DateTime?
+  createdAt         DateTime @default(now())
+  
+  @@unique([squadId, userId])
+  @@index([squadId])
+  @@index([userId])
 }

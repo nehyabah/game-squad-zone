@@ -1,95 +1,55 @@
+// src/app.ts
 import Fastify, { FastifyInstance } from "fastify";
-import Stripe from "stripe";
 import process from "node:process";
 import fastifyCors from "@fastify/cors";
+import cookie from "@fastify/cookie";
+import helmet from "@fastify/helmet";
 import "dotenv/config";
 
-/**
- * Build and configure the Fastify instance.
- */
+// plugins
+import prismaPlugin from "./plugins/prisma";
+import oktaPlugin from "./plugins/okta";
+import authJwt from "./plugins/auth-jwt";
+
+// routes
+import authRoutes from "./modules/auth/auth.routes";
+import squadsRoutes from "./modules/squads/squads.routes";
+
 export function buildApp(): FastifyInstance {
-  const app = Fastify({
-    logger: true,
-    disableRequestLogging: false,
+  const app = Fastify({ logger: true });
+  const isProd = process.env.NODE_ENV === "production";
+
+  // CORS
+  app.register(fastifyCors, {
+    origin: isProd ? [process.env.FRONTEND_URL!] : true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Set-Cookie"],
   });
 
-  // Simple CORS setup - allows all origins in development
-  if (process.env.NODE_ENV === "production") {
-    // Production: strict CORS
-    app.register(fastifyCors, {
-      origin: ["https://yourdomain.com"], // Replace with your production domain
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    });
-  } else {
-    // Development: allow all origins
-    app.register(fastifyCors, {
-      origin: true, // Allow all origins
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    });
-  }
-
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error("STRIPE_SECRET_KEY is not set");
-  }
-  const stripe = new Stripe(secretKey, { apiVersion: "2023-10-16" });
-
-  // Health check endpoint
-  app.get("/health", async (request, reply) => {
-    return { status: "ok", timestamp: new Date().toISOString() };
+  // Security headers
+  app.register(helmet, {
+    crossOriginResourcePolicy: { policy: "cross-origin" },
   });
 
-  // Stripe checkout session endpoint
-  app.post("/api/checkout/sessions", async (request, reply) => {
-    try {
-      const body = request.body as {
-        amount?: number;
-        priceId?: string;
-        currency?: string;
-      };
+  // Register plugins in order
+  app.register(cookie);
+  app.register(prismaPlugin);
+  app.register(oktaPlugin);
+  app.register(authJwt);
 
-      // Validate input
-      if (!body.priceId && !body.amount) {
-        return reply.status(400).send({
-          error: "Either priceId or amount must be provided",
-        });
-      }
+  // Health check
+  app.get("/health", async () => ({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  }));
 
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+  // Auth routes
+  app.register(authRoutes, { prefix: "/api/auth" });
 
-      const session = await stripe.checkout.sessions.create(
-        body.priceId
-          ? {
-              mode: "payment",
-              line_items: [{ price: body.priceId, quantity: 1 }],
-              success_url: `${frontendUrl}/success`,
-              cancel_url: `${frontendUrl}/cancel`,
-            }
-          : {
-              mode: "payment",
-              line_items: [
-                {
-                  price_data: {
-                    currency: body.currency ?? "usd",
-                    product_data: { name: "Game Squad Purchase" },
-                    unit_amount: body.amount ?? 0,
-                  },
-                  quantity: 1,
-                },
-              ],
-              success_url: `${frontendUrl}/success`,
-              cancel_url: `${frontendUrl}/cancel`,
-            }
-      );
-
-      reply.send({ sessionId: session.id });
-    } catch (error) {
-      request.log.error(error);
-      reply.status(500).send({ error: "Failed to create checkout session" });
-    }
-  });
+  // Squad routes
+  app.register(squadsRoutes, { prefix: "/api" });
 
   return app;
 }

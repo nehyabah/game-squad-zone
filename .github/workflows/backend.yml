@@ -75,6 +75,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    environment: production
     
     steps:
     - uses: actions/checkout@v4
@@ -89,7 +90,12 @@ jobs:
     - name: Install dependencies
       run: |
         cd backend
-        npm ci
+        npm ci --production=false
+    
+    - name: Copy production environment
+      run: |
+        cd backend
+        cp .env.production .env
     
     - name: Generate Prisma client
       run: |
@@ -101,14 +107,46 @@ jobs:
         cd backend
         npm run build
     
+    - name: Create deployment package
+      run: |
+        cd backend
+        # Copy necessary files for deployment
+        mkdir -p deploy
+        cp -r dist deploy/
+        cp -r prisma deploy/
+        cp -r node_modules deploy/
+        cp package*.json deploy/
+        cp .env deploy/
+        
+        # Create deployment archive
+        cd deploy
+        zip -r ../backend-deploy.zip .
+        cd ..
+        rm -rf deploy
+    
     - name: Deploy to Azure App Service
-      uses: azure/webapps-deploy@v2
-      if: success()
+      uses: azure/webapps-deploy@v3
       with:
-        app-name: 'squadpot-api'
+        app-name: 'squadpot-api'  # Change this to your actual App Service name
         slot-name: 'production'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
-        package: backend
+        package: backend/backend-deploy.zip
+    
+    - name: Run database migrations
+      uses: azure/CLI@v1
+      with:
+        azcliversion: 2.30.0
+        inlineScript: |
+          # Set environment variables in App Service
+          az webapp config appsettings set --name squadpot-api --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --settings \
+            DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+            JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+            STRIPE_SECRET_KEY="${{ secrets.STRIPE_SECRET_KEY }}" \
+            OKTA_CLIENT_SECRET="${{ secrets.OKTA_CLIENT_SECRET }}" \
+            NODE_ENV=production
+          
+          # Restart app to apply new settings
+          az webapp restart --name squadpot-api --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}
     
     # Alternative: Deploy to Heroku
     # - name: Deploy to Heroku

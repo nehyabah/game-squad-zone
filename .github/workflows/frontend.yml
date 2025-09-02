@@ -47,6 +47,9 @@ jobs:
       run: npm run build
       env:
         NODE_ENV: production
+        VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://squadpot-api.azurewebsites.net' }}
+        VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+        VITE_ODDS_API_KEY: ${{ secrets.VITE_ODDS_API_KEY }}
     
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
@@ -58,9 +61,12 @@ jobs:
     needs: test-and-build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    environment: production
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -81,7 +87,6 @@ jobs:
     
     - name: Deploy to Azure Static Web Apps
       uses: Azure/static-web-apps-deploy@v1
-      if: success()
       with:
         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
         repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -89,6 +94,7 @@ jobs:
         app_location: "/"
         api_location: ""
         output_location: "dist"
+        skip_deploy_on_missing_secrets: true
 
   # Alternative deployment options
   deploy-vercel:

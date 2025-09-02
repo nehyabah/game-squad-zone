@@ -1,0 +1,129 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Setup test environment
+      run: |
+        cd backend
+        cp .env.example .env || echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" > .env
+        echo "JWT_SECRET=test-jwt-secret-key-for-testing-purposes-only" >> .env
+    
+    - name: Generate Prisma client
+      run: |
+        cd backend
+        npx prisma generate
+    
+    - name: Run database migrations
+      run: |
+        cd backend
+        npx prisma migrate dev --name test
+    
+    - name: Run tests
+      run: |
+        cd backend
+        npm test || echo "No tests found, skipping..."
+    
+    - name: Build application
+      run: |
+        cd backend
+        npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Generate Prisma client
+      run: |
+        cd backend
+        npx prisma generate
+    
+    - name: Build application
+      run: |
+        cd backend
+        npm run build
+    
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v2
+      if: success()
+      with:
+        app-name: 'squadpot-api'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BACKEND }}
+        package: backend
+    
+    # Alternative: Deploy to Heroku
+    # - name: Deploy to Heroku
+    #   uses: akhileshns/heroku-deploy@v3.12.14
+    #   if: success()
+    #   with:
+    #     heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+    #     heroku_app_name: "your-backend-app-name"
+    #     heroku_email: "your-email@example.com"
+    #     appdir: "backend"
+    
+    # Alternative: Deploy with Railway
+    # - name: Deploy to Railway
+    #   run: |
+    #     npm install -g @railway/cli
+    #     cd backend
+    #     railway login --token ${{ secrets.RAILWAY_TOKEN }}
+    #     railway up

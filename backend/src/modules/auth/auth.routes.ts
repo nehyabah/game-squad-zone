@@ -1,5 +1,5 @@
 // src/modules/auth/auth.routes.ts
-import { FastifyInstance } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import { AuthService } from "./auth.service";
 
 export default async function authRoutes(app: FastifyInstance) {
@@ -12,7 +12,9 @@ export default async function authRoutes(app: FastifyInstance) {
     console.error("AuthService initialization failed:", error);
   }
 
-  // GET /login - get Auth0 login URL
+
+
+  // GET /login - get Auth0 login URL (OAuth)
   app.get("/login", async (req, reply) => {
     const domain = process.env.OKTA_DOMAIN;
     const clientId = process.env.OKTA_CLIENT_ID;
@@ -78,7 +80,10 @@ export default async function authRoutes(app: FastifyInstance) {
         });
       }
 
-      // If we have AuthService, use it to create a session
+      // Always redirect to frontend - never show JSON to users
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+      
+      // If we have AuthService, try to create a session
       if (svc && tokens.id_token) {
         try {
           const { accessToken, refreshToken, refreshExpiresAt } =
@@ -98,22 +103,21 @@ export default async function authRoutes(app: FastifyInstance) {
           });
 
           // Redirect to frontend with access token
-          const frontendUrl =
-            process.env.FRONTEND_URL || "http://localhost:8080";
-          return reply.redirect(
-            `${frontendUrl}/auth/success?token=${accessToken}`
-          );
+          return reply.redirect(`${frontendUrl}/auth/success?token=${accessToken}`);
         } catch (err) {
           console.error("Session creation failed:", err);
+          // Even if session creation fails, redirect with the id_token
+          return reply.redirect(`${frontendUrl}/auth/success?id_token=${tokens.id_token}`);
         }
       }
 
-      // Fallback: just return the tokens for testing
-      return {
-        message: "Authentication successful",
-        tokens,
-        next_step: "Use id_token with /okta/exchange endpoint",
-      };
+      // If no AuthService or no id_token, redirect with id_token if available
+      if (tokens.id_token) {
+        return reply.redirect(`${frontendUrl}/auth/success?id_token=${tokens.id_token}`);
+      }
+
+      // Last resort: redirect to login with error
+      return reply.redirect(`${frontendUrl}/login?error=authentication_failed`);
     } catch (err) {
       console.error("Token exchange failed:", err);
       return reply
@@ -199,9 +203,13 @@ export default async function authRoutes(app: FastifyInstance) {
         id: true,
         email: true,
         username: true,
+        displayName: true,
         firstName: true,
         lastName: true,
         avatarUrl: true,
+        status: true,
+        createdAt: true,
+        lastLoginAt: true,
       },
     });
 
@@ -212,8 +220,271 @@ export default async function authRoutes(app: FastifyInstance) {
     return user;
   });
 
+  // PUT /me - Update current user profile (protected route)
+  app.put("/me", { preHandler: [app.auth] }, async (req: FastifyRequest, reply) => {
+    const { firstName, lastName, username, avatarUrl, displayName } = req.body as {
+      firstName?: string;
+      lastName?: string;
+      username?: string;
+      avatarUrl?: string;
+      displayName?: string;
+    };
+
+    try {
+      // Check if username is already taken (if provided)
+      if (username) {
+        const existingUser = await app.prisma.user.findFirst({
+          where: { 
+            username, 
+            NOT: { id: req.currentUser!.id }
+          }
+        });
+        
+        if (existingUser) {
+          return reply.status(400).send({ error: "Username already taken" });
+        }
+      }
+
+      const updateData = {
+        ...(firstName !== undefined && { firstName }),
+        ...(lastName !== undefined && { lastName }),
+        ...(username !== undefined && { username }),
+        ...(avatarUrl !== undefined && { avatarUrl }),
+        ...(displayName !== undefined && { displayName }),
+      };
+      
+
+      const user = await app.prisma.user.update({
+        where: { id: req.currentUser!.id },
+        data: updateData,
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          firstName: true,
+          lastName: true,
+          avatarUrl: true,
+        },
+      });
+
+      return user;
+    } catch (error) {
+      return reply.status(500).send({ error: "Failed to update profile" });
+    }
+  });
+
+  // DELETE /me - Delete current user account (protected route)
+  app.delete("/me", { preHandler: [app.auth] }, async (req: FastifyRequest, reply) => {
+    const userId = req.currentUser!.id;
+    
+    try {
+      // Start a transaction to delete all user-related data
+      await app.prisma.$transaction(async (prisma) => {
+        // Delete squad messages
+        await prisma.squadMessage.deleteMany({
+          where: { userId }
+        });
+
+        // Delete user picks
+        await prisma.pick.deleteMany({
+          where: { 
+            pickSet: { userId }
+          }
+        });
+
+        // Delete pick sets
+        await prisma.pickSet.deleteMany({
+          where: { userId }
+        });
+
+        // Delete squad payments
+        await prisma.squadPayment.deleteMany({
+          where: { userId }
+        });
+
+        // Delete wallet transactions
+        await prisma.walletTransaction.deleteMany({
+          where: { userId }
+        });
+
+        // Remove user from squad memberships
+        await prisma.squadMember.deleteMany({
+          where: { userId }
+        });
+
+        // Delete squads owned by the user (this will cascade to other related data)
+        await prisma.squad.deleteMany({
+          where: { ownerId: userId }
+        });
+
+        // Delete user sessions
+        await prisma.session.deleteMany({
+          where: { userId }
+        });
+
+        // Finally, delete the user
+        await prisma.user.delete({
+          where: { id: userId }
+        });
+      });
+
+      // If we have AuthService, logout the user to clean up any remaining sessions
+      if (svc) {
+        try {
+          const token = req.cookies["refresh_token"];
+          await svc.logout(token);
+          reply.clearCookie("refresh_token");
+        } catch (error) {
+          // Log but don't fail the request if logout fails
+          console.warn("Failed to logout during account deletion:", error);
+        }
+      }
+
+      return { message: "Account successfully deleted" };
+    } catch (error) {
+      console.error("Account deletion failed:", error);
+      return reply.status(500).send({ error: "Failed to delete account" });
+    }
+  });
+
+  // GET /me/squads - Get current user's squads (protected route)
+  app.get("/me/squads", { preHandler: [app.auth] }, async (req, reply) => {
+    try {
+      const squads = await app.prisma.squad.findMany({
+        where: {
+          members: {
+            some: { userId: req.currentUser!.id }
+          }
+        },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              avatarUrl: true,
+            }
+          },
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  firstName: true,
+                  lastName: true,
+                  avatarUrl: true,
+                }
+              }
+            }
+          },
+          _count: {
+            select: {
+              members: true,
+              payments: true,
+            }
+          }
+        }
+      });
+
+      return squads;
+    } catch (error) {
+      return reply.status(500).send({ error: "Failed to fetch squads" });
+    }
+  });
+
+  // GET /me/stats - Get user statistics (protected route)
+  app.get("/me/stats", { preHandler: [app.auth] }, async (req, reply) => {
+    try {
+      const userId = req.currentUser!.id;
+
+      const [ownedSquadsCount, memberSquadsCount, totalPayments] = await Promise.all([
+        app.prisma.squad.count({ where: { ownerId: userId } }),
+        app.prisma.squadMember.count({ where: { userId } }),
+        app.prisma.squadPayment.aggregate({
+          where: { userId, status: 'completed' },
+          _sum: { amount: true },
+          _count: true,
+        })
+      ]);
+
+      return {
+        squads: {
+          owned: ownedSquadsCount,
+          member: memberSquadsCount,
+          total: memberSquadsCount,
+        },
+        payments: {
+          count: totalPayments._count,
+          totalAmount: (totalPayments._sum.amount || 0) / 100, // Convert cents to dollars
+        }
+      };
+    } catch (error) {
+      return reply.status(500).send({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // POST /resend-verification - Trigger email verification resend
+  app.post("/resend-verification", async (req, reply) => {
+    const { email } = req.body as { email: string };
+    
+    if (!email) {
+      return reply.status(400).send({ error: "Email is required" });
+    }
+
+    // In a real implementation, you would call Auth0 Management API to resend verification
+    // For now, return instructions for the user
+    return reply.send({
+      message: "If an account with this email exists, we've sent verification instructions.",
+      instructions: [
+        "Check your email inbox and spam folder",
+        "Click the verification link in the email from Auth0",
+        "Return to the platform and log in again",
+        "If you don't receive an email, contact support"
+      ]
+    });
+  });
+
   // GET /test - Simple test endpoint
   app.get("/test", async (req, reply) => {
     return { message: "Auth routes are working!" };
+  });
+
+  app.get("/debug/users", async (req, reply) => {
+    const users = await app.prisma.user.findMany({
+      select: {
+        id: true,
+        oktaId: true,
+        email: true,
+        username: true,
+      }
+    });
+    return users;
+  });
+
+  app.delete("/debug/test-picks", async (req, reply) => {
+    const deleted = await app.prisma.pickSet.deleteMany({
+      where: {
+        userId: "test-user-123"
+      }
+    });
+    return { message: `Deleted ${deleted.count} test pick sets` };
+  });
+
+  app.get("/debug/picks", async (req, reply) => {
+    const pickSets = await app.prisma.pickSet.findMany({
+      select: {
+        id: true,
+        userId: true,
+        weekId: true,
+        status: true,
+        picks: true,
+      }
+    });
+    return pickSets;
   });
 }

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSquads } from "@/hooks/use-squads";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,69 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import SquadDashboard from "./SquadDashboard";
-
-interface Squad {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-  maxMembers: number;
-  isPublic: boolean;
-  createdBy: string;
-  joinCode: string;
-  features: {
-    hasChat: boolean;
-    hasLeaderboard: boolean;
-  };
-}
-
-const mockSquads: Squad[] = [
-  {
-    id: "1",
-    name: "Fantasy Masters",
-    description: "Competitive squad for serious fantasy players",
-    memberCount: 8,
-    maxMembers: 10,
-    isPublic: false,
-    createdBy: "You",
-    joinCode: "FM2024",
-    features: {
-      hasChat: true,
-      hasLeaderboard: true
-    }
-  },
-  {
-    id: "2", 
-    name: "Office League",
-    description: "Fun squad for office colleagues",
-    memberCount: 12,
-    maxMembers: 15,
-    isPublic: true,
-    createdBy: "Mike",
-    joinCode: "OFFICE",
-    features: {
-      hasChat: true,
-      hasLeaderboard: false
-    }
-  },
-  {
-    id: "3",
-    name: "Weekend Warriors",
-    description: "Casual weekend picks with friends",
-    memberCount: 6,
-    maxMembers: 8,
-    isPublic: true,
-    createdBy: "Sarah",
-    joinCode: "WKND24",
-    features: {
-      hasChat: false,
-      hasLeaderboard: true
-    }
-  }
-];
+import type { Squad } from "@/lib/api/squads";
 
 const SquadManager = () => {
-  const [squads, setSquads] = useState<Squad[]>(mockSquads);
+  const { squads, loading, createSquad, joinSquad, refetch, error } = useSquads();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [selectedSquad, setSelectedSquad] = useState<Squad | null>(null);
@@ -85,6 +27,20 @@ const SquadManager = () => {
     maxMembers: 10,
     isPublic: true
   });
+
+  // Add error handling for browser extension conflicts
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      if (event.filename?.includes('web-client-content-script.js')) {
+        // Suppress browser extension errors
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
 
   const triggerConfetti = () => {
     confetti({
@@ -112,30 +68,27 @@ const SquadManager = () => {
     }, 400);
   };
 
-  const handleCreateSquad = () => {
-    const squad: Squad = {
-      id: Date.now().toString(),
-      name: newSquad.name,
-      description: newSquad.description,
-      memberCount: 1,
-      maxMembers: newSquad.maxMembers,
-      isPublic: newSquad.isPublic,
-      createdBy: "You",
-      joinCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-      features: {
-        hasChat: true,
-        hasLeaderboard: true
-      }
-    };
-    
-    setSquads([squad, ...squads]);
-    setCreatedSquad(squad);
-    
-    // Trigger celebration
-    triggerConfetti();
-    toast.success(`🎉 Squad "${squad.name}" created successfully!`, {
-      description: `Join code: ${squad.joinCode}`
-    });
+  const handleCreateSquad = async () => {
+    try {
+      const squadData = {
+        name: newSquad.name,
+        description: newSquad.description || undefined,
+        maxMembers: newSquad.maxMembers,
+      };
+      
+      
+      const squad = await createSquad(squadData);
+      
+      setCreatedSquad(squad);
+      
+      // Trigger celebration
+      triggerConfetti();
+      toast.success(`🎉 Squad "${squad.name}" created successfully!`, {
+        description: `Join code: ${squad.joinCode}`
+      });
+    } catch (error) {
+      toast.error("Failed to create squad. Please try again.");
+    }
   };
 
   const copyJoinCode = async (joinCode: string) => {
@@ -178,44 +131,74 @@ const SquadManager = () => {
     setShowCreateDialog(false);
   };
 
-  const handleJoinSquad = () => {
-    // Find the squad with the matching join code
-    const existingSquad = mockSquads.find(squad => squad.joinCode.toLowerCase() === joinCode.toLowerCase());
-    
-    if (existingSquad) {
-      // Check if user is already in this squad
-      const isAlreadyMember = squads.some(squad => squad.id === existingSquad.id);
-      
-      if (isAlreadyMember) {
-        toast.error("You're already a member of this squad!");
-        return;
+  const handleJoinSquad = async () => {
+    try {
+      const result = await joinSquad({ joinCode });
+      if (result) {
+        triggerConfetti();
+        toast.success(`🎉 Successfully joined "${result.name}"!`);
+        setJoinCode("");
+        setShowJoinDialog(false);
       }
-      
-      // Add squad to user's squads list
-      const joinedSquad = { ...existingSquad, memberCount: existingSquad.memberCount + 1 };
-      setSquads([joinedSquad, ...squads]);
-      
-      triggerConfetti();
-      toast.success(`🎉 Successfully joined "${existingSquad.name}"!`);
-      
-      setJoinCode("");
-      setShowJoinDialog(false);
-    } else {
+    } catch (error) {
       toast.error("Invalid join code. Please check and try again.");
     }
   };
 
   const handleViewSquad = (squad: Squad) => {
-    setSelectedSquad(squad);
+    try {
+      console.log('Viewing squad:', squad);
+      setSelectedSquad(squad);
+    } catch (error) {
+      console.error('Error viewing squad:', error);
+      toast.error("Failed to load squad. Please try again.");
+    }
   };
 
   const handleBackToSquads = () => {
-    setSelectedSquad(null);
+    try {
+      setSelectedSquad(null);
+      // Refresh squads to update unread counts
+      refetch();
+    } catch (error) {
+      console.error('Error going back to squads:', error);
+    }
   };
+
+  // Handle API errors
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Failed to load squads</p>
+          <Button onClick={() => window.location.reload()}>
+            Reload Page
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // If a squad is selected, show the dashboard
   if (selectedSquad) {
-    return <SquadDashboard squad={selectedSquad} onBack={handleBackToSquads} />;
+    try {
+      return <SquadDashboard squadId={selectedSquad.id} onBack={handleBackToSquads} />;
+    } catch (error) {
+      console.error('Error rendering SquadDashboard:', error);
+      setSelectedSquad(null);
+      toast.error("Failed to load squad dashboard. Please try again.");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading your squads...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -277,7 +260,10 @@ const SquadManager = () => {
                         min="2"
                         max="50"
                         value={newSquad.maxMembers}
-                        onChange={(e) => setNewSquad({ ...newSquad, maxMembers: parseInt(e.target.value) })}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          setNewSquad({ ...newSquad, maxMembers: isNaN(value) ? 10 : value });
+                        }}
                         className="h-9 border-border/50 rounded-lg focus:ring-1 focus:ring-primary/50 text-sm"
                       />
                     </div>
@@ -378,51 +364,40 @@ const SquadManager = () => {
                 <span className="relative z-10">Join Squad</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-[95vw] max-w-xs mx-auto p-0 gap-0 border-0 bg-white rounded-2xl shadow-2xl">
-              <div className="bg-gradient-to-r from-blue-500/10 to-green-500/10 p-3 border-b border-border/50">
-                <DialogHeader className="space-y-0">
-                  <DialogTitle className="text-base font-semibold text-center">Join Squad</DialogTitle>
-                </DialogHeader>
-              </div>
-              
-              <div className="p-3 space-y-3">
-                <div className="text-center space-y-1.5">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center text-white font-bold text-base mx-auto">
-                    <UserPlus className="w-5 h-5" />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Enter the join code to become part of an existing squad</p>
-                </div>
+            <DialogContent className="w-[95vw] max-w-sm mx-auto p-0 gap-0 border-0 bg-card/95 backdrop-blur-sm rounded-3xl shadow-xl ring-1 ring-border/20">
+              <div className="p-6 space-y-6">
                 
-                <div className="space-y-2">
+                <div className="text-center space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">Join Squad</h3>
+                    <p className="text-sm text-muted-foreground">Enter your squad's join code</p>
+                  </div>
                   <Input
-                    placeholder="Enter join code"
+                    placeholder="ABCD1234"
                     value={joinCode}
                     onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    className="h-9 border-border/50 rounded-lg focus:ring-1 focus:ring-primary/50 text-sm text-center font-mono tracking-wider"
-                    maxLength={6}
+                    className="h-12 text-center font-mono text-lg tracking-widest border-2 rounded-xl focus:border-primary transition-all duration-200"
+                    maxLength={12}
                   />
-                  <p className="text-xs text-muted-foreground text-center">
-                    Try: FM2024, OFFICE, or WKND24
-                  </p>
                 </div>
                 
-                <div className="flex gap-2 pt-1">
+                <div className="flex gap-3">
                   <Button 
                     variant="outline"
                     onClick={() => {
                       setShowJoinDialog(false);
                       setJoinCode("");
                     }}
-                    className="flex-1 h-9 rounded-lg border-border/50 text-sm"
+                    className="flex-1 h-11 rounded-xl"
                   >
                     Cancel
                   </Button>
                   <Button 
                     onClick={handleJoinSquad} 
-                    className="flex-1 h-9 rounded-lg text-sm font-medium"
+                    className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 transition-all duration-200"
                     disabled={!joinCode.trim()}
                   >
-                    Join
+                    Join Squad
                   </Button>
                 </div>
               </div>
@@ -433,68 +408,73 @@ const SquadManager = () => {
 
       <div className="space-y-2">
         {squads.map((squad) => (
-          <Card key={squad.id} className="relative overflow-hidden border-0 bg-white shadow-md hover:shadow-lg transition-all duration-300 group">
-            <CardContent className="p-0">
-              {/* Compact Header */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-3 border-b border-gray-100">
+          <Card key={squad.id} className="relative overflow-hidden border border-primary/10 shadow-lg bg-gradient-to-br from-background via-primary/3 to-background backdrop-blur-sm hover:shadow-xl transition-all duration-300 group hover:scale-[1.01]">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4 opacity-50"></div>
+            <CardContent className="relative p-0">
+              {/* Sleek Header */}
+              <div className="bg-gradient-to-r from-background/90 to-primary/5 p-3 border-b border-primary/10 backdrop-blur-sm">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                      {squad.name.charAt(0).toUpperCase()}
+                    <div className="w-9 h-9 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center shadow-md border border-primary/20 flex-shrink-0">
+                      <span className="text-primary font-bold text-sm">{squad.name.charAt(0).toUpperCase()}</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="font-semibold text-sm text-gray-900 truncate">{squad.name}</h3>
-                      <div className="flex items-center gap-2">
-                        {squad.createdBy === "You" && (
-                          <Badge variant="default" className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 border-0">Owner</Badge>
-                        )}
-                        <Badge variant="secondary" className={`text-xs px-1.5 py-0.5 border-0 ${
-                          squad.isPublic 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-orange-100 text-orange-700'
-                        }`}>
-                          {squad.isPublic ? "Public" : "Private"}
+                      <h3 className="font-bold text-sm text-foreground truncate">{squad.name}</h3>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="default" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-full">
+                          Member
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 bg-muted/60 text-muted-foreground border-0 rounded-full">
+                          Private
                         </Badge>
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {squad.createdBy === "You" && (
-                      <Button variant="outline" size="sm" className="text-xs px-2 h-7 text-gray-600 hover:text-primary bg-white border-gray-200 hover:border-primary hover:bg-background transition-all duration-300 hover:scale-105 hover:shadow-md relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
-                        <span className="relative z-10">Manage</span>
-                      </Button>
+                    {/* Unread message indicator */}
+                    {squad.unreadCount && squad.unreadCount > 0 && (
+                      <div className="relative">
+                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                          {squad.unreadCount > 99 ? '99+' : squad.unreadCount}
+                        </div>
+                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      </div>
                     )}
                     <Button 
                       size="sm" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 h-7 transition-all duration-300 hover:scale-105 hover:shadow-lg relative overflow-hidden group"
+                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-1.5 h-8 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg"
                       onClick={() => handleViewSquad(squad)}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
-                      <span className="hidden sm:inline relative z-10">Dashboard</span>
-                      <span className="sm:hidden relative z-10">View</span>
+                      <span className="hidden sm:inline">Dashboard</span>
+                      <span className="sm:hidden">View</span>
                     </Button>
                   </div>
                 </div>
               </div>
 
-              {/* Compact Content */}
+              {/* Sleek Content */}
               <div className="p-3">
-                <p className="text-gray-600 text-xs mb-2 line-clamp-1">{squad.description}</p>
+                {squad.description && (
+                  <p className="text-muted-foreground text-xs mb-2 line-clamp-1">{squad.description}</p>
+                )}
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-blue-500" />
-                      <span className="text-xs text-gray-500">Members:</span>
-                      <span className="font-medium text-sm text-gray-900">{squad.memberCount}/{squad.maxMembers}</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
+                        <Users className="w-3 h-3 text-primary" />
+                      </div>
+                      <span className="text-xs text-muted-foreground">Members:</span>
+                      <span className="font-semibold text-xs text-foreground">{squad.members?.length || 0}/{squad.maxMembers}</span>
                     </div>
                     
-                    <div className="flex items-center gap-1">
-                      <Trophy className="w-3.5 h-3.5 text-purple-500" />
-                      <span className="text-xs text-gray-500">Code:</span>
-                      <span className="font-mono font-medium text-sm text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded">{squad.joinCode}</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
+                        <Trophy className="w-3 h-3 text-primary" />
+                      </div>
+                      <span className="text-xs text-muted-foreground">Code:</span>
+                      <span className="font-mono font-semibold text-xs text-foreground bg-primary/5 px-2 py-1 rounded-md border border-primary/10">{squad.joinCode}</span>
                     </div>
                   </div>
                 </div>

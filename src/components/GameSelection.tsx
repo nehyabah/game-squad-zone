@@ -2,39 +2,108 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Sparkles } from "lucide-react";
+import { Clock, Sparkles, Loader2, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { nflApi, Game } from "@/services/nflApi";
+import { oddsApi, OddsGame } from "@/services/oddsApi";
 import { usePicks } from "@/contexts/PicksContext";
+import { picksApi } from "@/lib/api/picks";
+import { getCurrentWeekId } from "@/lib/utils/weekUtils";
 import confetti from "canvas-confetti";
 
 const GameSelection = () => {
   const { selectedPicks, setSelectedPicks } = usePicks();
   const { toast } = useToast();
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<OddsGame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [weekInfo, setWeekInfo] = useState({ weekNumber: 1, start: '', end: '' });
+  const [existingPicks, setExistingPicks] = useState<any>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const maxGames = 3;
 
   useEffect(() => {
-    loadGames();
+    loadGamesAndPicks();
   }, []);
 
-  const loadGames = async () => {
+  const loadGamesAndPicks = async () => {
     setIsLoading(true);
-    console.log("GameSelection: Loading games...");
     try {
-      // Keep HEAD version: explicit season + week
-      const gameData = await nflApi.getGames(2023, 1);
-      console.log("GameSelection: Received games:", gameData);
+      // Get week info for display
+      const weekData = oddsApi.getWeekDateRangeForDisplay();
+      setWeekInfo(weekData);
+      
+      // Get games for current week only
+      const gameData = await oddsApi.getUpcomingGames(true);
       setGames(gameData);
+      
+      // Load existing picks for current week
+      const weekId = getCurrentWeekId();
+      const picks = await picksApi.getWeekPicks(weekId);
+      setExistingPicks(picks);
+      
+      // If picks exist, populate the selected picks and set edit mode
+      if (picks && picks.picks) {
+        const pickMap = new Map<string, 'home' | 'away'>();
+        picks.picks.forEach(pick => {
+          pickMap.set(pick.gameId, pick.choice);
+        });
+        setSelectedPicks(pickMap);
+        setIsEditMode(true);
+        console.log("GameSelection: Loaded existing picks in edit mode:", picks);
+      } else {
+        setIsEditMode(false);
+        console.log("GameSelection: No existing picks found");
+      }
     } catch (error) {
-      console.error("GameSelection: Error loading games:", error);
+      console.error("GameSelection: Error loading games and picks:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const areGamesLocked = () => {
+    const now = new Date();
+    
+    // FOR WEEK 1 LAUNCH: Games are OPEN until the first Saturday (Sept 7, 2025) at noon
+    // After that, follow normal weekly schedule
+    
+    const firstLockDate = new Date('2025-09-07T12:00:00'); // Sept 7, 2025 at noon
+    
+    if (now < firstLockDate) {
+      // We're before the first lock - games are OPEN
+      return false;
+    }
+    
+    // After first lock, follow normal weekly schedule
+    const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const currentHour = now.getHours();
+    
+    // Normal weekly lock schedule:
+    // Saturday noon -> Wednesday: LOCKED
+    // Thursday -> Saturday noon: OPEN
+    
+    if (currentDay === 6 && currentHour >= 12) {
+      return true; // Saturday after noon - LOCKED
+    }
+    
+    if (currentDay === 0 || currentDay === 1 || currentDay === 2 || currentDay === 3) {
+      return true; // Sunday through Wednesday - LOCKED
+    }
+    
+    return false; // Thursday, Friday, or Saturday before noon - OPEN
+  };
+
   const handleSpreadPick = (gameId: string, team: "home" | "away") => {
+    // Check if all games are locked for the week
+    if (areGamesLocked()) {
+      toast({
+        title: "Picks locked",
+        description: "Weekly picks lock at Saturday noon. You'll need to wait until next week!",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newPicks = new Map(selectedPicks);
 
     if (newPicks.has(gameId)) {
@@ -53,7 +122,7 @@ const GameSelection = () => {
     setSelectedPicks(newPicks);
   };
 
-  const submitPicks = () => {
+  const submitPicks = async () => {
     if (selectedPicks.size < maxGames) {
       toast({
         title: "Select 3 games",
@@ -63,20 +132,57 @@ const GameSelection = () => {
       return;
     }
 
-    // Confetti celebration
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b"],
-    });
+    setIsSubmitting(true);
 
-    toast({
-      title: "🎉 Picks submitted!",
-      description:
-        "Your picks have been locked in for this week. View them in My Picks!",
-      duration: 4000,
-    });
+    try {
+      // Convert selected picks to API format
+      const picks = Array.from(selectedPicks.entries()).map(([gameId, selection]) => ({
+        gameId,
+        selection
+      }));
+
+      const weekId = getCurrentWeekId();
+
+      if (isEditMode && existingPicks) {
+        // Delete existing picks first, then submit new ones
+        await picksApi.deletePicks(weekId);
+      }
+      
+      await picksApi.submitPicks({
+        weekId,
+        picks,
+      });
+
+      // Don't clear selected picks - keep them visible
+      // setSelectedPicks(new Map());
+      setIsEditMode(true);
+
+      // Confetti celebration
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b"],
+      });
+
+      const actionText = isEditMode ? "updated" : "submitted";
+      toast({
+        title: `🎉 Picks ${actionText}!`,
+        description:
+          `Your picks have been ${actionText} for this week. View them in My Picks!`,
+        duration: 4000,
+      });
+
+    } catch (error: any) {
+      console.error('Error submitting picks:', error);
+      toast({
+        title: "Error submitting picks",
+        description: error.response?.data?.title || "Failed to save your picks. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -84,10 +190,10 @@ const GameSelection = () => {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="text-center space-y-2 sm:space-y-4">
           <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">
-            Week 1 Matchups
+            NFL Week {weekInfo.weekNumber} Games
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">
-            Loading games...
+            Loading games and spreads...
           </p>
         </div>
         <div className="grid gap-4">
@@ -117,14 +223,28 @@ const GameSelection = () => {
     );
   }
 
+  const gamesLocked = areGamesLocked();
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {gamesLocked && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3">
+          <Lock className="w-5 h-5 text-destructive" />
+          <div>
+            <p className="font-semibold text-sm">Weekly picks are locked</p>
+            <p className="text-xs text-muted-foreground">Picks lock every Saturday at noon. Check back Thursday for next week's games!</p>
+          </div>
+        </div>
+      )}
+      
       <div className="text-center space-y-2 sm:space-y-4">
         <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">
-          Week 1 Matchups
+          NFL Week {weekInfo.weekNumber} Games
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">
-          Select 3 games against the spread
+          {weekInfo.start && weekInfo.end ? `${weekInfo.start} - ${weekInfo.end} • ` : ''}
+          {gamesLocked ? 'Picks are locked for this week' : 
+            isEditMode ? 'Edit your 3 picks against the spread' : 'Select 3 games against the spread'}
         </p>
         <div className="flex items-center justify-center gap-2 flex-wrap px-3">
           <Badge
@@ -134,24 +254,42 @@ const GameSelection = () => {
             {selectedPicks.size}/{maxGames} picked
           </Badge>
           <Badge
-            variant="outline"
-            className="text-muted-foreground text-xs px-2 py-0.5"
+            variant={gamesLocked ? "destructive" : "outline"}
+            className="text-xs px-2 py-0.5"
           >
             <Clock className="w-2 h-2 mr-1" />
-            <span className="hidden sm:inline">Lock: </span>Sat 12PM EST
+            {gamesLocked ? "LOCKED" : <><span className="hidden sm:inline">Locks: </span>Sat 12PM</>}
           </Badge>
         </div>
       </div>
 
+      {games.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground text-sm">
+            No games available for Week {weekInfo.weekNumber} yet.
+          </p>
+          <p className="text-muted-foreground text-xs mt-2">
+            Games typically become available closer to game week.
+          </p>
+        </div>
+      ) : (
       <div className="grid gap-4">
         {games.map((game) => {
           const selectedPick = selectedPicks.get(game.id);
           const spreadValue = Math.abs(game.spread);
+          const hasSelectedPick = selectedPick !== undefined;
+          const isLocked = areGamesLocked();
 
           return (
             <Card
               key={game.id}
-              className="group cursor-pointer transition-all duration-300 ease-out transform hover:scale-[1.02] border-border bg-muted/30 hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-muted/40 hover:via-muted/50 hover:to-primary/20 relative overflow-hidden"
+              className={`group transition-all duration-300 ease-out border-border relative overflow-hidden ${
+                isLocked 
+                  ? 'bg-muted/20 border-muted-foreground/20 opacity-60 cursor-not-allowed'
+                  : hasSelectedPick 
+                    ? 'bg-gradient-to-br from-primary/10 via-primary/15 to-primary/20 border-primary/40 shadow-md cursor-pointer transform hover:scale-[1.02]' 
+                    : 'bg-muted/30 hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-muted/40 hover:via-muted/50 hover:to-primary/20 cursor-pointer transform hover:scale-[1.02]'
+              }`}
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 const x = e.clientX - rect.left;
@@ -161,6 +299,21 @@ const GameSelection = () => {
               }}
             >
               <CardContent className="p-3 sm:p-4 relative overflow-hidden">
+                {/* Weekly lock indicator - shown on all games when locked */}
+                {isLocked && (
+                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-destructive/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                    <Lock className="w-3 h-3 text-destructive" />
+                    <span className="text-xs text-destructive font-medium">WEEKLY LOCK</span>
+                  </div>
+                )}
+                {/* Selected pick indicator - always show if user has made a pick */}
+                {hasSelectedPick && !isLocked && (
+                  <div className="absolute top-2 right-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
+                )}
+                {/* Show selected picks even when locked */}
+                {hasSelectedPick && isLocked && (
+                  <div className="absolute top-2 left-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
+                )}
                 {/* Mouse spotlight effect */}
                 <div
                   className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full blur-xl bg-primary/10 w-32 h-32 -translate-x-1/2 -translate-y-1/2"
@@ -221,26 +374,41 @@ const GameSelection = () => {
                     </div>
                   </div>
 
+                  {/* Game Time */}
+                  <div className="text-center text-xs text-muted-foreground mb-2">
+                    {game.time}
+                  </div>
+
                   {/* Spread Selection Buttons */}
                   <div className="flex items-center gap-2 mt-1">
                     {game.spread < 0 ? (
                       <>
                         <button
-                          onClick={() => handleSpreadPick(game.id, "away")}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
+                          onClick={() => !isLocked && handleSpreadPick(game.id, "away")}
+                          disabled={isLocked}
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
                             selectedPick === "away"
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                              ? isLocked
+                                ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
+                                : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
+                              : isLocked 
+                                ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
+                                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
                           }`}
                         >
                           +{spreadValue}
                         </button>
                         <button
-                          onClick={() => handleSpreadPick(game.id, "home")}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
-                            selectedPick === "home"
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                          onClick={() => !isLocked && handleSpreadPick(game.id, "home")}
+                          disabled={isLocked}
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
+                            isLocked 
+                              ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
+                              : selectedPick === "home"
+                                ? isLocked
+                                  ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
+                                  : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
+                                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
                           }`}
                         >
                           -{spreadValue}
@@ -249,21 +417,31 @@ const GameSelection = () => {
                     ) : (
                       <>
                         <button
-                          onClick={() => handleSpreadPick(game.id, "away")}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
+                          onClick={() => !isLocked && handleSpreadPick(game.id, "away")}
+                          disabled={isLocked}
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
                             selectedPick === "away"
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                              ? isLocked
+                                ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
+                                : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
+                              : isLocked 
+                                ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
+                                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
                           }`}
                         >
                           -{spreadValue}
                         </button>
                         <button
-                          onClick={() => handleSpreadPick(game.id, "home")}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 hover:scale-105 min-w-[50px] sm:min-w-[60px] ${
-                            selectedPick === "home"
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                          onClick={() => !isLocked && handleSpreadPick(game.id, "home")}
+                          disabled={isLocked}
+                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
+                            isLocked 
+                              ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
+                              : selectedPick === "home"
+                                ? isLocked
+                                  ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
+                                  : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
+                                : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
                           }`}
                         >
                           +{spreadValue}
@@ -277,23 +455,29 @@ const GameSelection = () => {
           );
         })}
       </div>
+      )}
 
-      {selectedPicks.size > 0 && (
+      {selectedPicks.size > 0 && games.length > 0 && !gamesLocked && (
         <div className="text-center">
           <Button
             variant="default"
             size="sm"
             onClick={submitPicks}
-            className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 px-6 py-2 group"
+            disabled={isSubmitting || gamesLocked}
+            className="relative overflow-hidden bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 px-6 py-2 group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
             <div className="relative flex items-center gap-1.5">
-              {selectedPicks.size === maxGames && (
+              {isSubmitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : selectedPicks.size === maxGames ? (
                 <Sparkles className="w-3.5 h-3.5" />
-              )}
+              ) : null}
               <span className="text-sm font-medium">
-                {selectedPicks.size === maxGames
-                  ? "Submit Picks"
+                {isSubmitting
+                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  : selectedPicks.size === maxGames
+                  ? (isEditMode ? "Update Picks" : "Submit Picks")
                   : `Select ${maxGames - selectedPicks.size} More`}
               </span>
             </div>

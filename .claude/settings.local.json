@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx tsc:*)",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:api.the-odds-api.com)",
+      "Bash(npm install:*)",
+      "Bash(sqlite3:*)",
+      "Bash(node:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(PORT=3001 npm run dev)",
+      "Bash(cmd /c:*)",
+      "Bash(del \"C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone\\src\\lib\\utils\\testLocking.ts\")",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend\\src\\modules\\picks/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend\\src\\modules\\squads/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend\\src\\modules\\squads/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
+      "Bash(PORT=8080 npm run dev)",
+      "Bash(timeout:*)",
+      "Bash(PORT=3031 npm run dev)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

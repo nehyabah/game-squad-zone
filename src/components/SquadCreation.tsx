@@ -3,14 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Users, Share2 } from "lucide-react";
+import { Copy, Users, Share2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useSquads } from "@/hooks/use-squads";
 import confetti from "canvas-confetti";
 
-const SquadCreation = () => {
+interface SquadCreationProps {
+  onSquadCreated?: (squad: any) => void;
+}
+
+const SquadCreation = ({ onSquadCreated }: SquadCreationProps) => {
   const [squadName, setSquadName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
-  const [isCreated, setIsCreated] = useState(false);
+  const [createdSquad, setCreatedSquad] = useState<any>(null);
+  const { createSquad, loading } = useSquads();
 
   const triggerConfetti = () => {
     const confettiColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#dda0dd', '#98d8c8', '#f7dc6f'];
@@ -42,11 +47,7 @@ const SquadCreation = () => {
     }, 200);
   };
 
-  const generateJoinCode = () => {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-  };
-
-  const handleCreateSquad = () => {
+  const handleCreateSquad = async () => {
     if (!squadName.trim()) {
       toast({
         title: "Squad name required",
@@ -56,22 +57,26 @@ const SquadCreation = () => {
       return;
     }
 
-    const code = generateJoinCode();
-    setJoinCode(code);
-    setIsCreated(true);
-    
-    // Trigger confetti celebration
-    triggerConfetti();
-    
-    toast({
-      title: "Squad created!",
-      description: `${squadName} is ready for members`,
+    const squad = await createSquad({
+      name: squadName.trim()
     });
+
+    if (squad) {
+      setCreatedSquad(squad);
+      
+      // Trigger confetti celebration
+      triggerConfetti();
+      
+      // Notify parent component
+      onSquadCreated?.(squad);
+    }
   };
 
   const copyJoinCode = async () => {
+    if (!createdSquad?.joinCode) return;
+    
     try {
-      await navigator.clipboard.writeText(joinCode);
+      await navigator.clipboard.writeText(createdSquad.joinCode);
       toast({
         title: "Copied!",
         description: "Join code copied to clipboard",
@@ -86,12 +91,14 @@ const SquadCreation = () => {
   };
 
   const shareToWhatsApp = () => {
-    const message = `🏈 Join my SquadPot NFL squad "${squadName}"!\n\nUse join code: ${joinCode}\n\nLet's pick some games and compete!`;
+    if (!createdSquad?.joinCode) return;
+    
+    const message = `🏈 Join my SquadPot NFL squad "${createdSquad.name}"!\n\nUse join code: ${createdSquad.joinCode}\n\nLet's pick some games and compete!`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
-  if (isCreated) {
+  if (createdSquad) {
     return (
       <div className="w-full max-w-xs sm:max-w-md mx-auto">
         <Card className="overflow-hidden border-0 shadow-2xl">
@@ -123,7 +130,7 @@ const SquadCreation = () => {
               {/* Squad Name */}
               <div className="mb-3 sm:mb-4">
                 <p className="text-xs text-white/70 mb-1">Squad Name</p>
-                <h2 className="font-display font-bold text-lg sm:text-xl text-white truncate">{squadName}</h2>
+                <h2 className="font-display font-bold text-lg sm:text-xl text-white truncate">{createdSquad.name}</h2>
               </div>
 
               {/* Join Code */}
@@ -131,7 +138,7 @@ const SquadCreation = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs text-white/70 mb-1">Join Code</p>
-                    <p className="font-mono font-bold text-xl sm:text-2xl text-white tracking-wider">{joinCode}</p>
+                    <p className="font-mono font-bold text-xl sm:text-2xl text-white tracking-wider">{createdSquad.joinCode}</p>
                   </div>
                   <div className="flex gap-1">
                     <button 
@@ -198,10 +205,15 @@ const SquadCreation = () => {
           <Button 
             variant="squad" 
             onClick={handleCreateSquad}
+            disabled={loading}
             className="w-full h-9 text-sm"
           >
-            <Users className="w-4 h-4 mr-2" />
-            Create Squad
+            {loading ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Users className="w-4 h-4 mr-2" />
+            )}
+            {loading ? "Creating..." : "Create Squad"}
           </Button>
         </CardContent>
       </Card>

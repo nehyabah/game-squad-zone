@@ -3,5 +3,6 @@
  */
 export interface LeaderboardQueryDto {
   scope?: 'squad' | 'global';
-  week?: number;
+  week?: string;
+  squadId?: string;
 }

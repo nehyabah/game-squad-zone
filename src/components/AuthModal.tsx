@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, User, Mail, Lock } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/use-auth.tsx";
 import { toast } from "@/hooks/use-toast";
 
 interface AuthModalProps {
@@ -118,6 +117,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       <DialogContent className="max-w-sm sm:max-w-md mx-4">
         <DialogHeader>
           <DialogTitle className="text-center font-display text-xl sm:text-2xl">Join SquadPot</DialogTitle>
+          <DialogDescription className="text-center text-muted-foreground">
+            Sign in to your account or create a new one to get started
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -131,7 +133,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               <CardContent className="space-y-4 p-0">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="loginEmail">Email</Label>
+                    <label htmlFor="loginEmail" className="text-sm font-medium">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -147,7 +149,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="loginPassword">Password</Label>
+                    <label htmlFor="loginPassword" className="text-sm font-medium">Password</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -180,7 +182,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               <CardContent className="space-y-4 p-0">
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signupUsername">Username</Label>
+                    <label htmlFor="signupUsername" className="text-sm font-medium">Username</label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -195,7 +197,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signupEmail">Email</Label>
+                    <label htmlFor="signupEmail" className="text-sm font-medium">Email</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -211,7 +213,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signupPassword">Password</Label>
+                    <label htmlFor="signupPassword" className="text-sm font-medium">Password</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -227,7 +229,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input

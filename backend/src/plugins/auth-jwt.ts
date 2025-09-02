@@ -7,7 +7,7 @@ declare module "fastify" {
     auth: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
   interface FastifyRequest {
-    currentUser?: { id: string; email: string }; // Changed from 'user' to 'currentUser'
+    currentUser?: { id: string; email: string; emailVerified: boolean }; // Changed from 'user' to 'currentUser'
   }
 }
 
@@ -35,7 +35,33 @@ export default fp(async (app) => {
       }
 
       const payload = app.jwt.verify<{ sub: string; email: string }>(token);
-      req.currentUser = { id: payload.sub, email: payload.email }; // Use currentUser instead
+      
+      // Check user's email verification status in database
+      const user = await app.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, email: true, emailVerified: true, status: true }
+      });
+
+      if (!user) {
+        return reply.code(401).send({ error: "User not found" });
+      }
+
+      if (!user.emailVerified) {
+        return reply.code(401).send({ 
+          error: "Email verification required",
+          message: "Please verify your email address to access the platform. Check your email for verification instructions."
+        });
+      }
+
+      if (user.status !== 'active') {
+        return reply.code(401).send({ error: "Account is not active" });
+      }
+
+      req.currentUser = { 
+        id: user.id, 
+        email: user.email, 
+        emailVerified: user.emailVerified 
+      };
     } catch (error) {
       return reply.code(401).send({ error: "Invalid access token" });
     }

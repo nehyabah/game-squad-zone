@@ -1,9 +1,10 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient, SquadRole } from '@prisma/client';
 
 export interface SquadMemberRecord {
   id: string;
   squadId: string;
   userId: string;
+  role: SquadRole;
 }
 
 export interface SquadRecord {
@@ -22,7 +23,22 @@ export class SquadRepo {
 
   createSquad(name: string, joinCode: string, ownerId: string): Promise<SquadRecord> {
     return this.prisma.squad.create({
-      data: { name, joinCode, ownerId },
+      data: { 
+        name, 
+        joinCode, 
+        ownerId,
+        members: {
+          create: {
+            userId: ownerId,
+            role: 'owner'
+          }
+        }
+      },
+      include: {
+        members: {
+          select: { id: true, squadId: true, userId: true, role: true },
+        },
+      }
     }) as unknown as Promise<SquadRecord>;
   }
 
@@ -31,7 +47,7 @@ export class SquadRepo {
       where: { id },
       include: {
         members: {
-          select: { id: true, squadId: true, userId: true },
+          select: { id: true, squadId: true, userId: true, role: true },
         },
       },
     }) as unknown as Promise<SquadRecord | null>;
@@ -43,9 +59,9 @@ export class SquadRepo {
     }) as unknown as Promise<SquadRecord | null>;
   }
 
-  async addMember(squadId: string, userId: string): Promise<void> {
+  async addMember(squadId: string, userId: string, role: SquadRole = 'member'): Promise<void> {
     await this.prisma.squadMember.create({
-      data: { squadId, userId },
+      data: { squadId, userId, role },
     });
   }
 

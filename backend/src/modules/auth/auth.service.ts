@@ -60,86 +60,8 @@ export class AuthService {
       : { days: n };
   }
 
-  async oktaExchange(idToken: string, userAgent?: string, ip?: string) {
-    const payload = await this.app.verifyOktaIdToken(idToken);
-
-    console.log("Token payload:", payload); // Debug log
-
-    const sub = String(payload.sub);
-
-    // Auth0 doesn't always include email in ID token
-    // Extract email from sub if it contains an email, or generate a placeholder
-    let email = String(payload.email || "");
-
-    if (!email) {
-      // If sub contains an email (some providers do this)
-      if (sub.includes("@")) {
-        email = sub;
-      } else {
-        // Generate a placeholder email
-        const cleanSub = sub.replace(/[^a-zA-Z0-9]/g, "_");
-        email = `${cleanSub}@auth0.local`;
-      }
-    }
-
-    console.log("Extracted - sub:", sub, "email:", email); // Debug log
-
-    if (!sub) {
-      throw new UnauthorizedError("Invalid token - missing subject");
-    }
-
-    // Generate username from sub or email
-    let username = email.split("@")[0];
-    // Remove auth0| prefix if present
-    if (sub.startsWith("auth0|")) {
-      username = sub.replace("auth0|", "user_");
-    }
-
-    // Ensure username is unique by checking and appending number if needed
-    let finalUsername = username;
-    let counter = 0;
-    while (
-      await this.prisma.user.findUnique({ where: { username: finalUsername } })
-    ) {
-      counter++;
-      finalUsername = `${username}_${counter}`;
-    }
-
-    // Upsert user
-    const user = await this.prisma.user.upsert({
-      where: { oktaId: sub },
-      create: {
-        oktaId: sub,
-        email,
-        username: finalUsername,
-        firstName: payload.given_name as string | undefined,
-        lastName: payload.family_name as string | undefined,
-        avatarUrl: payload.picture as string | undefined,
-        emailVerified: Boolean(payload.email_verified),
-        authProvider: "okta",
-        status: "active",
-        lastLoginAt: new Date(),
-      },
-      update: {
-        email,
-        firstName: payload.given_name as string | undefined,
-        lastName: payload.family_name as string | undefined,
-        avatarUrl: payload.picture as string | undefined,
-        emailVerified: Boolean(payload.email_verified),
-        lastLoginAt: new Date(),
-      },
-      select: { id: true, email: true },
-    });
-
-    const accessToken = this.signAccess(user);
-    const { token: refreshToken, expiresAt } = await this.createRefreshSession(
-      user.id,
-      user.email,
-      userAgent,
-      ip
-    );
-
-    return { accessToken, refreshToken, refreshExpiresAt: expiresAt };
+  async oktaExchange(idToken: string, userAgent?: string, ip?: string): Promise<{ accessToken: string; refreshToken: string; refreshExpiresAt: Date }> {
+    throw new Error("Okta auth temporarily disabled for testing");
   }
 
   async refresh(refreshToken: string) {

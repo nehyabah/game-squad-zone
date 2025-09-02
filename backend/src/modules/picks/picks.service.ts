@@ -1,4 +1,4 @@
-import type { SubmitPicksInput } from './picks.dto';
+import type { SubmitPicksDto } from './picks.dto';
 import { PickRepo, type PickSetRecord } from './picks.repo';
 import { GameRepo } from '../games/games.repo';
 import { GameLineRepo } from '../games/game-lines.repo';
@@ -41,7 +41,7 @@ export class PickService {
   ) {}
 
   async submitWeeklyPicks(
-    data: SubmitPicksInput,
+    data: SubmitPicksDto,
     userId: string,
     idempotencyKey?: string,
   ): Promise<PickSetRecord> {
@@ -97,6 +97,10 @@ export class PickService {
     for (const pick of data.picks) {
       const line = await this.gameLineRepo.getLatest(pick.gameId);
       
+      if (!line) {
+        throw new AppError(`No line found for game ${pick.gameId}`);
+      }
+      
       await this.pickRepo.upsertPick({
         pickSetId: pickSet.id,
         gameId: pick.gameId,
@@ -118,5 +122,25 @@ export class PickService {
 
   async getUserPicks(userId: string, weekId: string): Promise<PickSetRecord | null> {
     return this.pickRepo.findByUserWeek(userId, weekId);
+  }
+
+  async getUserPickHistory(userId: string): Promise<PickSetRecord[]> {
+    return this.pickRepo.findAllByUser(userId);
+  }
+
+  async deleteUserPicks(userId: string, weekId: string): Promise<boolean> {
+    const pickSet = await this.pickRepo.findByUserWeek(userId, weekId);
+    
+    if (!pickSet) {
+      return false; // No picks found to delete
+    }
+
+    // Delete all picks associated with this pick set
+    await this.pickRepo.deletePicks(pickSet.id);
+    
+    // Delete the pick set itself
+    await this.pickRepo.deletePickSet(pickSet.id);
+    
+    return true;
   }
 }

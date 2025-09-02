@@ -1,10 +1,9 @@
 // src/plugins/okta.ts (actually Auth0)
 import fp from "fastify-plugin";
-import { createRemoteJWKSet, jwtVerify, JWTPayload } from "jose";
 
 declare module "fastify" {
   interface FastifyInstance {
-    verifyOktaIdToken: (idToken: string) => Promise<JWTPayload>;
+    verifyOktaIdToken: (idToken: string) => Promise<any>;
   }
 }
 
@@ -12,6 +11,9 @@ export default fp(async (app) => {
   const domain = process.env.OKTA_DOMAIN!; // Actually Auth0 domain
   const issuer = `https://${domain}/`; // Auth0 uses trailing slash
   const clientId = process.env.OKTA_CLIENT_ID!;
+
+  // Dynamically import jose to handle ESM
+  const { createRemoteJWKSet, jwtVerify } = await import("jose");
 
   // Auth0 uses /.well-known/jwks.json
   const jwks = createRemoteJWKSet(

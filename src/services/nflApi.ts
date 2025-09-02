@@ -61,12 +61,10 @@ class NFLApiService {
   }
 
   async getGames(season: number = 2023, week: number = 1): Promise<Game[]> {
-    console.log("Attempting to fetch games...");
     try {
       const data = await this.makeRequest(
         `/games?league=1&season=${season}&week=${week}`
       );
-      console.log("API response:", data);
 
       // Transform API response to our Game interface
       const games: Game[] =

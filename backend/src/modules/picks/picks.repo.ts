@@ -82,7 +82,33 @@ export class PickRepo {
   async getPicksByPickSetId(pickSetId: string): Promise<PickRecord[]> {
     return this.prisma.pick.findMany({
       where: { pickSetId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAtUtc: 'asc' },
     }) as unknown as Promise<PickRecord[]>;
+  }
+
+  async findAllByUser(userId: string): Promise<PickSetRecord[]> {
+    return this.prisma.pickSet.findMany({
+      where: { userId },
+      include: {
+        picks: {
+          include: {
+            game: true
+          }
+        }
+      },
+      orderBy: { weekId: 'desc' }
+    }) as unknown as Promise<PickSetRecord[]>;
+  }
+
+  async deletePicks(pickSetId: string): Promise<void> {
+    await this.prisma.pick.deleteMany({
+      where: { pickSetId }
+    });
+  }
+
+  async deletePickSet(pickSetId: string): Promise<void> {
+    await this.prisma.pickSet.delete({
+      where: { id: pickSetId }
+    });
   }
 }

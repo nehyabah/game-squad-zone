@@ -1,30 +1,55 @@
 // src/modules/squads/squads.service.ts
 import type { PrismaClient } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
-import crypto from "crypto";
+import type { CreateSquadInput, JoinSquadInput } from './squads.dto';
+import { randomBytes } from "crypto";
 import Stripe from "stripe";
 
 interface SquadCreateData {
   name: string;
   description?: string;
   imageUrl?: string;
+  maxMembers: number;
   potEnabled?: boolean;
   potAmount?: number;
-  potDeadline?: Date;
+  potDeadline?: string;
 }
 
 interface SquadUpdateData {
   name?: string;
   description?: string;
   imageUrl?: string;
+  maxMembers?: number;
   potEnabled?: boolean;
   potAmount?: number;
-  potDeadline?: Date;
+  potDeadline?: string;
   stripePriceId?: string;
   stripeProductId?: string;
 }
 
-export class SquadsService {
+// Error classes
+export class InvalidJoinCodeError extends Error {
+  constructor(message = "Invalid join code") {
+    super(message);
+    this.name = "InvalidJoinCodeError";
+  }
+}
+
+export class AlreadyMemberError extends Error {
+  constructor(message = "User already belongs to this squad") {
+    super(message);
+    this.name = "AlreadyMemberError";
+  }
+}
+
+export class SquadNotFoundError extends Error {
+  constructor(message = "Squad not found") {
+    super(message);
+    this.name = "SquadNotFoundError";
+  }
+}
+
+export class SquadService {
   private stripe: Stripe | null = null;
 
   constructor(private app: FastifyInstance, private prisma: PrismaClient) {
@@ -37,7 +62,34 @@ export class SquadsService {
 
   // Generate unique join code
   private generateJoinCode(): string {
-    return crypto.randomBytes(4).toString("hex").toUpperCase();
+    return randomBytes(4).toString("hex").toUpperCase();
+  }
+
+  // Validate squad ownership
+  private async validateSquadOwnership(squadId: string, userId: string): Promise<void> {
+    const squad = await this.prisma.squad.findUnique({
+      where: { id: squadId },
+      select: { ownerId: true }
+    });
+
+    if (!squad) {
+      throw new SquadNotFoundError();
+    }
+
+    if (squad.ownerId !== userId) {
+      throw new Error("Only squad owner can perform this action");
+    }
+  }
+
+  // Validate squad membership
+  private async validateSquadMembership(squadId: string, userId: string): Promise<void> {
+    const member = await this.prisma.squadMember.findUnique({
+      where: { squadId_userId: { squadId, userId } }
+    });
+
+    if (!member) {
+      throw new Error("User is not a member of this squad");
+    }
   }
 
   // Create a new squad
@@ -60,11 +112,12 @@ export class SquadsService {
       name: data.name,
       description: data.description,
       imageUrl: data.imageUrl,
+      maxMembers: data.maxMembers,
       joinCode,
       ownerId: userId,
       potEnabled: data.potEnabled || false,
       potAmount: data.potAmount,
-      potDeadline: data.potDeadline,
+      potDeadline: data.potDeadline ? new Date(data.potDeadline) : undefined,
       members: {
         create: {
           userId,
@@ -92,7 +145,7 @@ export class SquadsService {
         const price = await this.stripe.prices.create({
           product: product.id,
           unit_amount: Math.round(data.potAmount * 100), // Convert to cents
-          currency: "usd",
+          currency: "eur",
           metadata: {
             squadJoinCode: joinCode,
           },
@@ -115,6 +168,9 @@ export class SquadsService {
               select: {
                 id: true,
                 username: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
                 avatarUrl: true,
               },
             },
@@ -146,27 +202,22 @@ export class SquadsService {
     squadId: string,
     data: SquadUpdateData
   ) {
-    // Check if user is owner or admin
+    // Validate squad ownership (only owner can update settings)
+    await this.validateSquadOwnership(squadId, userId);
+
     const squad = await this.prisma.squad.findUnique({
-      where: { id: squadId },
-      include: {
-        members: {
-          where: { userId },
-        },
-      },
+      where: { id: squadId }
     });
 
     if (!squad) {
-      throw new Error("Squad not found");
+      throw new SquadNotFoundError();
     }
 
-    const member = squad.members[0];
-    if (!member || (member.role !== "owner" && member.role !== "admin")) {
-      throw new Error("Only squad owner or admin can update settings");
-    }
-
-    // Copy data to allow modifications
-    const updateData: SquadUpdateData = { ...data };
+    // Copy data to allow modifications and convert date string
+    const updateData: any = { 
+      ...data,
+      potDeadline: data.potDeadline ? new Date(data.potDeadline) : undefined
+    };
 
     // Update Stripe if pot settings changed
     if (data.potEnabled && data.potAmount && this.stripe) {
@@ -193,7 +244,7 @@ export class SquadsService {
           const price = await this.stripe.prices.create({
             product: product.id,
             unit_amount: Math.round(data.potAmount * 100),
-            currency: "usd",
+            currency: "eur",
             metadata: { squadId },
           });
 
@@ -215,6 +266,9 @@ export class SquadsService {
               select: {
                 id: true,
                 username: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
                 avatarUrl: true,
               },
             },
@@ -264,6 +318,9 @@ export class SquadsService {
               select: {
                 id: true,
                 username: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
                 avatarUrl: true,
               },
             },
@@ -273,6 +330,10 @@ export class SquadsService {
           select: {
             id: true,
             username: true,
+            displayName: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
           },
         },
         payments: {
@@ -289,23 +350,48 @@ export class SquadsService {
       },
     });
 
-    return squads.map((squad) => ({
-      ...squad,
-      totalPot: squad.payments.reduce((sum, p) => sum + p.amount, 0) / 100,
-    }));
+    // For each squad, calculate unread message count for the current user
+    const squadsWithUnread = await Promise.all(
+      squads.map(async (squad) => {
+        // Get user's membership to check lastReadAt
+        const userMembership = await this.prisma.squadMember.findUnique({
+          where: {
+            squadId_userId: {
+              squadId: squad.id,
+              userId,
+            },
+          },
+          select: { lastReadAt: true },
+        });
+
+        // Count unread messages (messages created after lastReadAt, or all if never read)
+        const unreadCount = await this.prisma.squadMessage.count({
+          where: {
+            squadId: squad.id,
+            createdAt: {
+              gt: userMembership?.lastReadAt || new Date(0), // If never read, compare to epoch
+            },
+          },
+        });
+
+        return {
+          ...squad,
+          totalPot: squad.payments.reduce((sum, p) => sum + p.amount, 0) / 100,
+          unreadCount,
+        };
+      })
+    );
+
+    return squadsWithUnread;
   }
 
   // Get squad details
   async getSquad(squadId: string, userId: string) {
-    const squad = await this.prisma.squad.findFirst({
-      where: {
-        id: squadId,
-        members: {
-          some: {
-            userId,
-          },
-        },
-      },
+    // Validate squad membership
+    await this.validateSquadMembership(squadId, userId);
+
+    const squad = await this.prisma.squad.findUnique({
+      where: { id: squadId },
       include: {
         members: {
           include: {
@@ -313,6 +399,7 @@ export class SquadsService {
               select: {
                 id: true,
                 username: true,
+                displayName: true,
                 firstName: true,
                 lastName: true,
                 avatarUrl: true,
@@ -347,7 +434,7 @@ export class SquadsService {
     });
 
     if (!squad) {
-      throw new Error("Squad not found or access denied");
+      throw new SquadNotFoundError();
     }
 
     return squad;
@@ -369,7 +456,12 @@ export class SquadsService {
     // Check if already a member
     const existingMember = squad.members.find((m) => m.userId === userId);
     if (existingMember) {
-      throw new Error("Already a member of this squad");
+      throw new Error(`🎯 Hold up! You're already part of the "${squad.name}" squad! No need to join twice - you're already in the game!`);
+    }
+
+    // Check if squad is at maximum capacity
+    if (squad.members.length >= squad.maxMembers) {
+      throw new Error(`🚫 Squad is full! (${squad.maxMembers}/${squad.maxMembers} members)`);
     }
 
     // Add user as member
@@ -390,6 +482,9 @@ export class SquadsService {
               select: {
                 id: true,
                 username: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
                 avatarUrl: true,
               },
             },
@@ -399,6 +494,10 @@ export class SquadsService {
           select: {
             id: true,
             username: true,
+            displayName: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
           },
         },
       },
@@ -420,10 +519,19 @@ export class SquadsService {
       throw new Error("Squad not found");
     }
 
-    // Can't leave if you're the owner
+    // Can't leave if you're the owner and there are other members
     if (squad.ownerId === userId) {
+      const memberCount = squad.members.length;
+      if (memberCount > 1) {
+        const otherMembers = memberCount - 1;
+        throw new Error(
+          `👑 As squad owner, you can't abandon your ${otherMembers} member${otherMembers === 1 ? '' : 's'}! ` +
+          `Transfer ownership or wait for everyone to leave.`
+        );
+      }
+      // If owner is the only member, they should delete the squad instead
       throw new Error(
-        "Owner cannot leave squad. Transfer ownership or delete squad."
+        "🗑️ You're the last one here. Delete the squad instead of leaving!"
       );
     }
 
@@ -445,17 +553,15 @@ export class SquadsService {
     targetUserId: string,
     newRole: "admin" | "member"
   ) {
-    const squad = await this.prisma.squad.findUnique({
-      where: { id: squadId },
-    });
-
-    if (!squad || squad.ownerId !== requesterId) {
-      throw new Error("Only squad owner can update roles");
-    }
+    // Validate squad ownership
+    await this.validateSquadOwnership(squadId, requesterId);
 
     if (targetUserId === requesterId) {
       throw new Error("Cannot change your own role");
     }
+
+    // Validate target user is a member
+    await this.validateSquadMembership(squadId, targetUserId);
 
     await this.prisma.squadMember.update({
       where: {
@@ -470,14 +576,73 @@ export class SquadsService {
     return { message: "Role updated successfully" };
   }
 
-  // Delete squad (owner only)
-  async deleteSquad(userId: string, squadId: string) {
-    const squad = await this.prisma.squad.findUnique({
-      where: { id: squadId },
+  // Remove member from squad (owner only)
+  async removeMember(
+    requesterId: string,
+    squadId: string,
+    targetUserId: string
+  ) {
+    // Validate squad ownership
+    await this.validateSquadOwnership(squadId, requesterId);
+
+    if (targetUserId === requesterId) {
+      throw new Error("Cannot remove yourself from the squad. Use leave squad instead.");
+    }
+
+    // Validate target user is a member
+    await this.validateSquadMembership(squadId, targetUserId);
+
+    // Get user info for success message
+    const user = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { username: true, displayName: true }
     });
 
-    if (!squad || squad.ownerId !== userId) {
-      throw new Error("Only squad owner can delete squad");
+    // Remove the member
+    await this.prisma.squadMember.delete({
+      where: {
+        squadId_userId: {
+          squadId,
+          userId: targetUserId,
+        },
+      },
+    });
+
+    const displayName = user?.displayName || user?.username || 'Member';
+    return { message: `${displayName} has been removed from the squad` };
+  }
+
+  // Delete squad (owner only)
+  async deleteSquad(userId: string, squadId: string) {
+    // Validate squad ownership
+    await this.validateSquadOwnership(squadId, userId);
+
+    // Check if there are other members in the squad
+    const memberCount = await this.prisma.squadMember.count({
+      where: { squadId },
+    });
+
+    if (memberCount > 1) {
+      const otherMembers = memberCount - 1;
+      throw new Error(
+        `⚠️ Squad has ${otherMembers} active member${otherMembers === 1 ? '' : 's'}! ` +
+        `All members must leave before you can delete this squad.`
+      );
+    }
+
+    // Check if there are any completed payments (pot contributions)
+    const completedPayments = await this.prisma.squadPayment.count({
+      where: { 
+        squadId,
+        status: 'completed'
+      },
+    });
+
+    if (completedPayments > 0) {
+      throw new Error(
+        `💰 Squad has active pot contributions! ` +
+        `Please resolve all financial matters before deleting.`
+      );
     }
 
     await this.prisma.squad.delete({
@@ -485,6 +650,98 @@ export class SquadsService {
     });
 
     return { message: "Squad deleted successfully" };
+  }
+
+  // Methods expected by controller
+  async create(data: CreateSquadInput, userId: string) {
+    // Ensure name is present (validated by Zod)
+    const squadData: SquadCreateData = {
+      name: data.name!,
+      description: data.description,
+      imageUrl: data.imageUrl,
+      maxMembers: data.maxMembers!,
+      potEnabled: data.potEnabled,
+      potAmount: data.potAmount,
+      potDeadline: data.potDeadline,
+    };
+    return this.createSquad(userId, squadData);
+  }
+
+  async join(data: JoinSquadInput, userId: string) {
+    const squad = await this.prisma.squad.findUnique({
+      where: { joinCode: data.joinCode },
+      include: { members: true }
+    });
+
+    if (!squad) {
+      throw new InvalidJoinCodeError();
+    }
+
+    // Check if already a member
+    const existingMember = squad.members.find(m => m.userId === userId);
+    if (existingMember) {
+      throw new AlreadyMemberError();
+    }
+
+    return this.joinSquad(userId, data.joinCode);
+  }
+
+  async get(squadId: string) {
+    const squad = await this.prisma.squad.findUnique({
+      where: { id: squadId },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              }
+            }
+          }
+        },
+        owner: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true,
+          }
+        },
+        payments: true,
+      }
+    });
+
+    if (!squad) {
+      throw new SquadNotFoundError();
+    }
+
+    return squad;
+  }
+
+  async listMembers(squadId: string) {
+    const members = await this.prisma.squadMember.findMany({
+      where: { squadId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          }
+        }
+      }
+    });
+
+    return members.map(member => ({
+      ...member.user,
+      role: member.role,
+      joinedAt: member.id // Using id as placeholder for joinedAt
+    }));
   }
 
   // Create checkout session for squad pot payment
@@ -582,6 +839,9 @@ export class SquadsService {
               select: {
                 id: true,
                 username: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
                 avatarUrl: true,
               },
             },

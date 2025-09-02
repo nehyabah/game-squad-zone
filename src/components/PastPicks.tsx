@@ -20,71 +20,8 @@ interface WeekData {
   picks: WeeklyPick[];
 }
 
-// Mock data for demonstration
-const mockPastWeeks: WeekData[] = [
-  {
-    week: 3,
-    record: { wins: 2, losses: 1 },
-    status: 'win',
-    picks: [
-      {
-        gameId: '1',
-        team: 'home',
-        result: 'win',
-        homeTeam: { name: 'Chiefs', code: 'KC', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/kc.png' },
-        awayTeam: { name: 'Raiders', code: 'LV', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/lv.png' },
-        spread: -7
-      },
-      {
-        gameId: '2',
-        team: 'away',
-        result: 'win',
-        homeTeam: { name: 'Cowboys', code: 'DAL', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/dal.png' },
-        awayTeam: { name: 'Eagles', code: 'PHI', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/phi.png' },
-        spread: -3
-      },
-      {
-        gameId: '3',
-        team: 'home',
-        result: 'loss',
-        homeTeam: { name: 'Packers', code: 'GB', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/gb.png' },
-        awayTeam: { name: 'Bears', code: 'CHI', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/chi.png' },
-        spread: -4
-      }
-    ]
-  },
-  {
-    week: 2,
-    record: { wins: 1, losses: 2 },
-    status: 'loss',
-    picks: [
-      {
-        gameId: '4',
-        team: 'away',
-        result: 'loss',
-        homeTeam: { name: 'Bills', code: 'BUF', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/buf.png' },
-        awayTeam: { name: 'Dolphins', code: 'MIA', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/mia.png' },
-        spread: -6
-      },
-      {
-        gameId: '5',
-        team: 'home',
-        result: 'win',
-        homeTeam: { name: '49ers', code: 'SF', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/sf.png' },
-        awayTeam: { name: 'Rams', code: 'LAR', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/lar.png' },
-        spread: -2.5
-      },
-      {
-        gameId: '6',
-        team: 'away',
-        result: 'loss',
-        homeTeam: { name: 'Steelers', code: 'PIT', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/pit.png' },
-        awayTeam: { name: 'Ravens', code: 'BAL', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/bal.png' },
-        spread: -1
-      }
-    ]
-  }
-];
+// No hardcoded past weeks - will load from API in the future
+const mockPastWeeks: WeekData[] = [];
 
 const PastPicks = () => {
   const [openWeeks, setOpenWeeks] = useState<Set<number>>(new Set());

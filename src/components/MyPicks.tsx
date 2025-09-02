@@ -2,44 +2,111 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Target, Calendar, Trash2, Edit } from "lucide-react";
+import { Target, Calendar, Trash2, Edit, Loader2 } from "lucide-react";
 import { usePicks } from "@/contexts/PicksContext";
-import { nflApi, Game } from "@/services/nflApi";
+import { oddsApi, OddsGame } from "@/services/oddsApi";
+import { picksApi } from "@/lib/api/picks";
+import { useToast } from "@/hooks/use-toast";
+import { getCurrentWeekId } from "@/lib/utils/weekUtils";
 import PastPicks from "./PastPicks";
 
 interface MyPicksProps {
   onEditPicks?: () => void;
 }
 
+interface SavedPick {
+  id: string;
+  gameId: string;
+  choice: 'home' | 'away';
+  spreadAtPick: number;
+}
+
+interface PickSet {
+  id: string;
+  userId: string;
+  weekId: string;
+  tiebreakerScore?: number;
+  status: string;
+  picks: SavedPick[];
+}
+
 const MyPicks = ({ onEditPicks }: MyPicksProps) => {
-  const { selectedPicks, clearPicks } = usePicks();
-  const [games, setGames] = useState<Game[]>([]);
+  const { clearPicks } = usePicks();
+  const { toast } = useToast();
+  const [games, setGames] = useState<OddsGame[]>([]);
+  const [savedPicks, setSavedPicks] = useState<PickSet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    loadGames();
+    loadData();
   }, []);
 
-  const loadGames = async () => {
+  const loadData = async () => {
     setIsLoading(true);
     try {
-
-      const gameData = await nflApi.getGames(2023, 1);
-
-
+      
+      // Load games
+      const gameData = await oddsApi.getUpcomingGames();
       setGames(gameData);
+      
+      // Load saved picks for current week
+      const weekId = getCurrentWeekId();
+      const picks = await picksApi.getWeekPicks(weekId);
+      setSavedPicks(picks);
     } catch (error) {
-      console.error('MyPicks: Error loading games:', error);
+      console.error('MyPicks: Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleClearPicks = async () => {
+    if (!savedPicks) return;
+    
+    setIsDeleting(true);
+    try {
+      await picksApi.deletePicks(getCurrentWeekId());
+      
+      // Clear local state
+      setSavedPicks(null);
+      clearPicks(); // Clear context picks too
+      
+      toast({
+        title: "Picks Cleared",
+        description: "Your picks have been successfully deleted.",
+      });
+      
+    } catch (error) {
+      console.error("MyPicks: Error clearing picks:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear picks. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const getPickedGames = () => {
-    return Array.from(selectedPicks.entries()).map(([gameId, team]) => {
-      const game = games.find(g => g.id === gameId);
-      return { gameId, team, game };
+    if (!savedPicks || !savedPicks.picks) {
+      return [];
+    }
+    
+    
+    const result = savedPicks.picks.map(pick => {
+      const game = games.find(g => g.id === pick.gameId);
+      const mapped = { 
+        gameId: pick.gameId, 
+        team: pick.choice, 
+        game,
+        spreadAtPick: pick.spreadAtPick 
+      };
+      return mapped;
     }).filter(pick => pick.game);
+    
+    return result;
   };
 
   const pickedGames = getPickedGames();
@@ -77,7 +144,14 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg sm:text-2xl md:text-3xl font-display font-bold text-foreground">My Current Picks</h3>
-          <p className="text-muted-foreground text-xs sm:text-sm md:text-base mt-0.5 sm:mt-1">Week 1 - Against the Spread</p>
+          <div className="flex items-center gap-2 mt-0.5 sm:mt-1">
+            <p className="text-muted-foreground text-xs sm:text-sm md:text-base">Week 1 - Against the Spread</p>
+            {savedPicks && (
+              <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                {savedPicks.status === 'submitted' ? '✓ Saved' : savedPicks.status}
+              </Badge>
+            )}
+          </div>
         </div>
         <Button 
           variant="outline" 
@@ -112,8 +186,11 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
           
           const selectedTeam = team === 'home' ? game.homeTeam : game.awayTeam;
           const opponentTeam = team === 'home' ? game.awayTeam : game.homeTeam;
-          const spreadValue = Math.abs(game.spread);
-          const isPickingFavorite = (game.spread < 0 && team === 'home') || (game.spread > 0 && team === 'away');
+          
+          // Use the spread at the time the pick was made (if available)
+          const actualSpread = 'spreadAtPick' in pickedGames[index] ? pickedGames[index].spreadAtPick : game.spread;
+          const spreadValue = Math.abs(actualSpread);
+          const isPickingFavorite = (actualSpread < 0 && team === 'home') || (actualSpread > 0 && team === 'away');
           const displaySpread = isPickingFavorite ? `-${spreadValue}` : `+${spreadValue}`;
 
           return (
@@ -176,11 +253,16 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={clearPicks}
-            className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30 text-xs sm:text-sm"
+            onClick={handleClearPicks}
+            disabled={isDeleting}
+            className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30 text-xs sm:text-sm disabled:opacity-50"
           >
-            <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            Clear All Picks
+            {isDeleting ? (
+              <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 animate-spin" />
+            ) : (
+              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            )}
+            {isDeleting ? 'Clearing...' : 'Clear All Picks'}
           </Button>
         </div>
       )}

@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, Users, LogOut } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/use-auth.tsx";
 import { useState } from "react";
+import { getDisplayName, getInitials } from "@/lib/utils/user";
 
 interface HeaderProps {
   onAuthClick: () => void;
@@ -38,7 +39,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
             <>
               <div className="hidden md:flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Welcome,</span>
-                <span className="font-semibold text-foreground">{user.username}</span>
+                <span className="font-semibold text-foreground">{getDisplayName(user)}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={logout} className="hidden sm:flex">
                 <LogOut className="w-4 h-4 mr-2" />
@@ -46,7 +47,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
               </Button>
               <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
-                  {user.username.charAt(0).toUpperCase()}
+                  {getInitials(user)}
                 </AvatarFallback>
               </Avatar>
             </>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { stripePromise } from "../stripe";
 import { useToast } from "@/hooks/use-toast";
+import { authAPI } from "@/lib/api/auth";
 
 interface CheckoutButtonProps {
   amount?: number;
@@ -22,17 +23,30 @@ export default function CheckoutButton({
   const handleClick = async () => {
     try {
       setIsLoading(true);
+
+      // Check authentication
+      if (!authAPI.isAuthenticated()) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to make a payment.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Get API URL from environment variable or use default
-      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
       // Create a checkout session on the backend
       const res = await fetch(`${apiUrl}/api/checkout/sessions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authAPI.getToken()}`,
+        },
         body: JSON.stringify({
-          priceId: priceId,
           amount: amount,
-          currency: "usd",
+          currency: "eur",
         }),
       });
 
@@ -45,6 +59,9 @@ export default function CheckoutButton({
 
       // Handle response from backend
       if (data.sessionId) {
+        // Store session ID for payment verification
+        localStorage.setItem('stripeSessionId', data.sessionId);
+        
         const stripe = await stripePromise;
         if (stripe) {
           const { error } = await stripe.redirectToCheckout({
@@ -57,6 +74,11 @@ export default function CheckoutButton({
           throw new Error("Stripe not initialized");
         }
       } else if (data.url) {
+        // Extract session ID from URL if available
+        const urlMatch = data.url.match(/cs_[a-zA-Z0-9]+/);
+        if (urlMatch) {
+          localStorage.setItem('stripeSessionId', urlMatch[0]);
+        }
         window.location.href = data.url;
       }
     } catch (error) {

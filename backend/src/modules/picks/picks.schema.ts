@@ -1,23 +1,36 @@
-import { z } from 'zod';
-
 /**
- * Picks module validation schemas.
+ * Picks module validation schemas - JSON Schema format for Fastify
  */
-export const submitPicksSchema = z.object({
-  weekId: z.string().min(1),
-  picks: z
-    .array(
-      z.object({
-        gameId: z.string().min(1),
-        selection: z.enum(['home', 'away']),
-      }),
-    )
-    .length(3), // Enforce exactly 3 picks
-  tiebreakerScore: z.number().int().min(0).optional(),
-});
-
-export const pickSchemas = {
-  submitPicksSchema,
+export const submitPicksSchema = {
+  type: 'object',
+  required: ['weekId', 'picks'],
+  properties: {
+    weekId: {
+      type: 'string',
+      minLength: 1
+    },
+    picks: {
+      type: 'array',
+      minItems: 3,
+      maxItems: 3,
+      items: {
+        type: 'object',
+        required: ['gameId', 'selection'],
+        properties: {
+          gameId: {
+            type: 'string',
+            minLength: 1
+          },
+          selection: {
+            type: 'string',
+            enum: ['home', 'away']
+          }
+        }
+      }
+    },
+    tiebreakerScore: {
+      type: 'number',
+      minimum: 0
+    }
+  }
 };
-
-export type SubmitPicksSchema = typeof submitPicksSchema;

@@ -1,10 +1,11 @@
-import { z } from 'zod';
-import { submitPicksSchema } from './picks.schema';
-
 /**
  * Picks module data transfer objects.
  */
-export type SubmitPicksInput = z.infer<typeof submitPicksSchema>;
+export interface SubmitPicksInput {
+  weekId: string;
+  picks: { gameId: string; selection: 'home' | 'away' }[];
+  tiebreakerScore?: number;
+}
 
 export interface SubmitPicksDto {
   weekId: string;

@@ -5,7 +5,8 @@ import { z } from 'zod';
  */
 export const leaderboardQuerySchema = z.object({
   scope: z.enum(['squad', 'global']).optional(),
-  week: z.number().int().positive().optional(),
+  week: z.string().optional(),
+  squadId: z.string().optional(),
 });
 
 export const leaderboardSchemas = {

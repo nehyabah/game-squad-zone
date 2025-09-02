@@ -1,37 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Send, Users, Trophy, Crown, Medal, Award } from "lucide-react";
+import { ArrowLeft, Send, Users, Trophy, Crown, Medal, Award, Loader2, UserMinus, Share2, Copy, Check, Settings, Trash2, User } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useSquads, useSquad } from "@/hooks/use-squads";
+import { useAuth } from "@/hooks/use-auth";
+import { useSquadChat } from "@/hooks/use-squad-chat";
+import type { Squad } from "@/lib/api/squads";
+import type { ChatMessage as APIChatMessage } from "@/lib/api/chat";
+import { getDisplayName, getInitials } from "@/lib/utils/user";
+import { squadsAPI } from "@/lib/api/squads";
+import { MemberPicksModal } from "./MemberPicksModal";
 
-interface Squad {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-  maxMembers: number;
-  isPublic: boolean;
-  createdBy: string;
-  joinCode: string;
-  features: {
-    hasChat: boolean;
-    hasLeaderboard: boolean;
-  };
+interface SquadFeatures {
+  hasChat: boolean;
+  hasLeaderboard: boolean;
 }
 
 interface ChatMessage {
   id: string;
   username: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   message: string;
   timestamp: string;
   isCurrentUser: boolean;
 }
 
-interface SquadMember {
+interface SquadMemberRanking {
+  userId: string;
   username: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   rank: number;
   wins: number;
   losses: number;
@@ -39,22 +47,6 @@ interface SquadMember {
   points: number;
   isCurrentUser?: boolean;
 }
-
-const mockChatMessages: ChatMessage[] = [
-  { id: "1", username: "Alex", message: "Good luck everyone for this week's picks!", timestamp: "2:30 PM", isCurrentUser: false },
-  { id: "2", username: "Jordan", message: "I'm feeling confident about the Chiefs game", timestamp: "2:32 PM", isCurrentUser: false },
-  { id: "3", username: "You", message: "Same here! Let's get these wins 🔥", timestamp: "2:35 PM", isCurrentUser: true },
-  { id: "4", username: "Taylor", message: "Anyone else going with the over on the Bills game?", timestamp: "2:38 PM", isCurrentUser: false },
-  { id: "5", username: "Ryan", message: "I'm staying away from that one, too risky", timestamp: "2:40 PM", isCurrentUser: false },
-];
-
-const mockSquadRanking: SquadMember[] = [
-  { username: "Alex", rank: 1, wins: 8, losses: 2, winPercentage: 80, points: 180 },
-  { username: "Jordan", rank: 2, wins: 7, losses: 3, winPercentage: 70, points: 160 },
-  { username: "You", rank: 3, wins: 6, losses: 4, winPercentage: 60, points: 140, isCurrentUser: true },
-  { username: "Taylor", rank: 4, wins: 5, losses: 5, winPercentage: 50, points: 120 },
-  { username: "Ryan", rank: 5, wins: 4, losses: 6, winPercentage: 40, points: 100 },
-];
 
 const getRankIcon = (rank: number) => {
   switch (rank) {
@@ -70,332 +62,823 @@ const getRankIcon = (rank: number) => {
 };
 
 interface SquadDashboardProps {
-  squad: Squad;
+  squadId: string;
   onBack: () => void;
 }
 
-const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
-  const [activeTab, setActiveTab] = useState(() => {
-    // Set initial tab based on available features
-    if (squad.features.hasChat) return "chat";
-    if (squad.features.hasLeaderboard) return "leaderboard";
-    return "chat";
-  });
+const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
+  // All hooks must be called at the top level, before any early returns
+  const { squad, loading, error, updateSettings, refetch } = useSquad(squadId);
+  const { leaveSquad, deleteSquad } = useSquads();
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState("leaderboard");
   const [newMessage, setNewMessage] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [newMaxMembers, setNewMaxMembers] = useState(squad?.maxMembers || 10);
+  
+  // Member picks modal state
+  const [selectedMember, setSelectedMember] = useState<{userId: string, displayName: string} | null>(null);
+  const [newSquadName, setNewSquadName] = useState(squad?.name || "");
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
+  const desktopMessagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Chat functionality with auto-refresh every 3 seconds
+  const { 
+    messages: chatMessages, 
+    loading: chatLoading, 
+    sending: chatSending, 
+    sendMessage, 
+    refetch: refetchMessages,
+    isPolling
+  } = useSquadChat(squadId, 3000);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    // In a real app, this would send the message to the backend
-    setNewMessage("");
+  // Mark messages as read when component mounts or when switching to chat tab
+  useEffect(() => {
+    const markAsRead = async () => {
+      if (activeTab === "chat" && squadId) {
+        try {
+          await squadsAPI.markMessagesAsRead(squadId);
+        } catch (error) {
+          console.error('Failed to mark messages as read:', error);
+        }
+      }
+    };
+    
+    markAsRead();
+  }, [squadId, activeTab]);
+
+  // Format chat messages for compatibility (moved before useEffect that depends on it)
+  const formattedChatMessages: ChatMessage[] = chatMessages.map(msg => ({
+    id: msg.id,
+    username: msg.user.username,
+    displayName: msg.user.displayName,
+    firstName: msg.user.firstName,
+    lastName: msg.user.lastName,
+    message: msg.message,
+    timestamp: new Date(msg.createdAt).toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    }),
+    isCurrentUser: msg.isCurrentUser
+  }));
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    const scrollToBottom = () => {
+      mobileMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      desktopMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+    
+    if (formattedChatMessages.length > 0) {
+      // Small delay to ensure DOM is updated
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [formattedChatMessages.length, activeTab]);
+
+  // Update form values when squad changes
+  useEffect(() => {
+    if (squad?.maxMembers !== undefined) {
+      setNewMaxMembers(squad.maxMembers);
+    }
+    if (squad?.name) {
+      setNewSquadName(squad.name);
+    }
+  }, [squad?.maxMembers, squad?.name]);
+
+  // Early returns after all hooks
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-6 h-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !squad) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Failed to load squad details</p>
+        <Button variant="outline" onClick={onBack} className="mt-4">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  // Enable both chat and leaderboard features
+  const features: SquadFeatures = {
+    hasChat: true, // Chat is now implemented
+    hasLeaderboard: true, // Show member leaderboard using real data
   };
 
-  const hasBothFeatures = squad.features.hasChat && squad.features.hasLeaderboard;
+  // Generate member ranking from real squad data
+  const memberRanking: SquadMemberRanking[] = squad.members.map((member, index) => ({
+    userId: member.user?.id || member.userId,
+    username: member.user?.username || member.username || 'Unknown',
+    displayName: member.user?.displayName || null,
+    firstName: member.user?.firstName || null,
+    lastName: member.user?.lastName || null,
+    rank: index + 1,
+    wins: 0, // TODO: Implement win/loss tracking
+    losses: 0,
+    winPercentage: 0,
+    points: 0,
+    isCurrentUser: member.user?.id === user?.id,
+  }));
+
+  const quickEmojis = ["🔥", "😂", "🤣", "👏", "💯", "❤️"];
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || chatSending) return;
+    
+    try {
+      await sendMessage({ message: newMessage.trim() });
+      setNewMessage("");
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
+  };
+
+  const handleEmojiClick = async (emoji: string) => {
+    if (chatSending) return;
+    
+    try {
+      await sendMessage({ message: emoji });
+    } catch (error) {
+      console.error('Failed to send emoji:', error);
+    }
+  };
+
+  const isOwner = squad?.ownerId === user?.id;
+
+  const handleShareSquad = async () => {
+    if (!squad?.joinCode) return;
+    
+    const shareUrl = `${window.location.origin}/?joinCode=${squad.joinCode}`;
+    
+    try {
+      if (navigator.share) {
+        // Use Web Share API if available (mobile devices)
+        await navigator.share({
+          title: `Join ${squad.name}`,
+          text: `Join my squad "${squad.name}" on SquadPot!`,
+          url: shareUrl,
+        });
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to share:', error);
+      // Fallback to clipboard copy
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (clipboardError) {
+        console.error('Failed to copy to clipboard:', clipboardError);
+      }
+    }
+  };
+
+  const handleLeaveSquad = async () => {
+    const action = isOwner ? 'delete' : 'leave';
+    const confirmed = window.confirm(
+      `Are you sure you want to ${action} "${squad?.name}"? This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+
+    const success = isOwner 
+      ? await deleteSquad(squadId)
+      : await leaveSquad(squadId);
+      
+    if (success) {
+      onBack(); // Go back to squad list after leaving/deleting
+    }
+  };
+
+  const handleUpdateSquadSettings = async () => {
+    if (!squad) {
+      setShowSettings(false);
+      return;
+    }
+
+    const hasChanges = 
+      newMaxMembers !== squad.maxMembers || 
+      newSquadName.trim() !== squad.name;
+
+    if (!hasChanges) {
+      setShowSettings(false);
+      return;
+    }
+
+    // Validate squad name
+    if (newSquadName.trim().length === 0) {
+      toast.error('Squad name cannot be empty');
+      return;
+    }
+
+    // Validate that new max is not less than current members
+    const currentMemberCount = squad.members?.length || 0;
+    if (newMaxMembers < currentMemberCount) {
+      toast.error(`Cannot set max members below current member count (${currentMemberCount})`);
+      return;
+    }
+
+    setUpdateLoading(true);
+    try {
+      const updateData: any = {};
+      
+      if (newMaxMembers !== squad.maxMembers) {
+        updateData.maxMembers = newMaxMembers;
+      }
+      
+      if (newSquadName.trim() !== squad.name) {
+        updateData.name = newSquadName.trim();
+      }
+      
+      const success = await updateSettings(updateData);
+      
+      if (success) {
+        setShowSettings(false);
+        // No need to call refetch() as updateSettings already updates the squad state
+      }
+    } catch (error) {
+      console.error('Failed to update squad settings:', error);
+      toast.error('Failed to update squad settings. Please try again.');
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const hasBothFeatures = features.hasChat && features.hasLeaderboard;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6 px-3 sm:px-0 pb-16 sm:pb-0">
-      {/* Compact Header */}
-      <div className="flex items-center gap-3 py-2">
-        <Button variant="ghost" onClick={onBack} className="p-1.5 h-8 w-8">
-          <ArrowLeft className="w-4 h-4" />
+    <div 
+      className="h-screen flex flex-col max-w-4xl mx-auto px-2 sm:px-4 overflow-hidden relative"
+      style={{
+        backgroundImage: 'url(/AdobeStock_555028248.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Background overlay for better text readability */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+      <div className="relative z-10 h-full flex flex-col">
+      {/* Enhanced Header - More Compact for Mobile */}
+      <div className="flex items-center gap-2 sm:gap-3 py-2 sm:py-4 border-b border-white/20 bg-white/10 rounded-b-xl backdrop-blur-md shadow-lg flex-shrink-0">
+        <Button variant="ghost" onClick={onBack} className="p-1.5 sm:p-2 h-8 w-8 sm:h-9 sm:w-9 hover:bg-muted/50 rounded-xl">
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
         </Button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">{squad.name}</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground truncate">{squad.description}</p>
+        
+        <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
+          <h1 className="text-base sm:text-lg font-bold text-white truncate drop-shadow-lg leading-tight">
+            {squad.name}
+          </h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-white/80">
+            <div className="flex items-center gap-1">
+              <Users className="w-3 h-3 text-white/90" />
+              <span className="font-medium text-white drop-shadow">{squad.members?.length || 0}/{squad.maxMembers} members</span>
+            </div>
+            <div className="hidden sm:block w-1 h-1 bg-white/50 rounded-full"></div>
+            <div className="flex items-center gap-1">
+              <Trophy className="w-3 h-3 text-yellow-400" />
+              <span className="font-mono font-medium tracking-wider text-white drop-shadow">{squad.joinCode}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-1 sm:gap-2">
+          {isOwner && (
+            <Dialog open={showSettings} onOpenChange={(open) => {
+              if (open && squad) {
+                if (squad.maxMembers) setNewMaxMembers(squad.maxMembers);
+                if (squad.name) setNewSquadName(squad.name);
+              }
+              setShowSettings(open);
+            }}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 p-0 sm:p-2 text-xs font-medium text-white hover:text-white hover:bg-white/20 border-white/30 bg-white/10 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                >
+                  <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] max-w-md mx-auto p-0 gap-0 border-0 bg-card rounded-2xl shadow-xl max-h-[90vh] overflow-hidden">
+                <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 border-b border-border/50">
+                  <DialogHeader>
+                    <DialogTitle className="text-base font-semibold text-center">Squad Settings</DialogTitle>
+                  </DialogHeader>
+                </div>
+                
+                <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+                  {/* Squad Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="squad-name" className="text-sm font-medium">Squad Name</Label>
+                    <Input
+                      id="squad-name"
+                      type="text"
+                      value={newSquadName}
+                      onChange={(e) => setNewSquadName(e.target.value)}
+                      className="h-10 font-medium"
+                      maxLength={100}
+                    />
+                  </div>
+
+                  {/* Maximum Members */}
+                  <div className="space-y-2">
+                    <Label htmlFor="max-members" className="text-sm font-medium">Maximum Members</Label>
+                    <div className="space-y-1">
+                      <Input
+                        id="max-members"
+                        type="number"
+                        min="2"
+                        max="50"
+                        value={newMaxMembers}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          const newValue = isNaN(value) ? 2 : Math.max(2, Math.min(50, value));
+                          setNewMaxMembers(newValue);
+                        }}
+                        className="h-10 text-center font-medium"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Current members: {squad?.members?.length || 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Members Management */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Members ({squad?.members?.length || 0})</Label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {squad?.members?.map((member) => {
+                        const isCurrentUser = member.user?.id === user?.id;
+                        const isOwner = member.role === 'owner';
+                        const displayName = getDisplayName({
+                          displayName: member.user?.displayName,
+                          firstName: member.user?.firstName,
+                          lastName: member.user?.lastName,
+                          username: member.user?.username || member.username || 'Unknown'
+                        });
+
+                        return (
+                          <div key={member.user?.id || member.userId} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                            <div 
+                              className="flex items-center gap-2 flex-1 cursor-pointer hover:bg-muted/70 -m-2 p-2 rounded-lg transition-colors"
+                              onClick={() => setSelectedMember({
+                                userId: member.user?.id || member.userId,
+                                displayName: displayName
+                              })}
+                            >
+                              <Avatar className="w-8 h-8">
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {getInitials({
+                                    displayName: member.user?.displayName,
+                                    firstName: member.user?.firstName,
+                                    lastName: member.user?.lastName,
+                                    username: member.user?.username || member.username || 'Unknown'
+                                  })}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium">{displayName}</span>
+                                <div className="flex items-center gap-1">
+                                  {isOwner && <Crown className="w-3 h-3 text-yellow-500" />}
+                                  <Badge 
+                                    variant={isOwner ? "default" : "secondary"} 
+                                    className="text-xs px-1.5 py-0.5"
+                                  >
+                                    {member.role}
+                                  </Badge>
+                                  {isCurrentUser && <span className="text-xs text-muted-foreground">(You)</span>}
+                                </div>
+                              </div>
+                              <div className="ml-auto">
+                                <User className="w-4 h-4 text-muted-foreground" />
+                              </div>
+                            </div>
+                            
+                            {!isCurrentUser && !isOwner && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={async () => {
+                                  const confirmed = window.confirm(`Remove ${displayName} from the squad?`);
+                                  if (confirmed && member.user?.id) {
+                                    try {
+                                      await squadsAPI.removeMember(squad!.id, member.user.id);
+                                      toast.success(`${displayName} has been removed from the squad`);
+                                      refetch();
+                                    } catch (error) {
+                                      console.error('Failed to remove member:', error);
+                                      toast.error('Failed to remove member. Please try again.');
+                                    }
+                                  }
+                                }}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setShowSettings(false)}
+                      className="flex-1 h-10 rounded-lg"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleUpdateSquadSettings}
+                      disabled={updateLoading || (newMaxMembers === squad?.maxMembers && newSquadName.trim() === squad?.name)}
+                      className="flex-1 h-10 rounded-lg"
+                    >
+                      {updateLoading && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+                      Update
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          
+          <Button 
+            variant="outline" 
+            onClick={handleShareSquad}
+            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium text-white hover:text-white hover:bg-white/20 border-white/30 bg-white/10 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            {copied ? (
+              <Check className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+            ) : (
+              <Share2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+            )}
+            <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleLeaveSquad}
+            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium text-red-300 hover:text-red-200 hover:bg-red-500/20 border-red-300/50 bg-red-500/10 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+          >
+            <UserMinus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+            <span className="hidden sm:inline">{isOwner ? 'Delete' : 'Leave'}</span>
+          </Button>
         </div>
       </div>
 
-      {/* Compact Squad Info */}
-      <Card className="border-0 shadow-sm bg-gradient-to-r from-blue-50 to-purple-50">
-        <CardContent className="p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                {squad.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 text-xs sm:text-sm">
-                <div className="flex items-center gap-1">
-                  <Users className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                  <span className="font-medium">{squad.memberCount}/{squad.maxMembers}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
-                  <span className="font-mono font-bold">{squad.joinCode}</span>
-                </div>
-              </div>
-            </div>
-            <Badge variant={squad.isPublic ? "secondary" : "outline"} className="text-xs px-2 py-0.5">
-              {squad.isPublic ? "Public" : "Private"}
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Mobile Bottom Tabs - Only show if squad has both features */}
+      {/* Mobile Top Tabs - Only show if squad has both features */}
       {hasBothFeatures && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t sm:hidden">
-          <div className="grid grid-cols-2 h-12">
-            <button
-              onClick={() => setActiveTab("chat")}
-              className={`flex items-center justify-center text-xs font-medium transition-colors ${
-                activeTab === "chat" ? "text-primary bg-primary/10" : "text-muted-foreground"
-              }`}
-            >
-              💬 Squad Chat
-            </button>
+        <div className="sm:hidden flex-shrink-0 pb-1">
+          <div className="grid grid-cols-2 bg-white/10 border border-white/20 backdrop-blur-md rounded-lg p-0.5">
             <button
               onClick={() => setActiveTab("leaderboard")}
-              className={`flex items-center justify-center text-xs font-medium transition-colors ${
-                activeTab === "leaderboard" ? "text-primary bg-primary/10" : "text-muted-foreground"
+              className={`flex items-center justify-center text-xs font-medium py-0.5 px-2 rounded-md transition-all duration-200 ${
+                activeTab === "leaderboard" 
+                  ? "bg-white/20 text-white shadow-sm backdrop-blur-sm" 
+                  : "text-white/70 hover:text-white hover:bg-white/10"
               }`}
             >
-              🏆 Leaderboard
+              🏆 Ranks
+            </button>
+            <button
+              onClick={() => setActiveTab("chat")}
+              className={`flex items-center justify-center text-xs font-medium py-0.5 px-2 rounded-md transition-all duration-200 ${
+                activeTab === "chat" 
+                  ? "bg-white/20 text-white shadow-sm backdrop-blur-sm" 
+                  : "text-white/70 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              💬 Chat
             </button>
           </div>
         </div>
       )}
 
       {/* Mobile Content */}
-      <div className="sm:hidden">
-        {(!hasBothFeatures && squad.features.hasChat) && (
-          <Card className="border-0 shadow-sm bg-card">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-base">Squad Chat</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-3 pt-0">
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {mockChatMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`flex items-start gap-2 max-w-[85%] ${
-                      message.isCurrentUser ? 'flex-row-reverse' : 'flex-row'
-                    }`}>
-                      <Avatar className="w-5 h-5 flex-shrink-0">
-                        <AvatarFallback className="text-xs">
-                          {message.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={`rounded-lg p-2 ${
-                        message.isCurrentUser 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-muted'
+      <div className="sm:hidden flex-1 flex flex-col min-h-0">
+        {((hasBothFeatures && activeTab === "chat") || (!hasBothFeatures && features.hasChat)) && (
+          <div className="flex flex-col min-h-0 max-h-[65vh] border border-primary/10 rounded-xl bg-background/95 backdrop-blur-sm shadow-lg">
+            {/* Enhanced Chat Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-gradient-to-r from-muted/30 via-muted/20 to-transparent rounded-t-xl flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Send className="w-3 h-3 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Squad Chat</span>
+              </div>
+              {isPolling && (
+                <div className="flex items-center gap-2 px-2 py-1 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs font-medium text-green-600 dark:text-green-400">Live</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Chat Messages - Scrollable area */}
+            <div className="flex-1 overflow-y-auto px-1 py-0.5 space-y-0.5 min-h-0">
+              {formattedChatMessages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`rounded px-1.5 py-0.5 max-w-[85%] ${
+                    message.isCurrentUser 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted'
+                  }`}>
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-xs font-medium ${
+                        message.isCurrentUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
                       }`}>
-                        <div className="flex items-baseline gap-2 mb-0.5">
-                          <span className={`text-xs font-medium ${
-                            message.isCurrentUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                          }`}>
-                            {message.username}
-                          </span>
-                          <span className={`text-xs ${
-                            message.isCurrentUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
-                          }`}>
-                            {message.timestamp}
-                          </span>
-                        </div>
-                        <p className="text-xs">{message.message}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 pt-2 border-t border-border">
-                <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1 h-8 text-sm"
-                />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim()} size="sm" className="h-8 w-8 p-0">
-                  <Send className="w-3 h-3" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {(!hasBothFeatures && squad.features.hasLeaderboard) && (
-          <Card className="border-0 shadow-sm bg-card">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-base">🏆 Leaderboard</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {mockSquadRanking.map((member, index) => (
-                  <div 
-                    key={member.username}
-                    className={`flex items-center justify-between p-2.5 hover:bg-muted/50 transition-colors ${
-                      member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
-                    } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
-                      index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
-                    } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
-                        {getRankIcon(member.rank)}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6">
-                          <AvatarFallback className="text-xs font-medium">
-                            {member.username.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
-                            {member.username}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {member.wins}W - {member.losses}L
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="font-bold text-sm text-primary">{member.points}</div>
-                        <div className="text-xs text-muted-foreground">Points</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-muted-foreground">{member.winPercentage}%</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {hasBothFeatures && activeTab === "chat" && (
-          <Card className="border-0 shadow-sm bg-card">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-base">Squad Chat</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-3 pt-0">
-              <div className="space-y-2 max-h-80 overflow-y-auto">
-                {mockChatMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`flex items-start gap-2 max-w-[85%] ${
-                      message.isCurrentUser ? 'flex-row-reverse' : 'flex-row'
-                    }`}>
-                      <Avatar className="w-5 h-5 flex-shrink-0">
-                        <AvatarFallback className="text-xs">
-                          {message.username.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={`rounded-lg p-2 ${
-                        message.isCurrentUser 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-muted'
+                        {getDisplayName({username: message.username, displayName: message.displayName, firstName: message.firstName, lastName: message.lastName})}
+                      </span>
+                      <span className={`text-xs ${
+                        message.isCurrentUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
                       }`}>
-                        <div className="flex items-baseline gap-2 mb-0.5">
-                          <span className={`text-xs font-medium ${
-                            message.isCurrentUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                          }`}>
-                            {message.username}
-                          </span>
-                          <span className={`text-xs ${
-                            message.isCurrentUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
-                          }`}>
-                            {message.timestamp}
-                          </span>
-                        </div>
-                        <p className="text-xs">{message.message}</p>
-                      </div>
+                        {message.timestamp}
+                      </span>
                     </div>
+                    <p className="text-xs leading-tight">{message.message}</p>
                   </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 pt-2 border-t border-border">
-                <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1 h-8 text-sm"
-                />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim()} size="sm" className="h-8 w-8 p-0">
-                  <Send className="w-3 h-3" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              ))}
+              <div ref={mobileMessagesEndRef} />
+            </div>
+            
+            {/* Quick Emoji Reactions - Mobile */}
+            <div className="flex items-center gap-1 px-1 py-0.5 bg-muted/20 flex-shrink-0">
+              {quickEmojis.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleEmojiClick(emoji)}
+                  disabled={chatSending}
+                  className="text-sm hover:bg-muted/50 rounded px-1 py-0.5 transition-colors disabled:opacity-50"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            
+            {/* Chat Input - Ultra compact */}
+            <div className="flex items-center gap-1 p-1 border-t border-border flex-shrink-0">
+              <Input
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                disabled={chatSending}
+                className="flex-1 h-6 text-xs"
+              />
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={!newMessage.trim() || chatSending} 
+                size="sm" 
+                className="h-6 w-6 p-0"
+              >
+                {chatSending ? (
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                ) : (
+                  <Send className="w-2.5 h-2.5" />
+                )}
+              </Button>
+            </div>
+          </div>
         )}
 
-        {hasBothFeatures && activeTab === "leaderboard" && (
-          <Card className="border-0 shadow-sm bg-card">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-base">🏆 Leaderboard</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {mockSquadRanking.map((member, index) => (
-                  <div 
-                    key={member.username}
-                    className={`flex items-center justify-between p-2.5 hover:bg-muted/50 transition-colors ${
-                      member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
-                    } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
-                      index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
-                    } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
-                        {getRankIcon(member.rank)}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6">
-                          <AvatarFallback className="text-xs font-medium">
-                            {member.username.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
-                            {member.username}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {member.wins}W - {member.losses}L
-                          </div>
-                        </div>
-                      </div>
+        {((hasBothFeatures && activeTab === "leaderboard") || (!hasBothFeatures && features.hasLeaderboard)) && (
+          <div className="flex flex-col min-h-0 max-h-[65vh] border border-primary/10 rounded-xl bg-background/95 backdrop-blur-sm shadow-lg">
+            {/* Enhanced Leaderboard Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-gradient-to-r from-yellow-50/50 via-orange-50/30 to-transparent dark:from-yellow-900/20 dark:via-orange-900/10 rounded-t-xl flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                  <Trophy className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Leaderboard</span>
+              </div>
+              <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-full">
+                <span className="text-xs font-medium text-muted-foreground">{memberRanking.length} players</span>
+              </div>
+            </div>
+            
+            {/* Leaderboard Content */}
+            <div className="flex-1 overflow-y-auto">
+              {memberRanking.map((member, index) => (
+                <div 
+                  key={getDisplayName(member)}
+                  className={`flex items-center justify-between p-2 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${
+                    member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                  } ${index === 0 ? 'bg-gradient-to-r from-yellow-50/50 to-transparent' : ''} ${
+                    index === 1 ? 'bg-gradient-to-r from-gray-50/50 to-transparent' : ''
+                  } ${index === 2 ? 'bg-gradient-to-r from-orange-50/50 to-transparent' : ''}`}
+                  onClick={() => setSelectedMember({
+                    userId: member.userId,
+                    displayName: getDisplayName(member)
+                  })}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                      {getRankIcon(member.rank)}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <div className="font-bold text-sm text-primary">{member.points}</div>
-                        <div className="text-xs text-muted-foreground">Points</div>
+                    <Avatar className="w-5 h-5">
+                      <AvatarFallback className="text-xs font-medium">
+                        {getInitials(member)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'} truncate`}>
+                        {getDisplayName(member)}
+                        {member.isCurrentUser && <span className="ml-1 text-xs font-normal text-primary/70">(You)</span>}
                       </div>
-                      <div className="text-right">
-                        <div className="text-xs text-muted-foreground">{member.winPercentage}%</div>
+                      <div className="text-xs text-muted-foreground">
+                        {member.wins === 0 && member.losses === 0 ? (
+                          <span className="text-muted-foreground/60">—</span>
+                        ) : (
+                          `${member.wins}W - ${member.losses}L`
+                        )}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="text-right min-w-[28px]">
+                      <div className="font-bold text-primary text-sm">
+                        {member.points === 0 ? (
+                          <span className="text-muted-foreground/60 font-normal">—</span>
+                        ) : (
+                          member.points
+                        )}
+                      </div>
+                      <div className="text-muted-foreground text-xs">pts</div>
+                    </div>
+                    <div className="text-right min-w-[24px]">
+                      <div className="font-medium text-sm">
+                        {member.wins === 0 && member.losses === 0 ? (
+                          <span className="text-muted-foreground/60">—</span>
+                        ) : (
+                          `${member.winPercentage}%`
+                        )}
+                      </div>
+                      <div className="text-muted-foreground text-xs">win</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
       {/* Desktop Tabs - Only show if squad has both features */}
       {hasBothFeatures ? (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full hidden sm:block">
-          <TabsList className="grid w-full grid-cols-2 h-10 mb-6">
-            <TabsTrigger value="chat" className="text-sm">💬 Squad Chat</TabsTrigger>
-            <TabsTrigger value="leaderboard" className="text-sm">🏆 Leaderboard</TabsTrigger>
-          </TabsList>
+        <div className="hidden sm:block flex-1 flex flex-col min-h-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col flex-1">
+            <TabsList className="grid w-full grid-cols-2 h-9 mb-2 flex-shrink-0">
+              <TabsTrigger value="leaderboard" className="text-sm">🏆 Leaderboard</TabsTrigger>
+              <TabsTrigger value="chat" className="text-sm">💬 Squad Chat</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="chat" className="mt-0">
-          <Card className="border-0 shadow-sm bg-card">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-base sm:text-lg">Squad Chat</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-3 pt-0">
-              {/* Compact Chat Messages */}
-              <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
-                {mockChatMessages.map((message) => (
+            <TabsContent value="leaderboard" className="mt-0 flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col border border-primary/10 rounded-xl bg-background/95 backdrop-blur-sm shadow-lg">
+                {/* Enhanced Desktop Leaderboard Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 bg-gradient-to-r from-yellow-50/50 via-orange-50/30 to-transparent dark:from-yellow-900/20 dark:via-orange-900/10 rounded-t-xl flex-shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl">
+                      <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-foreground">Squad Leaderboard</h3>
+                      <p className="text-sm text-muted-foreground">Current season standings</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground">{memberRanking.length} players</span>
+                  </div>
+                </div>
+                
+                {/* Desktop Leaderboard Content */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="divide-y divide-border">
+                    {memberRanking.map((member, index) => (
+                      <div 
+                        key={getDisplayName(member)}
+                        className={`flex items-center justify-between p-2.5 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
+                          member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
+                        } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
+                          index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
+                        } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
+                        onClick={() => setSelectedMember({
+                          userId: member.userId,
+                          displayName: getDisplayName(member)
+                        })}
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
+                            {getRankIcon(member.rank)}
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
+                              <AvatarFallback className="text-xs font-medium">
+                                {getInitials(member)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+                                {getDisplayName(member)}
+                                {member.isCurrentUser && <span className="ml-1 text-xs font-normal text-primary/70">(You)</span>}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {member.wins === 0 && member.losses === 0 ? (
+                                  <span className="text-muted-foreground/60">—</span>
+                                ) : (
+                                  `${member.wins}W - ${member.losses}L`
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 sm:gap-6">
+                          <div className="text-right hidden sm:block">
+                            <div className="font-semibold text-foreground">
+                              {member.wins === 0 && member.losses === 0 ? (
+                                <span className="text-muted-foreground/60">—</span>
+                              ) : (
+                                `${member.winPercentage}%`
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Win Rate</div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="font-bold text-sm sm:text-lg text-primary">
+                              {member.points === 0 ? (
+                                <span className="text-muted-foreground/60 font-normal text-sm">—</span>
+                              ) : (
+                                member.points
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">Points</div>
+                          </div>
+                          
+                          {/* Mobile compact view */}
+                          <div className="text-right sm:hidden">
+                            <div className="text-xs text-muted-foreground">
+                              {member.wins === 0 && member.losses === 0 ? (
+                                <span className="text-muted-foreground/40">—</span>
+                              ) : (
+                                `${member.winPercentage}%`
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+        </TabsContent>
+
+            <TabsContent value="chat" className="mt-0 flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col border border-primary/10 rounded-xl bg-background/95 backdrop-blur-sm shadow-lg">
+            {/* Enhanced Desktop Chat Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 bg-gradient-to-r from-muted/30 via-muted/20 to-transparent rounded-t-xl flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-xl">
+                  <Send className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Squad Chat</h3>
+                  <p className="text-sm text-muted-foreground">Connect with your teammates</p>
+                </div>
+              </div>
+              {isPolling && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-full">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-green-600 dark:text-green-400">Live</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Desktop Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {formattedChatMessages.map((message) => (
                   <div
                     key={message.id}
                     className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'}`}
@@ -405,7 +888,7 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
                     }`}>
                       <Avatar className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0">
                         <AvatarFallback className="text-xs">
-                          {message.username.charAt(0).toUpperCase()}
+                          {getInitials({username: message.username, displayName: message.displayName, firstName: message.firstName, lastName: message.lastName})}
                         </AvatarFallback>
                       </Avatar>
                       <div className={`rounded-lg p-2 sm:p-3 ${
@@ -417,7 +900,7 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
                           <span className={`text-xs font-medium ${
                             message.isCurrentUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
                           }`}>
-                            {message.username}
+                            {getDisplayName({username: message.username, displayName: message.displayName, firstName: message.firstName, lastName: message.lastName})}
                           </span>
                           <span className={`text-xs ${
                             message.isCurrentUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
@@ -430,98 +913,63 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
                     </div>
                   </div>
                 ))}
-              </div>
+                <div ref={desktopMessagesEndRef} />
+            </div>
 
-              {/* Compact Message Input */}
-              <div className="flex items-center gap-2 pt-2 border-t border-border">
-                <Input
-                  placeholder="Type a message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1 h-8 text-sm"
-                />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim()} size="sm" className="h-8 w-8 p-0">
-                  <Send className="w-3 h-3" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Quick Emoji Reactions - Desktop */}
+            <div className="flex items-center justify-center gap-2 px-3 py-2 bg-muted/20 border-t border-border/50 flex-shrink-0">
+              {quickEmojis.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleEmojiClick(emoji)}
+                  disabled={chatSending}
+                  className="text-lg hover:bg-muted/50 rounded-lg px-2 py-1 transition-all duration-200 hover:scale-110 disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Desktop Chat Input */}
+            <div className="flex items-center gap-2 p-3 border-t border-border flex-shrink-0">
+              <Input
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                disabled={chatSending}
+                className="flex-1 h-9 text-sm"
+              />
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={!newMessage.trim() || chatSending} 
+                size="sm" 
+                className="h-9 w-9 p-0"
+              >
+                {chatSending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+          </div>
         </TabsContent>
-
-        <TabsContent value="leaderboard" className="mt-0">
-          <Card className="border-0 shadow-sm bg-card">
-            <CardHeader className="pb-2 pt-3 px-3">
-              <CardTitle className="text-base sm:text-lg">🏆 Leaderboard</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {mockSquadRanking.map((member, index) => (
-                  <div 
-                    key={member.username}
-                    className={`flex items-center justify-between p-2.5 sm:p-4 hover:bg-muted/50 transition-colors ${
-                      member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
-                    } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
-                      index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
-                    } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
-                  >
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
-                        {getRankIcon(member.rank)}
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
-                          <AvatarFallback className="text-xs font-medium">
-                            {member.username.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
-                            {member.username}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {member.wins}W - {member.losses}L
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3 sm:gap-6">
-                      <div className="text-right hidden sm:block">
-                        <div className="font-semibold text-foreground">{member.winPercentage}%</div>
-                        <div className="text-xs text-muted-foreground">Win Rate</div>
-                      </div>
-                      
-                      <div className="text-right">
-                        <div className="font-bold text-sm sm:text-lg text-primary">{member.points}</div>
-                        <div className="text-xs text-muted-foreground">Points</div>
-                      </div>
-                      
-                      {/* Mobile compact view */}
-                      <div className="text-right sm:hidden">
-                        <div className="text-xs text-muted-foreground">{member.winPercentage}%</div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          </Tabs>
+        </div>
       ) : (
         /* Single feature view for desktop */
         <div className="hidden sm:block">
-          {squad.features.hasChat && !squad.features.hasLeaderboard && (
+          {features.hasChat && !features.hasLeaderboard && (
             /* Chat only content - same as mobile but for desktop */
-            <Card className="border-0 shadow-sm bg-card">
-              <CardHeader className="pb-2 pt-3 px-3">
+            <Card className="relative overflow-hidden border border-primary/10 shadow-lg bg-gradient-to-br from-background via-primary/3 to-background backdrop-blur-sm">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4 opacity-50"></div>
+              <CardHeader className="relative pb-2 pt-3 px-3">
                 <CardTitle className="text-base sm:text-lg">Squad Chat</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 p-3 pt-0">
+              <CardContent className="relative space-y-3 p-3 pt-0">
                 <div className="space-y-2 max-h-80 sm:max-h-96 overflow-y-auto">
-                  {mockChatMessages.map((message) => (
+                  {formattedChatMessages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex ${message.isCurrentUser ? 'justify-end' : 'justify-start'}`}
@@ -531,7 +979,7 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
                       }`}>
                         <Avatar className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0">
                           <AvatarFallback className="text-xs">
-                            {message.username.charAt(0).toUpperCase()}
+                            {getInitials({username: message.username, displayName: message.displayName, firstName: message.firstName, lastName: message.lastName})}
                           </AvatarFallback>
                         </Avatar>
                         <div className={`rounded-lg p-2 sm:p-3 ${
@@ -543,7 +991,7 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
                             <span className={`text-xs font-medium ${
                               message.isCurrentUser ? 'text-primary-foreground/80' : 'text-muted-foreground'
                             }`}>
-                              {message.username}
+                              {getDisplayName({username: message.username, displayName: message.displayName, firstName: message.firstName, lastName: message.lastName})}
                             </span>
                             <span className={`text-xs ${
                               message.isCurrentUser ? 'text-primary-foreground/60' : 'text-muted-foreground/60'
@@ -573,22 +1021,27 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
             </Card>
           )}
 
-          {squad.features.hasLeaderboard && !squad.features.hasChat && (
+          {features.hasLeaderboard && !features.hasChat && (
             /* Leaderboard only content - same as mobile but for desktop */
-            <Card className="border-0 shadow-sm bg-card">
-              <CardHeader className="pb-2 pt-3 px-3">
+            <Card className="relative overflow-hidden border border-primary/10 shadow-lg bg-gradient-to-br from-background via-primary/3 to-background backdrop-blur-sm">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4 opacity-50"></div>
+              <CardHeader className="relative pb-2 pt-3 px-3">
                 <CardTitle className="text-base sm:text-lg">🏆 Leaderboard</CardTitle>
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="relative p-0">
                 <div className="divide-y divide-border">
-                  {mockSquadRanking.map((member, index) => (
+                  {memberRanking.map((member, index) => (
                     <div 
-                      key={member.username}
-                      className={`flex items-center justify-between p-2.5 sm:p-4 hover:bg-muted/50 transition-colors ${
+                      key={getDisplayName(member)}
+                      className={`flex items-center justify-between p-2.5 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
                         member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
                       } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
                         index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
                       } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
+                      onClick={() => setSelectedMember({
+                        userId: member.userId,
+                        displayName: getDisplayName(member)
+                      })}
                     >
                       <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 flex-shrink-0">
@@ -598,15 +1051,20 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
                         <div className="flex items-center gap-2">
                           <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
                             <AvatarFallback className="text-xs font-medium">
-                              {member.username.charAt(0).toUpperCase()}
+                              {getInitials(member)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <div className={`text-sm font-semibold ${member.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
-                              {member.username}
+                              {getDisplayName(member)}
+                              {member.isCurrentUser && <span className="ml-1 text-xs font-normal text-primary/70">(You)</span>}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {member.wins}W - {member.losses}L
+                              {member.wins === 0 && member.losses === 0 ? (
+                                <span className="text-muted-foreground/60">—</span>
+                              ) : (
+                                `${member.wins}W - ${member.losses}L`
+                              )}
                             </div>
                           </div>
                         </div>
@@ -614,17 +1072,35 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
 
                       <div className="flex items-center gap-3 sm:gap-6">
                         <div className="text-right hidden sm:block">
-                          <div className="font-semibold text-foreground">{member.winPercentage}%</div>
+                          <div className="font-semibold text-foreground">
+                            {member.wins === 0 && member.losses === 0 ? (
+                              <span className="text-muted-foreground/60">—</span>
+                            ) : (
+                              `${member.winPercentage}%`
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground">Win Rate</div>
                         </div>
                         
                         <div className="text-right">
-                          <div className="font-bold text-sm sm:text-lg text-primary">{member.points}</div>
+                          <div className="font-bold text-sm sm:text-lg text-primary">
+                            {member.points === 0 ? (
+                              <span className="text-muted-foreground/60 font-normal text-sm">—</span>
+                            ) : (
+                              member.points
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground">Points</div>
                         </div>
                         
                         <div className="text-right sm:hidden">
-                          <div className="text-xs text-muted-foreground">{member.winPercentage}%</div>
+                          <div className="text-xs text-muted-foreground">
+                            {member.wins === 0 && member.losses === 0 ? (
+                              <span className="text-muted-foreground/40">—</span>
+                            ) : (
+                              `${member.winPercentage}%`
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -635,6 +1111,15 @@ const SquadDashboard = ({ squad, onBack }: SquadDashboardProps) => {
           )}
         </div>
       )}
+
+      {/* Member picks modal */}
+      <MemberPicksModal
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+        userId={selectedMember?.userId || ''}
+        displayName={selectedMember?.displayName || ''}
+      />
+      </div>
     </div>
   );
 };

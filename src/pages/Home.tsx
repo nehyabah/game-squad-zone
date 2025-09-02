@@ -12,7 +12,10 @@ import AuthModal from "@/components/AuthModal";
 import AccountMenu from "@/components/AccountMenu";
 import CountdownTimer from "@/components/CountdownTimer";
 import Wallet from "@/components/Wallet";
+import UpcomingGames from "@/components/UpcomingGames";
+import PickHistory from "@/components/PickHistory";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getDisplayName } from "@/lib/utils/user";
 import { WalletIcon } from "lucide-react";
 
 const Home = () => {
@@ -31,7 +34,7 @@ const Home = () => {
           <>
             <div className="text-center mb-4 sm:mb-8">
               <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
-                Welcome back, {user?.username}! 👋
+                Welcome back, {user && getDisplayName(user)}! 👋
               </h2>
               <p className="text-muted-foreground text-xs sm:text-base">
                 Ready to make your picks?
@@ -41,7 +44,7 @@ const Home = () => {
           </>
         )}
 
-        {activeTab !== "create" && <CountdownTimer />}
+        {activeTab !== "create" && activeTab !== "wallet" && <CountdownTimer />}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="hidden sm:grid w-full grid-cols-4 max-w-3xl mx-auto mb-16 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
@@ -119,7 +122,14 @@ const Home = () => {
           </div>
 
           <TabsContent value="fixtures" className="space-y-8">
-            <GameSelection />
+            <div className="grid lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <GameSelection />
+              </div>
+              <div className="lg:col-span-1">
+                <UpcomingGames />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="create" className="space-y-8">
@@ -130,7 +140,14 @@ const Home = () => {
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">
-            <MyPicks onEditPicks={() => setActiveTab("fixtures")} />
+            <div className="grid lg:grid-cols-2 gap-8">
+              <div>
+                <MyPicks onEditPicks={() => setActiveTab("fixtures")} />
+              </div>
+              <div>
+                <PickHistory />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="wallet" className="space-y-8">

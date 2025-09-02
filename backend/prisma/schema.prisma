@@ -1,15 +1,205 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Enums
+model User {
+  id                 String              @id @default(uuid())
+  oktaId             String              @unique
+  email              String              @unique
+  username           String              @unique
+  firstName          String?
+  lastName           String?
+  avatarUrl          String?
+  authProvider       AuthProvider        @default(okta)
+  emailVerified      Boolean             @default(false)
+  status             UserStatus          @default(active)
+  walletBalance      Float               @default(0.0)
+  walletCurrency     String              @default("eur")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  lastLoginAt        DateTime?
+  displayName        String?
+  phoneNumber        String?
+  pickSets           PickSet[]
+  sessions           Session[]
+  ownedSquads        Squad[]             @relation("SquadOwner")
+  squadMembers       SquadMember[]
+  squadMessages      SquadMessage[]
+  squadPayments      SquadPayment[]
+  walletTransactions WalletTransaction[]
+
+  @@index([email])
+  @@index([username])
+  @@index([oktaId])
+  @@index([status])
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  userAgent String?
+  ipAddress String?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model Game {
+  id         String     @id
+  startAtUtc DateTime
+  weekId     String
+  homeTeam   String
+  awayTeam   String
+  homeScore  Int?
+  awayScore  Int?
+  completed  Boolean    @default(false)
+  lines      GameLine[]
+  picks      Pick[]
+
+  @@index([weekId])
+}
+
+model GameLine {
+  gameId       String
+  spread       Float
+  source       String
+  fetchedAtUtc DateTime
+  game         Game     @relation(fields: [gameId], references: [id])
+
+  @@id([gameId, source, fetchedAtUtc])
+}
+
+model PickSet {
+  id              String        @id @default(uuid())
+  userId          String
+  weekId          String
+  submittedAtUtc  DateTime?
+  lockedAtUtc     DateTime?
+  tiebreakerScore Int?
+  status          PickSetStatus @default(draft)
+  picks           Pick[]
+  user            User          @relation(fields: [userId], references: [id])
+
+  @@unique([userId, weekId])
+  @@index([userId])
+  @@index([weekId])
+  @@index([status])
+}
+
+model Pick {
+  id           String     @id @default(uuid())
+  pickSetId    String
+  gameId       String
+  choice       PickChoice
+  spreadAtPick Float
+  lineSource   String
+  createdAtUtc DateTime   @default(now())
+  status       PickStatus @default(pending)
+  result       String?
+  payout       Float?
+  odds         Int?
+  game         Game       @relation(fields: [gameId], references: [id])
+  pickSet      PickSet    @relation(fields: [pickSetId], references: [id])
+
+  @@unique([pickSetId, gameId])
+}
+
+model Squad {
+  id              String         @id @default(uuid())
+  name            String
+  description     String?
+  imageUrl        String?
+  joinCode        String         @unique
+  ownerId         String
+  maxMembers      Int            @default(10)
+  potEnabled      Boolean        @default(false)
+  potAmount       Float?
+  potCurrency     String         @default("eur")
+  potDeadline     DateTime?
+  stripePriceId   String?
+  stripeProductId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  owner           User           @relation("SquadOwner", fields: [ownerId], references: [id])
+  members         SquadMember[]
+  messages        SquadMessage[]
+  payments        SquadPayment[]
+}
+
+model SquadMember {
+  id         String    @id @default(uuid())
+  squadId    String
+  userId     String
+  role       SquadRole @default(member)
+  lastReadAt DateTime?
+  user       User      @relation(fields: [userId], references: [id])
+  squad      Squad     @relation(fields: [squadId], references: [id], onDelete: Cascade)
+
+  @@unique([squadId, userId])
+}
+
+model SquadPayment {
+  id              String        @id @default(uuid())
+  squadId         String
+  userId          String
+  amount          Float
+  currency        String
+  stripePaymentId String?
+  stripeSessionId String?
+  status          PaymentStatus @default(pending)
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  user            User          @relation(fields: [userId], references: [id])
+  squad           Squad         @relation(fields: [squadId], references: [id], onDelete: Cascade)
+
+  @@unique([squadId, userId])
+  @@index([squadId])
+  @@index([userId])
+}
+
+model WalletTransaction {
+  id              String   @id @default(uuid())
+  userId          String
+  amount          Float
+  currency        String   @default("eur")
+  type            String
+  description     String?
+  stripePaymentId String?
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+}
+
+model SquadMessage {
+  id        String   @id @default(uuid())
+  squadId   String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  squad     Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
+
+  @@index([squadId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
 enum UserStatus {
   active
   suspended
@@ -18,7 +208,6 @@ enum UserStatus {
 
 enum AuthProvider {
   okta
-  local
 }
 
 enum PickSetStatus {
@@ -45,151 +234,9 @@ enum PaymentStatus {
   refunded
 }
 
-// Models
-model User {
-  id              String    @id @default(uuid())
-  oktaId          String    @unique
-  email           String    @unique
-  username        String    @unique
-  firstName       String?
-  lastName        String?
-  avatarUrl       String?
-  authProvider    AuthProvider @default(okta)
-  emailVerified   Boolean   @default(false)
-  status          UserStatus @default(active)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  lastLoginAt     DateTime?
-  
-  // Relations
-  pickSets        PickSet[]
-  squadMembers    SquadMember[]
-  ownedSquads     Squad[]    @relation("SquadOwner")
-  sessions        Session[]
-  squadPayments   SquadPayment[]
-  
-  @@index([email])
-  @@index([username])
-  @@index([oktaId])
-  @@index([status])
-}
-
-model Session {
-  id          String    @id @default(uuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token       String    @unique
-  expiresAt   DateTime
-  createdAt   DateTime  @default(now())
-  revokedAt   DateTime?
-  userAgent   String?
-  ipAddress   String?
-  
-  @@index([userId])
-  @@index([token])
-}
-
-model Game {
-  id         String    @id
-  startAtUtc DateTime
-  weekId     String
-  lines      GameLine[]
-  picks      Pick[]
-}
-
-model GameLine {
-  gameId      String
-  game        Game      @relation(fields: [gameId], references: [id])
-  spread      Float
-  source      String
-  fetchedAtUtc DateTime
-
-  @@id([gameId, source, fetchedAtUtc])
-}
-
-model PickSet {
-  id             String      @id @default(uuid())
-  userId         String
-  user           User        @relation(fields: [userId], references: [id])
-  weekId         String
-  submittedAtUtc DateTime?
-  lockedAtUtc    DateTime?
-  tiebreakerScore Int?
-  status         PickSetStatus @default(draft)
-  picks          Pick[]
-
-  @@unique([userId, weekId])
-  @@index([userId])
-  @@index([weekId])
-  @@index([status])
-}
-
-model Pick {
-  id           String     @id @default(uuid())
-  pickSetId    String
-  pickSet      PickSet    @relation(fields: [pickSetId], references: [id])
-  gameId       String
-  game         Game       @relation(fields: [gameId], references: [id])
-  choice       PickChoice
-  spreadAtPick Float
-  lineSource   String
-  createdAtUtc DateTime   @default(now())
-
-  @@unique([pickSetId, gameId])
-}
-
-model Squad {
-  id          String       @id @default(uuid())
-  name        String
-  description String?
-  imageUrl    String?
-  joinCode    String       @unique
-  ownerId     String
-  owner       User         @relation("SquadOwner", fields: [ownerId], references: [id])
-  
-  // Optional pot/prize settings
-  potEnabled  Boolean      @default(false)
-  potAmount   Float?
-  potCurrency String       @default("usd")
-  potDeadline DateTime?
-  
-  // Stripe IDs (only used if pot is enabled)
-  stripePriceId    String?
-  stripeProductId  String?
-  
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  
-  members     SquadMember[]
-  payments    SquadPayment[]
-}
-
-model SquadMember {
-  id      String @id @default(uuid())
-  squadId String
-  squad   Squad  @relation(fields: [squadId], references: [id], onDelete: Cascade)
-  userId  String
-  user    User   @relation(fields: [userId], references: [id])
-  role    SquadRole @default(member)
-
-  @@unique([squadId, userId])
-}
-
-model SquadPayment {
-  id                String   @id @default(uuid())
-  squadId           String
-  squad             Squad    @relation(fields: [squadId], references: [id], onDelete: Cascade)
-  userId            String
-  user              User     @relation(fields: [userId], references: [id])
-  amount            Float
-  currency          String
-  stripePaymentId   String?
-  stripeSessionId   String?
-  status            PaymentStatus @default(pending)
-  paidAt            DateTime?
-  createdAt         DateTime @default(now())
-  
-  @@unique([squadId, userId])
-  @@index([squadId])
-  @@index([userId])
+enum PickStatus {
+  pending
+  won
+  lost
+  pushed
 }

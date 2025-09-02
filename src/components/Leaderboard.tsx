@@ -3,39 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Medal, Award } from "lucide-react";
+import { Trophy, Medal, Award, Loader2 } from "lucide-react";
+import { getDisplayName, getInitials } from "@/lib/utils/user";
+import { useSeasonLeaderboard, useWeeklyLeaderboard } from "@/hooks/use-leaderboard";
+import { useAuth } from "@/hooks/use-auth";
 
-interface LeaderboardEntry {
+interface LeaderboardDisplayEntry {
   rank: number;
   username: string;
+  displayName?: string;
+  firstName?: string;
+  lastName?: string;
   wins: number;
   losses: number;
   winPercentage: number;
   points: number;
   isCurrentUser?: boolean;
 }
-
-const mockWeeklyLeaderboard: LeaderboardEntry[] = [
-  { rank: 1, username: "Taylor", wins: 3, losses: 0, winPercentage: 100, points: 90 },
-  { rank: 2, username: "Alex", wins: 2, losses: 1, winPercentage: 67, points: 60 },
-  { rank: 3, username: "You", wins: 2, losses: 1, winPercentage: 67, points: 60, isCurrentUser: true },
-  { rank: 4, username: "Jordan", wins: 2, losses: 1, winPercentage: 67, points: 60 },
-  { rank: 5, username: "Ryan", wins: 1, losses: 2, winPercentage: 33, points: 30 },
-  { rank: 6, username: "Chris", wins: 1, losses: 2, winPercentage: 33, points: 30 },
-  { rank: 7, username: "Drew", wins: 0, losses: 3, winPercentage: 0, points: 0 },
-  { rank: 8, username: "Blake", wins: 0, losses: 3, winPercentage: 0, points: 0 },
-];
-
-const mockSeasonLeaderboard: LeaderboardEntry[] = [
-  { rank: 1, username: "Alex", wins: 12, losses: 3, winPercentage: 80, points: 240 },
-  { rank: 2, username: "Jordan", wins: 11, losses: 4, winPercentage: 73, points: 220 },
-  { rank: 3, username: "Taylor", wins: 10, losses: 5, winPercentage: 67, points: 200 },
-  { rank: 4, username: "Ryan", wins: 9, losses: 6, winPercentage: 60, points: 180 },
-  { rank: 5, username: "You", wins: 8, losses: 7, winPercentage: 53, points: 160, isCurrentUser: true },
-  { rank: 6, username: "Chris", wins: 8, losses: 7, winPercentage: 53, points: 160 },
-  { rank: 7, username: "Drew", wins: 7, losses: 8, winPercentage: 47, points: 140 },
-  { rank: 8, username: "Blake", wins: 6, losses: 9, winPercentage: 40, points: 120 },
-];
 
 const getRankIcon = (rank: number) => {
   switch (rank) {
@@ -50,7 +34,7 @@ const getRankIcon = (rank: number) => {
   }
 };
 
-const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
+const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
   <div className="bg-card border border-border rounded-lg shadow-sm">
     <div className="p-3 border-b border-border">
       <h3 className="font-semibold text-sm text-foreground">Rankings</h3>
@@ -73,12 +57,22 @@ const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
             <div className="flex items-center gap-2">
               <Avatar className="w-6 h-6 flex-shrink-0">
                 <AvatarFallback className="text-xs font-medium">
-                  {entry.username.charAt(0).toUpperCase()}
+                  {getInitials({
+                    username: entry.username, 
+                    displayName: entry.displayName,
+                    firstName: entry.firstName,
+                    lastName: entry.lastName
+                  })}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
                 <div className={`text-sm font-medium truncate ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
-                  {entry.username}
+                  {getDisplayName({
+                    username: entry.username,
+                    displayName: entry.displayName,
+                    firstName: entry.firstName,
+                    lastName: entry.lastName
+                  })}
                 </div>
                 <div className="text-xs text-muted-foreground hidden sm:block">
                   {entry.wins}W - {entry.losses}L
@@ -111,11 +105,28 @@ const LeaderboardTable = ({ data }: { data: LeaderboardEntry[] }) => (
 
 const Leaderboard = () => {
   const [activeTab, setActiveTab] = useState("week");
+  const { user } = useAuth();
+  
+  // For now, use current week - we'll need to implement week detection later
+  const currentWeekId = "2025-W1";
+  const seasonLeaderboard = useSeasonLeaderboard();
+  const weeklyLeaderboard = useWeeklyLeaderboard(currentWeekId);
+  
+  // Transform API data to display format and mark current user
+  const transformLeaderboardData = (apiData: any[]): LeaderboardDisplayEntry[] => {
+    return apiData.map(entry => ({
+      ...entry,
+      isCurrentUser: user ? entry.userId === user.id : false
+    }));
+  };
+
+  const weeklyData = transformLeaderboardData(weeklyLeaderboard.data);
+  const seasonData = transformLeaderboardData(seasonLeaderboard.data);
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Squad Leaderboard</h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Global Leaderboard</h2>
         <p className="text-muted-foreground">See how you stack up against the competition</p>
       </div>
 
@@ -126,11 +137,45 @@ const Leaderboard = () => {
         </TabsList>
 
         <TabsContent value="week">
-          <LeaderboardTable data={mockWeeklyLeaderboard} />
+          {weeklyLeaderboard.loading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <span className="ml-2">Loading weekly leaderboard...</span>
+            </div>
+          ) : weeklyLeaderboard.error ? (
+            <div className="text-center p-8 text-red-600">
+              <p>Error loading weekly leaderboard: {weeklyLeaderboard.error}</p>
+              <button 
+                onClick={weeklyLeaderboard.refetch}
+                className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <LeaderboardTable data={weeklyData} />
+          )}
         </TabsContent>
 
         <TabsContent value="season">
-          <LeaderboardTable data={mockSeasonLeaderboard} />
+          {seasonLeaderboard.loading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="w-8 h-8 animate-spin" />
+              <span className="ml-2">Loading season leaderboard...</span>
+            </div>
+          ) : seasonLeaderboard.error ? (
+            <div className="text-center p-8 text-red-600">
+              <p>Error loading season leaderboard: {seasonLeaderboard.error}</p>
+              <button 
+                onClick={seasonLeaderboard.refetch}
+                className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (
+            <LeaderboardTable data={seasonData} />
+          )}
         </TabsContent>
       </Tabs>
 
@@ -138,7 +183,7 @@ const Leaderboard = () => {
       <Card className="bg-muted/30 border-border">
         <CardContent className="p-4">
           <div className="text-center text-sm text-muted-foreground">
-            <p><strong>Points System:</strong> Win = 20 points • Perfect Week (3-0) = 30 bonus points</p>
+            <p><strong>Points System:</strong> Winning Pick = 10 points • Rankings by total points, then win percentage</p>
           </div>
         </CardContent>
       </Card>

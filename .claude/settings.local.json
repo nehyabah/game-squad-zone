@@ -32,7 +32,8 @@
       "Bash(PORT=8080 npm run dev)",
       "Bash(timeout:*)",
       "Bash(PORT=3031 npm run dev)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

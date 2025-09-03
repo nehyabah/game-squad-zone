@@ -96,8 +96,8 @@ jobs:
           cd backend
           node -e "
           const pkg = require('./package.json');
-          pkg.scripts.start = 'node src/minimal.js';
-          pkg.scripts.postinstall = 'echo No Prisma needed';
+          pkg.scripts.start = 'node src/server-prisma-fixed.js';
+          pkg.scripts.postinstall = 'prisma generate';
           delete pkg.devDependencies;
           require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));
           "

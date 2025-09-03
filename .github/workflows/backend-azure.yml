@@ -251,7 +251,7 @@ jobs:
     - name: 🚀 Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
       with:
-        app-name: 'SquadPot-Backend'
+        app-name: 'squadpot-backend-dvbpatdag5a6aqff'
         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
         package: ./deploy
         clean: true
@@ -268,7 +268,7 @@ jobs:
       if: steps.deploy_attempt_1.outcome == 'failure'
       uses: azure/webapps-deploy@v3
       with:
-        app-name: 'SquadPot-Backend'
+        app-name: 'squadpot-backend-dvbpatdag5a6aqff'
         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
         package: ./deploy
         clean: true

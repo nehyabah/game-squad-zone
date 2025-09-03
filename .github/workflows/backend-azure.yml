@@ -96,7 +96,7 @@ jobs:
           cd backend
           node -e "
           const pkg = require('./package.json');
-          pkg.scripts.start = 'node src/fastify-only.js';
+          pkg.scripts.start = 'node src/minimal.js';
           pkg.scripts.postinstall = 'echo No Prisma needed';
           delete pkg.devDependencies;
           require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));

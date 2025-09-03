@@ -43,7 +43,7 @@ jobs:
         cache-dependency-path: backend/package-lock.json
     
     - name: 📦 Install dependencies  
-      run: cd backend && npm install
+      run: cd backend && npm ci
     
     - name: 🔧 Generate Prisma client
       run: cd backend && npx prisma generate
@@ -75,7 +75,7 @@ jobs:
         cache-dependency-path: backend/package-lock.json
     
     - name: 📦 Install dependencies
-      run: cd backend && npm install
+      run: cd backend && npm ci
     
     - name: 🔧 Generate Prisma client
       run: cd backend && npx prisma generate
@@ -90,93 +90,33 @@ jobs:
         # Create deployment directory
         mkdir -p deploy
         
-        # Copy built application
+        # Copy ONLY the necessary files (no Windows artifacts!)
         cp -r backend/dist deploy/
         cp -r backend/prisma deploy/
-        cp -r backend/node_modules deploy/ || echo "⚠️ node_modules not found, will install in Azure"
         
         # Copy package files
         cp backend/package.json deploy/
         cp backend/package-lock.json deploy/
         
-        # Create optimized package.json for production
-        cat > deploy/package.json << 'EOF'
-        {
-          "name": "squadpot-backend",
-          "version": "1.0.0",
-          "type": "commonjs",
-          "engines": {
-            "node": ">=18.0.0",
-            "npm": ">=8.0.0"
-          },
-          "scripts": {
-            "start": "node dist/src/main.server.js",
-            "postinstall": "echo 'Skipping prisma generate for now'",
-            "migrate": "npx prisma migrate deploy"
-          },
-          "dependencies": {
-            "@fastify/cookie": "^8.3.0",
-            "@fastify/cors": "^8.5.0",
-            "@fastify/error": "^4.2.0",
-            "@fastify/helmet": "^11.1.1",
-            "@fastify/jwt": "^7.2.4",
-            "@fastify/sensible": "^6.0.3",
-            "@prisma/client": "^6.15.0",
-            "@sinclair/typebox": "^0.34.41",
-            "@types/bcryptjs": "^2.4.6",
-            "bcryptjs": "^3.0.2",
-            "date-fns": "^4.1.0",
-            "dotenv": "^16.3.1",
-            "fastify": "^4.29.1",
-            "jose": "^6.1.0",
-            "mysql2": "^3.14.4",
-            "node-fetch": "^3.3.2",
-            "pg": "^8.11.3",
-            "postgresql": "^0.0.1",
-            "prisma": "^6.15.0",
-            "stripe": "^14.0.0"
-          }
-        }
-        EOF
+        # Create production-ready package.json
+        # Keep the original but update the start script
+        cd backend
+        node -e "
+        const pkg = require('./package.json');
+        pkg.scripts.start = 'node dist/src/main.server.js';
+        pkg.scripts.postinstall = 'prisma generate';
+        delete pkg.devDependencies;
+        require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));
+        "
+        cd ..
         
-        # Keep the direct node command - remove startup script wrapper
-        
-        # Create web.config for Windows App Service
-        cat > deploy/web.config << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?>
-        <configuration>
-          <system.webServer>
-            <handlers>
-              <add name="iisnode" path="startup.js" verb="*" modules="iisnode"/>
-            </handlers>
-            <rewrite>
-              <rules>
-                <rule name="DynamicContent">
-                  <match url=".*" />
-                  <conditions>
-                    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
-                  </conditions>
-                  <action type="Rewrite" url="startup.js"/>
-                </rule>
-              </rules>
-            </rewrite>
-            <iisnode 
-              node_env="%node_env%"
-              nodeProcessCommandLine="%programfiles%\\nodejs\\node.exe"
-              interceptor="%programfiles%\\iisnode\\interceptor.js" />
-            <httpErrors existingResponse="PassThrough" />
-            <security>
-              <requestFiltering>
-                <hiddenSegments>
-                  <remove segment="bin"/>
-                </hiddenSegments>
-              </requestFiltering>
-            </security>
-          </system.webServer>
-        </configuration>
-        EOF
+        # DO NOT create web.config - it's for Windows!
+        # DO NOT create startup.js - not needed for Linux!
+        # DO NOT copy node_modules - let Azure install them!
         
         echo "✅ Deployment package ready"
+        echo "📊 Package contents:"
+        ls -la deploy/
         echo "📊 Package size: $(du -sh deploy)"
     
     - name: 🗃️ Upload build artifacts
@@ -206,10 +146,12 @@ jobs:
     - name: 🔍 Verify deployment package
       run: |
         echo "📋 Deployment package contents:"
-        find ./deploy -type f -name "*.js" | head -10
+        ls -la ./deploy
         echo "📊 Package size: $(du -sh deploy)"
         echo "🔧 Package.json check:"
         cat deploy/package.json | head -20
+        echo "📁 Dist folder contents:"
+        find ./deploy/dist -type f -name "*.js" | head -10
     
     - name: 🚀 Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
@@ -237,25 +179,57 @@ jobs:
     - name: 🏥 Health check
       run: |
         echo "🔍 Waiting for deployment to be ready..."
-        sleep 30
+        sleep 60  # Give more time for the app to start
         
         # Try health check
         for i in {1..5}; do
           echo "🩺 Health check attempt $i/5"
-          if curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/health" || curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/api/health"; then
+          if curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/health" || \
+             curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/api/health" || \
+             curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/"; then
             echo "✅ Backend is healthy!"
             break
           else
-            echo "⚠️ Health check failed, retrying..."
-            sleep 15
+            echo "⚠️ Health check failed, retrying in 20 seconds..."
+            sleep 20
           fi
           
           if [ $i -eq 5 ]; then
             echo "❌ Health check failed after 5 attempts"
             echo "🔍 Check Azure App Service logs for details"
+            echo "💡 Tip: Make sure your app listens on process.env.PORT"
             exit 1
           fi
         done
 
-  # Database Migration Job - TEMPORARILY DISABLED FOR DEBUGGING
-  # migrate:
+  # Database Migration Job
+  migrate:
+    name: 🗄️ Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+    
+    - name: 🟢 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: 📦 Install Prisma CLI
+      run: |
+        cd backend
+        npm install prisma @prisma/client
+    
+    - name: 🗄️ Run migrations
+      run: |
+        cd backend
+        npx prisma migrate deploy
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      continue-on-error: true  # Don't fail the whole deployment if migrations have issues

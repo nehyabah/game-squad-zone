@@ -41,7 +41,7 @@ export function buildApp(): FastifyInstance {
 
   // Register plugins in order
   app.register(cookie);
-  // app.register(prismaPlugin); // TEMPORARILY DISABLED FOR DEBUGGING
+  app.register(prismaPlugin);
   // app.register(oktaPlugin);
   app.register(authJwt);
 

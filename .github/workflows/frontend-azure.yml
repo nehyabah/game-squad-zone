@@ -55,7 +55,7 @@ jobs:
       run: npm ci
     
     - name: 🔧 Run linting
-      run: npm run lint || echo "⚠️ Linting not configured, skipping..."
+      run: npm run lint || echo "⚠️ Linting warnings found but continuing..."
       continue-on-error: true
     
     - name: ✅ Run tests
@@ -63,7 +63,7 @@ jobs:
       continue-on-error: true
     
     - name: 🎯 Type check
-      run: npx tsc --noEmit || echo "⚠️ TypeScript check not configured"
+      run: npx tsc --noEmit || echo "⚠️ TypeScript warnings found but continuing..."
       continue-on-error: true
 
   # Build Job

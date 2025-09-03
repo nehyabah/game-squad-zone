@@ -1,8 +1,8 @@
 name: 🌟 Full Stack - Complete Azure Deployment
 
 on:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
     inputs:
       deploy_backend:

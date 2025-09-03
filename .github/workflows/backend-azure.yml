@@ -248,12 +248,6 @@ jobs:
         echo "🔧 Package.json check:"
         cat deploy/package.json | head -20
     
-    - name: 🔄 Stop App Service (if running)
-      run: |
-        echo "🔄 Attempting to stop app service to resolve conflicts..."
-        # This is handled by the deployment action, but we'll add longer timeout
-      continue-on-error: true
-      
     - name: 🚀 Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
       with:
@@ -261,7 +255,23 @@ jobs:
         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
         package: ./deploy
         clean: true
-        restart: true
+      continue-on-error: true
+      id: deploy_attempt_1
+      
+    - name: 🔄 Retry deployment if failed
+      if: steps.deploy_attempt_1.outcome == 'failure'
+      run: |
+        echo "🔄 First deployment failed, waiting 30 seconds and retrying..."
+        sleep 30
+        
+    - name: 🚀 Retry Deploy to Azure App Service
+      if: steps.deploy_attempt_1.outcome == 'failure'
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'SquadPot-Backend'
+        publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+        package: ./deploy
+        clean: true
     
     - name: 🏥 Health check
       run: |

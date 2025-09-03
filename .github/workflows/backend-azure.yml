@@ -138,8 +138,18 @@ jobs:
           echo "📊 Package size: $(du -sh deploy)"
           echo "🔧 Package.json check:"
           cat deploy/package.json | head -20
-          echo "📁 Dist folder contents:"
+          echo "📁 Source folder contents:"
           find ./deploy/src -type f -name "*.js" | head -10
+          echo "🧹 Ensuring no Windows artifacts:"
+          ls -la ./deploy/
+          if [ -f ./deploy/startup.js ]; then
+            echo "⚠️ Found startup.js - this should not exist"
+            rm -f ./deploy/startup.js
+          fi
+          if [ -f ./deploy/web.config ]; then
+            echo "⚠️ Found web.config - this should not exist"
+            rm -f ./deploy/web.config
+          fi
 
       - name: 🚀 Deploy to Azure App Service
         uses: azure/webapps-deploy@v3

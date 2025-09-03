@@ -250,7 +250,7 @@ jobs:
     - name: 🚀 Deploy to Azure App Service
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ secrets.AZURE_API_APP_NAME }}
+        app-name: 'SquadPot-Backend'
         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
         package: ./deploy
         clean: true

@@ -42,11 +42,8 @@ jobs:
         cache: 'npm'
         cache-dependency-path: backend/package-lock.json
     
-    - name: 📦 Install dependencies
-      run: cd backend && npm ci --only=production
-      
-    - name: 📦 Install dev dependencies
-      run: cd backend && npm ci
+    - name: 📦 Install dependencies  
+      run: cd backend && npm install
     
     - name: 🔧 Generate Prisma client
       run: cd backend && npx prisma generate
@@ -77,7 +74,7 @@ jobs:
         cache-dependency-path: backend/package-lock.json
     
     - name: 📦 Install dependencies
-      run: cd backend && npm ci
+      run: cd backend && npm install
     
     - name: 🔧 Generate Prisma client
       run: cd backend && npx prisma generate
@@ -304,7 +301,7 @@ jobs:
       run: npm install -g prisma
     
     - name: 🔧 Install backend dependencies
-      run: cd backend && npm ci
+      run: cd backend && npm install
     
     - name: 🗃️ Run database migrations
       run: cd backend && npx prisma migrate deploy --schema=./prisma/schema.prisma

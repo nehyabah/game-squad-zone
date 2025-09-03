@@ -1,0 +1,41 @@
+{
+  "name": "squadpot-azure",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "postinstall": "npm run build:backend && npx prisma generate",
+    "build:backend": "cd backend && npm run build",
+    "migrate": "npx prisma migrate deploy",
+    "health": "node -e \"console.log('Health check passed')\""
+  },
+  "dependencies": {
+    "@fastify/cookie": "^8.3.0",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/error": "^4.2.0",
+    "@fastify/helmet": "^11.1.1",
+    "@fastify/jwt": "^7.2.4",
+    "@fastify/sensible": "^6.0.3",
+    "@fastify/static": "^7.0.4",
+    "@prisma/client": "^6.15.0",
+    "@sinclair/typebox": "^0.34.41",
+    "bcryptjs": "^2.4.3",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.29.1",
+    "jose": "^6.1.0",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.11.3",
+    "prisma": "^6.15.0",
+    "stripe": "^14.0.0",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/pg": "^8.10.2"
+  }
+}

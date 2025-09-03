@@ -110,7 +110,7 @@ jobs:
             "npm": ">=8.0.0"
           },
           "scripts": {
-            "start": "node dist/src/test-startup.js",
+            "start": "node dist/src/main.server.js",
             "postinstall": "npx prisma generate",
             "migrate": "npx prisma migrate deploy"
           },
@@ -150,7 +150,7 @@ jobs:
         console.log('Environment:', process.env.NODE_ENV || 'development');
         
         // Check if main server file exists
-        const serverPath = path.join(__dirname, 'dist', 'src', 'test-startup.js');
+        const serverPath = path.join(__dirname, 'dist', 'src', 'main.server.js');
         if (!fs.existsSync(serverPath)) {
           console.error('❌ Server file not found at:', serverPath);
           console.log('📁 Available files:');
@@ -176,7 +176,7 @@ jobs:
         EOF
         
         # Update package.json to use startup script
-        sed -i 's/"node dist\/src\/test-startup.js"/"node startup.js"/' deploy/package.json
+        sed -i 's/"node dist\/src\/main.server.js"/"node startup.js"/' deploy/package.json
         
         # Create web.config for Windows App Service
         cat > deploy/web.config << 'EOF'

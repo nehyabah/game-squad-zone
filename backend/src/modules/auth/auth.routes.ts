@@ -32,8 +32,6 @@ export default async function authRoutes(app: FastifyInstance) {
       });
     }
 
-    console.log("Auth0 redirect_uri being used:", redirectUri);
-    
     const authUrl =
       `https://${domain}/authorize?` +
       `response_type=code&` +
@@ -41,17 +39,7 @@ export default async function authRoutes(app: FastifyInstance) {
       `redirect_uri=${encodeURIComponent(redirectUri!)}&` +
       `scope=openid profile email`;
 
-    console.log("Full Auth0 URL:", authUrl);
-    
-    // Also return debug info in response for troubleshooting
-    return { 
-      authUrl,
-      debug: {
-        redirect_uri_configured: redirectUri,
-        domain: domain,
-        client_id: clientId
-      }
-    };
+    return { authUrl };
   });
 
   // POST /login - Manual login with email (for development)
@@ -197,48 +185,25 @@ export default async function authRoutes(app: FastifyInstance) {
       redirectUri = `${frontendUrl}/auth/callback`;
     }
 
-    console.log("Token exchange redirect_uri:", redirectUri);
-    console.log("Auth0 domain:", domain);
-    console.log("Client ID:", clientId);
-
     try {
-      const tokenPayload = {
-        grant_type: "authorization_code",
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        redirect_uri: redirectUri,
-      };
-      
-      console.log("Token exchange payload:", { ...tokenPayload, client_secret: "[REDACTED]" });
-      
       const tokenResponse = await fetch(`https://${domain}/oauth/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokenPayload),
+        body: JSON.stringify({
+          grant_type: "authorization_code",
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
       });
 
       const tokens = await tokenResponse.json();
-      
-      console.log("Auth0 token response:", {
-        has_access_token: !!tokens.access_token,
-        has_id_token: !!tokens.id_token,
-        has_refresh_token: !!tokens.refresh_token,
-        token_keys: Object.keys(tokens),
-        error: tokens.error
-      });
 
       if (tokens.error) {
-        console.error("Auth0 token exchange error:", tokens);
         return reply.status(400).send({
           error: tokens.error,
           error_description: tokens.error_description,
-          debug: {
-            redirect_uri_used: redirectUri,
-            domain: domain,
-            client_id: clientId,
-            error_details: tokens
-          }
         });
       }
       
@@ -246,12 +211,7 @@ export default async function authRoutes(app: FastifyInstance) {
       if (!tokens.id_token) {
         return reply.status(400).send({
           error: "ID token required",
-          debug: {
-            tokens_received: Object.keys(tokens),
-            has_access_token: !!tokens.access_token,
-            redirect_uri_used: redirectUri,
-            scope_requested: "openid profile email"
-          }
+          error_description: "Authentication failed - no ID token received from Auth0"
         });
       }
 

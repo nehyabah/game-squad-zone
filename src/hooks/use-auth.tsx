@@ -85,11 +85,9 @@ export function useAuthState() {
     if (loading) return;
     
     try {
-      authAPI.getLoginUrl().then((response) => {
-        console.log('Login URL response:', response);
-        if (response.authUrl) {
-          console.log('Redirecting to:', response.authUrl);
-          window.location.href = response.authUrl;
+      authAPI.getLoginUrl().then(({ authUrl }) => {
+        if (authUrl) {
+          window.location.href = authUrl;
         } else {
           console.error('No auth URL received');
         }

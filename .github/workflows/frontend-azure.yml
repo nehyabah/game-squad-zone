@@ -42,7 +42,7 @@ jobs:
 
       - name: 🔧 Set API URL
         run: |
-          echo "VITE_API_URL=https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net" > .env.production
+          echo "VITE_API_URL=https://squadpot-backend-production.up.railway.app" > .env.production
 
       - name: 🏗️ Build Frontend
         run: npm run build
@@ -50,10 +50,10 @@ jobs:
       - name: 📁 Prepare deployment package
         run: |
           mkdir -p deploy
-          
+
           # Copy built files
           cp -r dist/* deploy/
-          
+
           # Create web.config for Azure
           cat > deploy/web.config << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>

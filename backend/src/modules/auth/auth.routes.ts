@@ -16,7 +16,13 @@ export default async function authRoutes(app: FastifyInstance) {
   app.get("/login", async (req, reply) => {
     const domain = process.env.OKTA_DOMAIN;
     const clientId = process.env.OKTA_CLIENT_ID;
-    const redirectUri = process.env.OKTA_REDIRECT_URI;
+    let redirectUri = process.env.OKTA_REDIRECT_URI;
+    
+    // Fallback to frontend URL if OKTA_REDIRECT_URI is not set properly
+    if (!redirectUri || redirectUri.includes('localhost:3001')) {
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+      redirectUri = `${frontendUrl}/auth/callback`;
+    }
 
     if (!domain || !clientId) {
       return reply.status(500).send({
@@ -183,7 +189,13 @@ export default async function authRoutes(app: FastifyInstance) {
     const domain = process.env.OKTA_DOMAIN;
     const clientId = process.env.OKTA_CLIENT_ID;
     const clientSecret = process.env.OKTA_CLIENT_SECRET;
-    const redirectUri = process.env.OKTA_REDIRECT_URI;
+    let redirectUri = process.env.OKTA_REDIRECT_URI;
+    
+    // Fallback to frontend URL if OKTA_REDIRECT_URI is not set properly
+    if (!redirectUri || redirectUri.includes('localhost:3001')) {
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+      redirectUri = `${frontendUrl}/auth/callback`;
+    }
 
     console.log("Token exchange redirect_uri:", redirectUri);
     console.log("Auth0 domain:", domain);

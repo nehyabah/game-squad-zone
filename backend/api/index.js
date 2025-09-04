@@ -14,14 +14,34 @@ module.exports = async (req, res) => {
     return;
   }
   
-  // For /api/auth/login, return a proper response
+  // For /api/auth/login, return the Auth0 authorization URL
   if (req.url === '/api/auth/login' && req.method === 'GET') {
-    // Set status to 200 explicitly
+    const domain = 'dev-xfta2nvjhpm5pku5.us.auth0.com';
+    const clientId = 'uBX39CJShJPMpgtLH9drNZkMaPsMVM7V';
+    const redirectUri = 'https://www.squadpot.dev/auth/callback'; // Frontend callback URL
+    
+    const authUrl = 
+      `https://${domain}/authorize?` +
+      `response_type=code&` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `scope=openid profile email`;
+    
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ authUrl }));
+    return;
+  }
+  
+  // Handle POST /api/auth/okta/exchange - exchange Auth0 token
+  if (req.url === '/api/auth/okta/exchange' && req.method === 'POST') {
+    // For now, return test tokens since we can't run the full Fastify app
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({
-      authUrl: 'https://dev-okta.com/oauth/authorize',
-      message: 'Test response - CORS should be working'
+      accessToken: 'test-token-' + Date.now(),
+      refreshToken: 'test-refresh-' + Date.now(),
+      message: 'Test authentication successful'
     }));
     return;
   }

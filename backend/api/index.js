@@ -14,35 +14,20 @@ module.exports = async (req, res) => {
     return;
   }
   
-  try {
-    // Try to load and initialize the app
-    const { buildApp } = require('../dist/app.js');
-    
-    // Cache the app instance
-    if (!global.app) {
-      global.app = buildApp();
-      await global.app.ready();
-    }
-    
-    // Let Fastify handle the request
-    await global.app.server.emit('request', req, res);
-  } catch (error) {
-    // If there's any error, still return a response with CORS headers
-    console.error('Error in api/index.js:', error);
-    
-    // Return a basic response for testing
-    if (req.url === '/api/auth/login' && req.method === 'GET') {
-      res.status(200).json({
-        authUrl: 'https://dev-okta.com/oauth/authorize',
-        message: 'Backend is initializing, please try again'
-      });
-    } else {
-      res.status(500).json({
-        error: 'Backend initialization error',
-        message: error.message,
-        path: req.url,
-        method: req.method
-      });
-    }
+  // For now, return a simple test response to verify CORS is working
+  if (req.url === '/api/auth/login' && req.method === 'GET') {
+    res.status(200).json({
+      authUrl: 'https://dev-okta.com/oauth/authorize',
+      message: 'Test response - CORS should be working'
+    });
+    return;
   }
+  
+  // Default test response
+  res.status(200).json({
+    message: 'Backend is running!',
+    path: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
 };

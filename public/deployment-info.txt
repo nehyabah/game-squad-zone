@@ -1,0 +1,5 @@
+Frontend Deployment Info
+========================
+Last Updated: 2025-09-04
+Backend API: https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net
+Frontend URL: https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net

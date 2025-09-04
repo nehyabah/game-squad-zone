@@ -30,6 +30,57 @@ const server = http.createServer((req, res) => {
     return;
   }
   
+  // Auth0 login endpoint
+  if (req.url === '/api/auth/login' && req.method === 'GET') {
+    const domain = 'dev-xfta2nvjhpm5pku5.us.auth0.com';
+    const clientId = 'uBX39CJShJPMpgtLH9drNZkMaPsMVM7V';
+    const redirectUri = 'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net/auth/callback';
+    
+    const authUrl = 
+      `https://${domain}/authorize?` +
+      `response_type=code&` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `scope=openid profile email`;
+    
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ authUrl }));
+    return;
+  }
+  
+  // Auth0 token exchange endpoint
+  if (req.url === '/api/auth/okta/exchange' && req.method === 'POST') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      accessToken: 'test-token-' + Date.now(),
+      refreshToken: 'test-refresh-' + Date.now(),
+      message: 'Authentication successful'
+    }));
+    return;
+  }
+  
+  // Get current user endpoint
+  if (req.url === '/api/auth/me' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      id: 'test-user-1',
+      email: 'test@squadpot.dev',
+      username: 'testuser',
+      firstName: 'Test',
+      lastName: 'User',
+      emailVerified: true,
+      status: 'active'
+    }));
+    return;
+  }
+  
+  // Squads endpoint
+  if (req.url === '/api/squads' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify([]));
+    return;
+  }
+  
   // Default response
   res.writeHead(404, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: 'Not Found' }));

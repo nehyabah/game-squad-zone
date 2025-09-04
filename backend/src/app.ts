@@ -28,7 +28,7 @@ export function buildApp(): FastifyInstance {
   // CORS
   app.register(fastifyCors, {
     origin: isProd 
-      ? ["https://www.squadpot.dev", "https://squadpot.dev", process.env.FRONTEND_URL!].filter(Boolean)
+      ? ["https://www.squadpot.dev", "https://squadpot.dev", "https://game-squad-zone-94o5.vercel.app", process.env.FRONTEND_URL!].filter(Boolean)
       : true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

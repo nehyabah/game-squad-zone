@@ -1,82 +1,39 @@
 // backend/api/index.js
 module.exports = async (req, res) => {
-  // ALWAYS set CORS headers first, no matter what
-  const origin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // ALWAYS set CORS headers first
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-user-id');
-  res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   
-  // Handle preflight OPTIONS requests immediately
+  // Handle OPTIONS preflight
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
   
-  // For /api/auth/login, return the Auth0 authorization URL
-  if (req.url === '/api/auth/login' && req.method === 'GET') {
-    const domain = 'dev-xfta2nvjhpm5pku5.us.auth0.com';
-    const clientId = 'uBX39CJShJPMpgtLH9drNZkMaPsMVM7V';
-    const redirectUri = 'https://www.squadpot.dev/auth/callback'; // Frontend callback URL
+  try {
+    // Try to load and run your app
+    const { buildApp } = require('../dist/src/app.js');
     
-    const authUrl = 
-      `https://${domain}/authorize?` +
-      `response_type=code&` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `scope=openid profile email`;
+    // Build app once
+    if (!global.app) {
+      global.app = buildApp();
+      await global.app.ready();
+    }
     
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ authUrl }));
-    return;
+    // Pass request to Fastify
+    await global.app.server.emit('request', req, res);
+    
+  } catch (error) {
+    console.error('Backend error:', error);
+    
+    // Return error details for debugging
+    res.status(500).json({
+      error: 'Backend initialization failed',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      path: req.url,
+      method: req.method
+    });
   }
-  
-  // Handle POST /api/auth/okta/exchange - exchange Auth0 token
-  if (req.url === '/api/auth/okta/exchange' && req.method === 'POST') {
-    // For now, return test tokens since we can't run the full Fastify app
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({
-      accessToken: 'test-token-' + Date.now(),
-      refreshToken: 'test-refresh-' + Date.now(),
-      message: 'Test authentication successful'
-    }));
-    return;
-  }
-  
-  // Handle GET /api/auth/me - return test user
-  if (req.url === '/api/auth/me' && req.method === 'GET') {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({
-      id: 'test-user-1',
-      email: 'test@squadpot.dev',
-      username: 'testuser',
-      firstName: 'Test',
-      lastName: 'User',
-      emailVerified: true,
-      status: 'active'
-    }));
-    return;
-  }
-  
-  // Handle GET /api/squads - return empty squads array
-  if (req.url === '/api/squads' && req.method === 'GET') {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify([]));
-    return;
-  }
-  
-  // For all other requests, return a test response
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'application/json');
-  res.end(JSON.stringify({
-    message: 'Backend API is running!',
-    path: req.url,
-    method: req.method,
-    timestamp: new Date().toISOString()
-  }));
 };

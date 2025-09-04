@@ -101,9 +101,9 @@ jobs:
         name: node-app
         path: ${{ env.WORKING_DIRECTORY }}/deploy
 
-    # Try using publish profile instead of OIDC
+    # Deploy using publish profile with v2 (v3 requires Azure login)
     - name: Deploy to Azure App Service
-      uses: azure/webapps-deploy@v3
+      uses: azure/webapps-deploy@v2
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
         publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}

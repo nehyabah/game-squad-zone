@@ -102,8 +102,8 @@ jobs:
           cd backend
           node -e "
           const pkg = require('./package.json');
-          pkg.scripts.start = 'node startup.js || node dist/src/main.server.js';
-          pkg.main = 'dist/src/main.server.js';
+          pkg.scripts.start = 'node dist/src/server.azure.js';
+          pkg.main = 'dist/src/server.azure.js';
           delete pkg.devDependencies;
           require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));
           "

@@ -7,5 +7,10 @@ console.log('Current directory:', process.cwd());
 console.log('Environment:', process.env.NODE_ENV);
 console.log('Port:', process.env.PORT || 8080);
 
-// Start the main server
-require('./dist/src/main.server.js');
+// Check if Azure-specific server exists, otherwise use main server
+try {
+  require('./dist/src/server.azure.js');
+} catch (err) {
+  console.log('Azure server not found, using main server');
+  require('./dist/src/main.server.js');
+}

@@ -14,20 +14,25 @@ module.exports = async (req, res) => {
     return;
   }
   
-  // For now, return a simple test response to verify CORS is working
+  // For /api/auth/login, return a proper response
   if (req.url === '/api/auth/login' && req.method === 'GET') {
-    res.status(200).json({
+    // Set status to 200 explicitly
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({
       authUrl: 'https://dev-okta.com/oauth/authorize',
       message: 'Test response - CORS should be working'
-    });
+    }));
     return;
   }
   
-  // Default test response
-  res.status(200).json({
+  // For all other requests, return a test response
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({
     message: 'Backend is running!',
     path: req.url,
     method: req.method,
     timestamp: new Date().toISOString()
-  });
+  }));
 };

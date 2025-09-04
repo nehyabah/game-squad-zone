@@ -207,6 +207,14 @@ export default async function authRoutes(app: FastifyInstance) {
       });
 
       const tokens = await tokenResponse.json();
+      
+      console.log("Auth0 token response:", {
+        has_access_token: !!tokens.access_token,
+        has_id_token: !!tokens.id_token,
+        has_refresh_token: !!tokens.refresh_token,
+        token_keys: Object.keys(tokens),
+        error: tokens.error
+      });
 
       if (tokens.error) {
         console.error("Auth0 token exchange error:", tokens);
@@ -218,6 +226,19 @@ export default async function authRoutes(app: FastifyInstance) {
             domain: domain,
             client_id: clientId,
             error_details: tokens
+          }
+        });
+      }
+      
+      // If no id_token but has access_token, that's still an error for our flow
+      if (!tokens.id_token) {
+        return reply.status(400).send({
+          error: "ID token required",
+          debug: {
+            tokens_received: Object.keys(tokens),
+            has_access_token: !!tokens.access_token,
+            redirect_uri_used: redirectUri,
+            scope_requested: "openid profile email"
           }
         });
       }

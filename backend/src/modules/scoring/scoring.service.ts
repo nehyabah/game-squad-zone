@@ -1,9 +1,9 @@
-import { PrismaClient, PickStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 export interface ScoringResult {
   pickId: string;
   gameId: string;
-  status: PickStatus;
+  status: string;
   points: number;
   payout?: number;
 }
@@ -38,7 +38,7 @@ export class ScoringService {
     const awayScore = game.awayScore;
     const homeDiff = homeScore - awayScore;
     
-    let status: PickStatus = 'pending';
+    let status: string = 'pending';
     let points = 0;
 
     // Simple moneyline calculation based on choice (home/away)

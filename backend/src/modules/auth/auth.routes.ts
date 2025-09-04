@@ -38,6 +38,120 @@ export default async function authRoutes(app: FastifyInstance) {
     return { authUrl };
   });
 
+  // POST /login - Manual login with email (for development)
+  app.post("/login", async (req, reply) => {
+    const { email, password } = req.body as { email: string; password?: string };
+
+    if (!email) {
+      return reply.status(400).send({ error: "Email is required" });
+    }
+
+    try {
+      // Check if user exists, create if not (development mode)
+      let user = await app.prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          firstName: true,
+          lastName: true,
+          displayName: true,
+          avatarUrl: true,
+          emailVerified: true,
+          status: true,
+        }
+      });
+
+      // If user doesn't exist, create them
+      if (!user) {
+        const username = email.split('@')[0] + Math.random().toString(36).substring(2, 7);
+        
+        user = await app.prisma.user.create({
+          data: {
+            email,
+            username,
+            oktaId: `manual-${Date.now()}`,
+            firstName: email.split('@')[0],
+            lastName: 'User',
+            displayName: email.split('@')[0],
+            status: 'active',
+            authProvider: 'okta',
+            emailVerified: true,
+            lastLoginAt: new Date(),
+          },
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            displayName: true,
+            avatarUrl: true,
+            emailVerified: true,
+            status: true,
+          }
+        });
+      } else {
+        // Update last login
+        await app.prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() }
+        });
+      }
+
+      // Check if user is active
+      if (user.status !== 'active') {
+        return reply.status(403).send({ 
+          error: "Account is not active",
+          status: user.status 
+        });
+      }
+
+      // Generate JWT token
+      const token = app.jwt.sign(
+        { 
+          sub: user.id,
+          email: user.email
+        },
+        { expiresIn: '7d' }
+      );
+
+      // Generate refresh token
+      const refreshToken = app.jwt.sign(
+        { 
+          sub: user.id,
+          email: user.email,
+          typ: 'refresh'
+        },
+        { expiresIn: '30d' }
+      );
+
+      // Set refresh token cookie
+      reply.setCookie('refresh_token', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60 * 1000
+      });
+
+      return {
+        success: true,
+        accessToken: token,
+        user,
+        expiresIn: 7 * 24 * 60 * 60
+      };
+
+    } catch (error) {
+      console.error("Login error:", error);
+      return reply.status(500).send({ 
+        error: "Login failed",
+        details: error instanceof Error ? error.message : undefined
+      });
+    }
+  });
+
   // GET /callback - OAuth callback handler
   app.get("/callback", async (req, reply) => {
     const { code, error } = req.query as { code?: string; error?: string };

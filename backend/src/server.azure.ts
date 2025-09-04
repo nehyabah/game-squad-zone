@@ -82,11 +82,12 @@ async function startServer() {
       
       // Copy routes from full app
       await app.register(async function (app) {
-        fullApp.ready().then(() => {
+        try {
+          await fullApp.ready();
           console.log("Full app loaded successfully");
-        }).catch((err: any) => {
+        } catch (err: any) {
           console.error("Failed to load full app:", err);
-        });
+        }
       });
     } catch (error) {
       console.error("Failed to load full application:", error);

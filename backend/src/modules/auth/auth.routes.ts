@@ -12,8 +12,6 @@ export default async function authRoutes(app: FastifyInstance) {
     console.error("AuthService initialization failed:", error);
   }
 
-
-
   // GET /login - get Auth0 login URL (OAuth)
   app.get("/login", async (req, reply) => {
     const domain = process.env.OKTA_DOMAIN;
@@ -40,7 +38,10 @@ export default async function authRoutes(app: FastifyInstance) {
 
   // POST /login - Manual login with email (for development)
   app.post("/login", async (req, reply) => {
-    const { email, password } = req.body as { email: string; password?: string };
+    const { email, password } = req.body as {
+      email: string;
+      password?: string;
+    };
 
     if (!email) {
       return reply.status(400).send({ error: "Email is required" });
@@ -60,23 +61,24 @@ export default async function authRoutes(app: FastifyInstance) {
           avatarUrl: true,
           emailVerified: true,
           status: true,
-        }
+        },
       });
 
       // If user doesn't exist, create them
       if (!user) {
-        const username = email.split('@')[0] + Math.random().toString(36).substring(2, 7);
-        
+        const username =
+          email.split("@")[0] + Math.random().toString(36).substring(2, 7);
+
         user = await app.prisma.user.create({
           data: {
             email,
             username,
             oktaId: `manual-${Date.now()}`,
-            firstName: email.split('@')[0],
-            lastName: 'User',
-            displayName: email.split('@')[0],
-            status: 'active',
-            authProvider: 'okta',
+            firstName: email.split("@")[0],
+            lastName: "User",
+            displayName: email.split("@")[0],
+            status: "active",
+            authProvider: "okta",
             emailVerified: true,
             lastLoginAt: new Date(),
           },
@@ -90,64 +92,63 @@ export default async function authRoutes(app: FastifyInstance) {
             avatarUrl: true,
             emailVerified: true,
             status: true,
-          }
+          },
         });
       } else {
         // Update last login
         await app.prisma.user.update({
           where: { id: user.id },
-          data: { lastLoginAt: new Date() }
+          data: { lastLoginAt: new Date() },
         });
       }
 
       // Check if user is active
-      if (user.status !== 'active') {
-        return reply.status(403).send({ 
+      if (user.status !== "active") {
+        return reply.status(403).send({
           error: "Account is not active",
-          status: user.status 
+          status: user.status,
         });
       }
 
       // Generate JWT token
       const token = app.jwt.sign(
-        { 
+        {
           sub: user.id,
-          email: user.email
+          email: user.email,
         },
-        { expiresIn: '7d' }
+        { expiresIn: "7d" }
       );
 
       // Generate refresh token
       const refreshToken = app.jwt.sign(
-        { 
+        {
           sub: user.id,
           email: user.email,
-          typ: 'refresh'
+          typ: "refresh",
         },
-        { expiresIn: '30d' }
+        { expiresIn: "30d" }
       );
 
       // Set refresh token cookie
-      reply.setCookie('refresh_token', refreshToken, {
+      reply.setCookie("refresh_token", refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 30 * 24 * 60 * 60 * 1000
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       });
 
       return {
         success: true,
         accessToken: token,
         user,
-        expiresIn: 7 * 24 * 60 * 60
+        expiresIn: 7 * 24 * 60 * 60,
       };
-
     } catch (error) {
       console.error("Login error:", error);
-      return reply.status(500).send({ 
+      return reply.status(500).send({
         error: "Login failed",
-        details: error instanceof Error ? error.message : undefined
+        details: error instanceof Error ? error.message : undefined,
       });
     }
   });
@@ -196,7 +197,7 @@ export default async function authRoutes(app: FastifyInstance) {
 
       // Always redirect to frontend - never show JSON to users
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
-      
+
       // If we have AuthService, try to create a session
       if (svc && tokens.id_token) {
         try {
@@ -217,17 +218,23 @@ export default async function authRoutes(app: FastifyInstance) {
           });
 
           // Redirect to frontend with access token
-          return reply.redirect(`${frontendUrl}/auth/success?token=${accessToken}`);
+          return reply.redirect(
+            `${frontendUrl}/auth/success?token=${accessToken}`
+          );
         } catch (err) {
           console.error("Session creation failed:", err);
           // Even if session creation fails, redirect with the id_token
-          return reply.redirect(`${frontendUrl}/auth/success?id_token=${tokens.id_token}`);
+          return reply.redirect(
+            `${frontendUrl}/auth/success?id_token=${tokens.id_token}`
+          );
         }
       }
 
       // If no AuthService or no id_token, redirect with id_token if available
       if (tokens.id_token) {
-        return reply.redirect(`${frontendUrl}/auth/success?id_token=${tokens.id_token}`);
+        return reply.redirect(
+          `${frontendUrl}/auth/success?id_token=${tokens.id_token}`
+        );
       }
 
       // Last resort: redirect to login with error
@@ -335,132 +342,140 @@ export default async function authRoutes(app: FastifyInstance) {
   });
 
   // PUT /me - Update current user profile (protected route)
-  app.put("/me", { preHandler: [app.auth] }, async (req: FastifyRequest, reply) => {
-    const { firstName, lastName, username, avatarUrl, displayName } = req.body as {
-      firstName?: string;
-      lastName?: string;
-      username?: string;
-      avatarUrl?: string;
-      displayName?: string;
-    };
+  app.put(
+    "/me",
+    { preHandler: [app.auth] },
+    async (req: FastifyRequest, reply) => {
+      const { firstName, lastName, username, avatarUrl, displayName } =
+        req.body as {
+          firstName?: string;
+          lastName?: string;
+          username?: string;
+          avatarUrl?: string;
+          displayName?: string;
+        };
 
-    try {
-      // Check if username is already taken (if provided)
-      if (username) {
-        const existingUser = await app.prisma.user.findFirst({
-          where: { 
-            username, 
-            NOT: { id: req.currentUser!.id }
+      try {
+        // Check if username is already taken (if provided)
+        if (username) {
+          const existingUser = await app.prisma.user.findFirst({
+            where: {
+              username,
+              NOT: { id: req.currentUser!.id },
+            },
+          });
+
+          if (existingUser) {
+            return reply.status(400).send({ error: "Username already taken" });
           }
-        });
-        
-        if (existingUser) {
-          return reply.status(400).send({ error: "Username already taken" });
         }
+
+        const updateData = {
+          ...(firstName !== undefined && { firstName }),
+          ...(lastName !== undefined && { lastName }),
+          ...(username !== undefined && { username }),
+          ...(avatarUrl !== undefined && { avatarUrl }),
+          ...(displayName !== undefined && { displayName }),
+        };
+
+        const user = await app.prisma.user.update({
+          where: { id: req.currentUser!.id },
+          data: updateData,
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            displayName: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        });
+
+        return user;
+      } catch (error) {
+        return reply.status(500).send({ error: "Failed to update profile" });
       }
-
-      const updateData = {
-        ...(firstName !== undefined && { firstName }),
-        ...(lastName !== undefined && { lastName }),
-        ...(username !== undefined && { username }),
-        ...(avatarUrl !== undefined && { avatarUrl }),
-        ...(displayName !== undefined && { displayName }),
-      };
-      
-
-      const user = await app.prisma.user.update({
-        where: { id: req.currentUser!.id },
-        data: updateData,
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          displayName: true,
-          firstName: true,
-          lastName: true,
-          avatarUrl: true,
-        },
-      });
-
-      return user;
-    } catch (error) {
-      return reply.status(500).send({ error: "Failed to update profile" });
     }
-  });
+  );
 
   // DELETE /me - Delete current user account (protected route)
-  app.delete("/me", { preHandler: [app.auth] }, async (req: FastifyRequest, reply) => {
-    const userId = req.currentUser!.id;
-    
-    try {
-      // Start a transaction to delete all user-related data
-      await app.prisma.$transaction(async (prisma) => {
-        // Delete squad messages
-        await prisma.squadMessage.deleteMany({
-          where: { userId }
+  app.delete(
+    "/me",
+    { preHandler: [app.auth] },
+    async (req: FastifyRequest, reply) => {
+      const userId = req.currentUser!.id;
+
+      try {
+        // Start a transaction to delete all user-related data
+        await app.prisma.$transaction(async (prisma) => {
+          // Delete squad messages
+          await prisma.squadMessage.deleteMany({
+            where: { userId },
+          });
+
+          // Delete user picks
+          await prisma.pick.deleteMany({
+            where: {
+              pickSet: { userId },
+            },
+          });
+
+          // Delete pick sets
+          await prisma.pickSet.deleteMany({
+            where: { userId },
+          });
+
+          // Delete squad payments
+          await prisma.squadPayment.deleteMany({
+            where: { userId },
+          });
+
+          // Delete wallet transactions
+          await prisma.walletTransaction.deleteMany({
+            where: { userId },
+          });
+
+          // Remove user from squad memberships
+          await prisma.squadMember.deleteMany({
+            where: { userId },
+          });
+
+          // Delete squads owned by the user (this will cascade to other related data)
+          await prisma.squad.deleteMany({
+            where: { ownerId: userId },
+          });
+
+          // Delete user sessions
+          await prisma.session.deleteMany({
+            where: { userId },
+          });
+
+          // Finally, delete the user
+          await prisma.user.delete({
+            where: { id: userId },
+          });
         });
 
-        // Delete user picks
-        await prisma.pick.deleteMany({
-          where: { 
-            pickSet: { userId }
+        // If we have AuthService, logout the user to clean up any remaining sessions
+        if (svc) {
+          try {
+            const token = req.cookies["refresh_token"];
+            await svc.logout(token);
+            reply.clearCookie("refresh_token");
+          } catch (error) {
+            // Log but don't fail the request if logout fails
+            console.warn("Failed to logout during account deletion:", error);
           }
-        });
-
-        // Delete pick sets
-        await prisma.pickSet.deleteMany({
-          where: { userId }
-        });
-
-        // Delete squad payments
-        await prisma.squadPayment.deleteMany({
-          where: { userId }
-        });
-
-        // Delete wallet transactions
-        await prisma.walletTransaction.deleteMany({
-          where: { userId }
-        });
-
-        // Remove user from squad memberships
-        await prisma.squadMember.deleteMany({
-          where: { userId }
-        });
-
-        // Delete squads owned by the user (this will cascade to other related data)
-        await prisma.squad.deleteMany({
-          where: { ownerId: userId }
-        });
-
-        // Delete user sessions
-        await prisma.session.deleteMany({
-          where: { userId }
-        });
-
-        // Finally, delete the user
-        await prisma.user.delete({
-          where: { id: userId }
-        });
-      });
-
-      // If we have AuthService, logout the user to clean up any remaining sessions
-      if (svc) {
-        try {
-          const token = req.cookies["refresh_token"];
-          await svc.logout(token);
-          reply.clearCookie("refresh_token");
-        } catch (error) {
-          // Log but don't fail the request if logout fails
-          console.warn("Failed to logout during account deletion:", error);
         }
-      }
 
-      return { message: "Account successfully deleted" };
-    } catch (error) {
-      console.error("Account deletion failed:", error);
-      return reply.status(500).send({ error: "Failed to delete account" });
+        return { message: "Account successfully deleted" };
+      } catch (error) {
+        console.error("Account deletion failed:", error);
+        return reply.status(500).send({ error: "Failed to delete account" });
+      }
     }
-  });
+  );
 
   // GET /me/squads - Get current user's squads (protected route)
   app.get("/me/squads", { preHandler: [app.auth] }, async (req, reply) => {
@@ -468,8 +483,8 @@ export default async function authRoutes(app: FastifyInstance) {
       const squads = await app.prisma.squad.findMany({
         where: {
           members: {
-            some: { userId: req.currentUser!.id }
-          }
+            some: { userId: req.currentUser!.id },
+          },
         },
         include: {
           owner: {
@@ -480,7 +495,7 @@ export default async function authRoutes(app: FastifyInstance) {
               firstName: true,
               lastName: true,
               avatarUrl: true,
-            }
+            },
           },
           members: {
             include: {
@@ -492,17 +507,17 @@ export default async function authRoutes(app: FastifyInstance) {
                   firstName: true,
                   lastName: true,
                   avatarUrl: true,
-                }
-              }
-            }
+                },
+              },
+            },
           },
           _count: {
             select: {
               members: true,
               payments: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       return squads;
@@ -516,15 +531,16 @@ export default async function authRoutes(app: FastifyInstance) {
     try {
       const userId = req.currentUser!.id;
 
-      const [ownedSquadsCount, memberSquadsCount, totalPayments] = await Promise.all([
-        app.prisma.squad.count({ where: { ownerId: userId } }),
-        app.prisma.squadMember.count({ where: { userId } }),
-        app.prisma.squadPayment.aggregate({
-          where: { userId, status: 'completed' },
-          _sum: { amount: true },
-          _count: true,
-        })
-      ]);
+      const [ownedSquadsCount, memberSquadsCount, totalPayments] =
+        await Promise.all([
+          app.prisma.squad.count({ where: { ownerId: userId } }),
+          app.prisma.squadMember.count({ where: { userId } }),
+          app.prisma.squadPayment.aggregate({
+            where: { userId, status: "completed" },
+            _sum: { amount: true },
+            _count: true,
+          }),
+        ]);
 
       return {
         squads: {
@@ -535,7 +551,7 @@ export default async function authRoutes(app: FastifyInstance) {
         payments: {
           count: totalPayments._count,
           totalAmount: (totalPayments._sum.amount || 0) / 100, // Convert cents to dollars
-        }
+        },
       };
     } catch (error) {
       return reply.status(500).send({ error: "Failed to fetch stats" });
@@ -545,7 +561,7 @@ export default async function authRoutes(app: FastifyInstance) {
   // POST /resend-verification - Trigger email verification resend
   app.post("/resend-verification", async (req, reply) => {
     const { email } = req.body as { email: string };
-    
+
     if (!email) {
       return reply.status(400).send({ error: "Email is required" });
     }
@@ -553,13 +569,14 @@ export default async function authRoutes(app: FastifyInstance) {
     // In a real implementation, you would call Auth0 Management API to resend verification
     // For now, return instructions for the user
     return reply.send({
-      message: "If an account with this email exists, we've sent verification instructions.",
+      message:
+        "If an account with this email exists, we've sent verification instructions.",
       instructions: [
         "Check your email inbox and spam folder",
         "Click the verification link in the email from Auth0",
         "Return to the platform and log in again",
-        "If you don't receive an email, contact support"
-      ]
+        "If you don't receive an email, contact support",
+      ],
     });
   });
 
@@ -575,7 +592,7 @@ export default async function authRoutes(app: FastifyInstance) {
         oktaId: true,
         email: true,
         username: true,
-      }
+      },
     });
     return users;
   });
@@ -583,8 +600,8 @@ export default async function authRoutes(app: FastifyInstance) {
   app.delete("/debug/test-picks", async (req, reply) => {
     const deleted = await app.prisma.pickSet.deleteMany({
       where: {
-        userId: "test-user-123"
-      }
+        userId: "test-user-123",
+      },
     });
     return { message: `Deleted ${deleted.count} test pick sets` };
   });
@@ -597,7 +614,7 @@ export default async function authRoutes(app: FastifyInstance) {
         weekId: true,
         status: true,
         picks: true,
-      }
+      },
     });
     return pickSets;
   });

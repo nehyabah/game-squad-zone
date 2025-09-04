@@ -1,4 +1,5 @@
 // backend/api/index.js
+// Force redeployment: Updated at 11:05 AM
 module.exports = async (req, res) => {
   // ALWAYS set CORS headers first
   res.setHeader('Access-Control-Allow-Origin', '*');

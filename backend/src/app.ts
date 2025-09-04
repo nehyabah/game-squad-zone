@@ -27,7 +27,9 @@ export function buildApp(): FastifyInstance {
 
   // CORS
   app.register(fastifyCors, {
-    origin: isProd ? [process.env.FRONTEND_URL!] : true,
+    origin: isProd 
+      ? ["https://www.squadpot.dev", "https://squadpot.dev", process.env.FRONTEND_URL!].filter(Boolean)
+      : true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],

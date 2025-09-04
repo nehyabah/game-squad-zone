@@ -26,6 +26,8 @@ export default async function authRoutes(app: FastifyInstance) {
       });
     }
 
+    console.log("Auth0 redirect_uri being used:", redirectUri);
+    
     const authUrl =
       `https://${domain}/authorize?` +
       `response_type=code&` +
@@ -33,6 +35,8 @@ export default async function authRoutes(app: FastifyInstance) {
       `redirect_uri=${encodeURIComponent(redirectUri!)}&` +
       `scope=openid profile email`;
 
+    console.log("Full Auth0 URL:", authUrl);
+    
     return { authUrl };
   });
 
@@ -173,17 +177,25 @@ export default async function authRoutes(app: FastifyInstance) {
     const clientSecret = process.env.OKTA_CLIENT_SECRET;
     const redirectUri = process.env.OKTA_REDIRECT_URI;
 
+    console.log("Token exchange redirect_uri:", redirectUri);
+    console.log("Auth0 domain:", domain);
+    console.log("Client ID:", clientId);
+
     try {
+      const tokenPayload = {
+        grant_type: "authorization_code",
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+      };
+      
+      console.log("Token exchange payload:", { ...tokenPayload, client_secret: "[REDACTED]" });
+      
       const tokenResponse = await fetch(`https://${domain}/oauth/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          grant_type: "authorization_code",
-          client_id: clientId,
-          client_secret: clientSecret,
-          code,
-          redirect_uri: redirectUri,
-        }),
+        body: JSON.stringify(tokenPayload),
       });
 
       const tokens = await tokenResponse.json();

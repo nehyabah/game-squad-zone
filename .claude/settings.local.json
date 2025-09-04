@@ -31,7 +31,9 @@
       "Read(C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone-main (1)\\game-squad-zone-main\\backend/**)",
       "Bash(PORT=8080 npm run dev)",
       "Bash(timeout:*)",
-      "Bash(PORT=3031 npm run dev)"
+      "Bash(PORT=3031 npm run dev)",
+      "Read(/C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone\\backend/**)",
+      "Read(/C:\\Users\\NehemiahAbah\\Downloads\\game-squad-zone\\src\\services/**)"
     ],
     "deny": [],
     "ask": []

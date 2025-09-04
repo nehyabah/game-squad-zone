@@ -87,39 +87,65 @@ jobs:
 
           mkdir -p deploy
 
-          # Copy compiled JavaScript from dist folder
-          cp -r backend/dist deploy/
-          # Copy Prisma schema and migrations
-          cp -r backend/prisma deploy/
-          # Copy source files (for source maps if needed)
+          # Copy source files for potential debugging
           cp -r backend/src deploy/
-          cp -r backend/node_modules deploy/ || echo "No node_modules to copy"
-          
-          # Copy the simple server.js to root of deploy
-          cp backend/server.js deploy/ 2>/dev/null || echo "No server.js to copy"
-          
-          # Also copy server.azure.js to dist/src if it wasn't built
-          mkdir -p deploy/dist/src
-          cp backend/src/server.azure.js deploy/dist/src/ 2>/dev/null || echo "No server.azure.js"
+          cp backend/tsconfig.json deploy/
 
+          # Copy compiled JavaScript
+          cp -r backend/dist deploy/
+
+          # Copy Prisma files
+          cp -r backend/prisma deploy/
+
+          # Copy package files
           cp backend/package.json deploy/
           cp backend/package-lock.json deploy/
-          cp backend/web.config deploy/ 2>/dev/null || echo "No web.config to copy"
 
-          cd backend
+          # Create a reliable startup script
+          cat > deploy/start.js << 'EOF'
+          console.log('Starting application...');
+          const port = process.env.PORT || 8080;
+
+          try {
+            const { buildApp } = require('./dist/src/app.js');
+            const app = buildApp();
+            
+            app.listen({ port: Number(port), host: '0.0.0.0' })
+              .then(() => console.log(`Fastify server running on port ${port}`))
+              .catch(err => {
+                console.error('Failed to start Fastify:', err);
+                process.exit(1);
+              });
+          } catch (error) {
+            console.error('Failed to load application:', error);
+            process.exit(1);
+          }
+          EOF
+
+          # Update package.json for Azure
+          cd deploy
           node -e "
+          const fs = require('fs');
           const pkg = require('./package.json');
-          pkg.scripts.start = 'node dist/src/server.azure.js';
-          pkg.main = 'dist/src/server.azure.js';
+
+          // Set scripts for Azure
+          pkg.scripts = pkg.scripts || {};
+          pkg.scripts.start = 'node start.js';
+          pkg.scripts.postinstall = 'npx prisma generate';
+
+          // Remove devDependencies to speed up Azure install
           delete pkg.devDependencies;
-          require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));
+
+          fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2));
+          console.log('Updated package.json for deployment');
           "
           cd ..
 
           echo "✅ Deployment package ready"
           echo "📊 Package contents:"
           ls -la deploy/
-          echo "📊 Package size: $(du -sh deploy)"
+          echo "📊 Dist folder check:"
+          ls -la deploy/dist/src/ | head -10
 
       - name: 🗃️ Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -148,21 +174,12 @@ jobs:
         run: |
           echo "📋 Deployment package contents:"
           ls -la ./deploy
-          echo "📊 Package size: $(du -sh deploy)"
-          echo "🔧 Package.json check:"
-          cat deploy/package.json | head -20
+          echo "📊 Package.json check:"
+          cat deploy/package.json | grep -A 5 scripts
           echo "📁 Dist folder contents:"
           find ./deploy/dist -type f -name "*.js" | head -10
-          echo "🧹 Ensuring no Windows artifacts:"
-          ls -la ./deploy/
-          if [ -f ./deploy/startup.js ]; then
-            echo "⚠️ Found startup.js - this should not exist"
-            rm -f ./deploy/startup.js
-          fi
-          if [ -f ./deploy/web.config ]; then
-            echo "⚠️ Found web.config - this should not exist"
-            rm -f ./deploy/web.config
-          fi
+          echo "📁 Start script check:"
+          test -f ./deploy/start.js && echo "✅ start.js exists" || echo "❌ start.js missing"
 
       - name: 🚀 Deploy to Azure App Service
         uses: azure/webapps-deploy@v3
@@ -170,27 +187,17 @@ jobs:
           publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
           package: ./deploy
           clean: true
+
+      - name: ⚙️ Configure Azure to install dependencies
         continue-on-error: true
-        id: deploy_attempt_1
-
-      - name: 🔄 Retry deployment if failed
-        if: steps.deploy_attempt_1.outcome == 'failure'
         run: |
-          echo "🔄 First deployment failed, waiting 30 seconds and retrying..."
-          sleep 30
-
-      - name: 🚀 Retry Deploy to Azure App Service
-        if: steps.deploy_attempt_1.outcome == 'failure'
-        uses: azure/webapps-deploy@v3
-        with:
-          publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
-          package: ./deploy
-          clean: true
+          echo "Azure will run npm install automatically when it detects package.json"
+          echo "The postinstall script will generate Prisma client"
 
       - name: 🏥 Health check
         run: |
-          echo "🔍 Waiting for deployment to be ready..."
-          sleep 60
+          echo "🔍 Waiting for deployment and npm install to complete..."
+          sleep 90
 
           for i in {1..5}; do
             echo "🩺 Health check attempt $i/5"
@@ -200,14 +207,17 @@ jobs:
               echo "✅ Backend is healthy!"
               break
             else
-              echo "⚠️ Health check failed, retrying in 20 seconds..."
-              sleep 20
+              echo "⚠️ Health check failed, retrying in 30 seconds..."
+              sleep 30
             fi
             
             if [ $i -eq 5 ]; then
               echo "❌ Health check failed after 5 attempts"
               echo "🔍 Check Azure App Service logs for details"
-              echo "💡 Tip: Make sure your app listens on process.env.PORT"
+              echo "💡 Tips:"
+              echo "  - Ensure DATABASE_URL is set in Azure Configuration"
+              echo "  - Check that the app listens on process.env.PORT"
+              echo "  - Verify Prisma client generates successfully"
               exit 1
             fi
           done

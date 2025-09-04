@@ -159,6 +159,105 @@ export default async function authRoutes(app: FastifyInstance) {
     }
   });
 
+  // POST /token - Exchange authorization code for tokens (JSON response for frontend)
+  app.post("/token", async (req, reply) => {
+    const { code, state } = req.body as { code?: string; state?: string };
+
+    if (!code) {
+      return reply
+        .status(400)
+        .send({ error: "No authorization code received" });
+    }
+
+    // Exchange the code for tokens with Auth0
+    const domain = process.env.OKTA_DOMAIN;
+    const clientId = process.env.OKTA_CLIENT_ID;
+    const clientSecret = process.env.OKTA_CLIENT_SECRET;
+    let redirectUri = process.env.OKTA_REDIRECT_URI;
+    
+    // Fallback to frontend URL if OKTA_REDIRECT_URI is not set properly
+    if (!redirectUri || redirectUri.includes('localhost:3001')) {
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+      redirectUri = `${frontendUrl}/auth/callback`;
+    }
+
+    try {
+      const tokenResponse = await fetch(`https://${domain}/oauth/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grant_type: "authorization_code",
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
+          redirect_uri: redirectUri,
+        }),
+      });
+
+      const tokens = await tokenResponse.json();
+
+      if (tokens.error) {
+        return reply.status(400).send({
+          error: tokens.error,
+          error_description: tokens.error_description,
+        });
+      }
+      
+      // If no id_token but has access_token, that's still an error for our flow
+      if (!tokens.id_token) {
+        return reply.status(400).send({
+          error: "ID token required",
+          error_description: "Authentication failed - no ID token received from Auth0"
+        });
+      }
+
+      // If we have AuthService, try to create a session
+      if (svc && tokens.id_token) {
+        try {
+          const { accessToken, refreshToken, refreshExpiresAt } =
+            await svc.oktaExchange(
+              tokens.id_token,
+              req.headers["user-agent"],
+              req.ip
+            );
+
+          // Set refresh token cookie
+          reply.setCookie("refresh_token", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            expires: refreshExpiresAt,
+          });
+
+          // Return JSON with tokens
+          return { 
+            accessToken, 
+            refreshToken,
+            expiresIn: 60 * 15 // 15 minutes
+          };
+        } catch (err) {
+          console.error("Session creation failed:", err);
+          // Return error
+          return reply.status(500).send({
+            error: "Session creation failed",
+            error_description: err instanceof Error ? err.message : "Unknown error"
+          });
+        }
+      }
+
+      // If no AuthService, return error
+      return reply.status(500).send({
+        error: "Authentication service unavailable"
+      });
+    } catch (err) {
+      console.error("Token exchange failed:", err);
+      return reply
+        .status(500)
+        .send({ error: "Failed to exchange code for tokens" });
+    }
+  });
+
   // GET /callback - OAuth callback handler
   app.get("/callback", async (req, reply) => {
     const { code, error } = req.query as { code?: string; error?: string };

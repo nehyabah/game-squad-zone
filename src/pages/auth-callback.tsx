@@ -22,9 +22,10 @@ const AuthCallback = () => {
         }
 
         if (code) {
-          // Exchange the code for tokens
+          // Exchange the code for tokens with backend
+          // The backend will exchange with Auth0 and return our app tokens
           const response = await fetch(
-            `${import.meta.env.VITE_API_URL}/api/auth/okta/exchange`,
+            `${import.meta.env.VITE_API_URL}/api/auth/token`,
             {
               method: "POST",
               headers: {

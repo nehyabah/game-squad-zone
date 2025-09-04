@@ -1,5 +1,5 @@
 // backend/src/server.azure.ts
-import { buildApp } from "./app.js"; // Add .js extension
+const { buildApp } = require("./app.js");
 
 const start = async () => {
   const app = buildApp();
@@ -12,7 +12,7 @@ const start = async () => {
     });
     console.log(`Server running on port ${port}`);
   } catch (err) {
-    app.log.error(err);
+    console.error(err);
     process.exit(1);
   }
 };

@@ -24,7 +24,17 @@ RUN npx tsc --skipLibCheck --target ES2020 --module commonjs --outDir dist || ec
 
 # Create a proper start script
 RUN cat > start.js << 'EOF'
+// Load environment variables from .env.production if it exists
+require('dotenv').config({ path: '.env.production' });
+
 const port = process.env.PORT || 8080;
+
+console.log('Environment check:', {
+  NODE_ENV: process.env.NODE_ENV,
+  FRONTEND_URL: process.env.FRONTEND_URL,
+  OKTA_DOMAIN: process.env.OKTA_DOMAIN,
+  OKTA_REDIRECT_URI: process.env.OKTA_REDIRECT_URI
+});
 
 async function start() {
   try {

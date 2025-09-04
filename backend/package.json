@@ -8,7 +8,8 @@
     "dev:watch": "ts-node-dev --respawn --transpile-only src/main.server.ts",
     "worker": "ts-node src/main.worker.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/main.server.js",
+    "start": "node dist/src/main.server.js",
+    "start:azure": "node dist/src/main.server.js",
     "start:ts": "ts-node src/main.server.ts",
     "type-check": "tsc --noEmit",
     "migrate:dev": "npx prisma migrate dev",
@@ -19,7 +20,10 @@
     "simulate-results": "ts-node scripts/simulate-results.ts",
     "process-results": "ts-node scripts/process-results.ts",
     "recalc": "ts-node scripts/recalc.ts",
-    "postinstall": "npx prisma generate"
+    "postinstall": "npx prisma generate",
+    "prebuild:azure": "npm ci && npx prisma generate",
+    "build:azure": "npm run build",
+    "postbuild:azure": "echo 'Build complete for Azure'"
   },
   "dependencies": {
     "@fastify/cookie": "^8.3.0",

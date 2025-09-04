@@ -1,0 +1,39 @@
+# Simple Azure App Service deployment using publish profile
+name: Deploy Backend to Azure (Simple)
+
+on:
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: ${{ secrets.AZURE_API_APP_NAME }}
+  NODE_VERSION: '18.x'
+  WORKING_DIRECTORY: backend
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install dependencies and build
+      working-directory: ${{ env.WORKING_DIRECTORY }}
+      run: |
+        npm ci
+        npm run build
+        npx prisma generate
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
+        package: ${{ env.WORKING_DIRECTORY }}

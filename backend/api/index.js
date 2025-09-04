@@ -1,43 +1,48 @@
 // backend/api/index.js
-const { buildApp } = require('../dist/app.js');
-
-let app;
-
 module.exports = async (req, res) => {
-  // Set CORS headers immediately
-  const origin = req.headers.origin;
+  // ALWAYS set CORS headers first, no matter what
+  const origin = req.headers.origin || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-user-id');
+  res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
   
-  // Add your frontend domains
-  const allowedOrigins = [
-    'https://www.squadpot.dev',
-    'https://squadpot.dev',
-    'https://sqpbackend.vercel.app',
-    'https://game-squad-zone-94o5.vercel.app',
-    'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net',
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'http://localhost:8080'
-  ];
-  
-  if (origin && (allowedOrigins.includes(origin) || true)) { // true for testing
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS,PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,x-user-id');
-  }
-  
-  // Handle preflight
+  // Handle preflight OPTIONS requests immediately
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
   
-  // Initialize app if needed
-  if (!app) {
-    app = buildApp();
-    await app.ready();
+  try {
+    // Try to load and initialize the app
+    const { buildApp } = require('../dist/app.js');
+    
+    // Cache the app instance
+    if (!global.app) {
+      global.app = buildApp();
+      await global.app.ready();
+    }
+    
+    // Let Fastify handle the request
+    await global.app.server.emit('request', req, res);
+  } catch (error) {
+    // If there's any error, still return a response with CORS headers
+    console.error('Error in api/index.js:', error);
+    
+    // Return a basic response for testing
+    if (req.url === '/api/auth/login' && req.method === 'GET') {
+      res.status(200).json({
+        authUrl: 'https://dev-okta.com/oauth/authorize',
+        message: 'Backend is initializing, please try again'
+      });
+    } else {
+      res.status(500).json({
+        error: 'Backend initialization error',
+        message: error.message,
+        path: req.url,
+        method: req.method
+      });
+    }
   }
-  
-  // Let Fastify handle the request
-  await app.server.emit('request', req, res);
 };

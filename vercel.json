@@ -1,8 +1,10 @@
 {
-  "buildCommand": "cd backend && npm install && npm run build",
+  "installCommand": "cd backend && npm install",
+  "buildCommand": "cd backend && npm run build && ls -la dist/src/",
   "functions": {
     "backend/api/index.js": {
-      "maxDuration": 10
+      "maxDuration": 10,
+      "includeFiles": "backend/dist/**"
     }
   },
   "rewrites": [

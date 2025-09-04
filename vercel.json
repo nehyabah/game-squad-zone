@@ -1,12 +1,11 @@
 {
   "buildCommand": "cd backend && npm install && npm run build",
-  "outputDirectory": ".",
   "functions": {
-    "api/index.js": {
+    "backend/api/index.js": {
       "maxDuration": 10
     }
   },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
+    { "source": "/api/(.*)", "destination": "/backend/api" }
   ]
 }

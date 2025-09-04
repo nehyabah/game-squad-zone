@@ -1,11 +1,4 @@
 {
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 10,
-      "includeFiles": "dist/**"
-    }
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
-  ]
+  "buildCommand": "npm run build",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.js" }]
 }

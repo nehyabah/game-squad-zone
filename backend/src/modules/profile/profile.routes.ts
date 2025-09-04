@@ -1,4 +1,5 @@
 // src/modules/profile/profile.routes.ts
+
 import { FastifyInstance } from "fastify";
 
 export default async function profileRoutes(app: FastifyInstance) {
@@ -6,7 +7,7 @@ export default async function profileRoutes(app: FastifyInstance) {
   app.get("/profile", { preHandler: [app.auth] }, async (req, reply) => {
     try {
       const userId = req.currentUser!.id;
-      
+
       const user = await app.prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -22,18 +23,18 @@ export default async function profileRoutes(app: FastifyInstance) {
           walletCurrency: true,
           createdAt: true,
           lastLoginAt: true,
-        }
+        },
       });
 
       if (!user) {
-        return reply.status(404).send({ error: 'User not found' });
+        return reply.status(404).send({ error: "User not found" });
       }
 
       return user;
     } catch (error) {
-      console.error('Profile fetch error:', error);
+      console.error("Profile fetch error:", error);
       return reply.status(500).send({
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : "Internal server error",
       });
     }
   });
@@ -42,14 +43,14 @@ export default async function profileRoutes(app: FastifyInstance) {
   app.put("/profile", { preHandler: [app.auth] }, async (req, reply) => {
     try {
       const userId = req.currentUser!.id;
-      
-      const { 
-        displayName, 
-        firstName, 
-        lastName, 
-        phoneNumber, 
+
+      const {
+        displayName,
+        firstName,
+        lastName,
+        phoneNumber,
         avatarUrl,
-        username 
+        username,
       } = req.body as {
         displayName?: string;
         firstName?: string;
@@ -58,53 +59,66 @@ export default async function profileRoutes(app: FastifyInstance) {
         avatarUrl?: string;
         username?: string;
       };
-      
 
       // Validate phone number format if provided
+      // Fix for phoneNumber validation (around line 59)
       if (phoneNumber && phoneNumber.trim()) {
         const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-        if (!phoneRegex.test(phoneNumber.replace(/[\s\-\(\)]/g, ''))) {
-          return reply.status(400).send({ 
-            error: 'Invalid phone number format' 
+        const cleanedPhone = phoneNumber.replace(/[\s\-\(\)]/g, "");
+        if (!phoneRegex.test(cleanedPhone)) {
+          return reply.status(400).send({
+            error: "Invalid phone number format",
           });
         }
       }
 
       // Validate display name length if provided
       if (displayName && displayName.trim() && displayName.trim().length > 50) {
-        return reply.status(400).send({ 
-          error: 'Display name must be 50 characters or less' 
+        return reply.status(400).send({
+          error: "Display name must be 50 characters or less",
         });
       }
 
       // Check if username is already taken (if provided and not empty)
-      if (username !== undefined && username !== null && username.trim() !== '') {
+      if (
+        username !== undefined &&
+        username !== null &&
+        username.trim() !== ""
+      ) {
         const trimmedUsername = username.trim();
-        
+
         // Validate username format first
         const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
         if (!usernameRegex.test(trimmedUsername)) {
-          return reply.status(400).send({ 
-            error: 'Username must be 3-20 characters and contain only letters, numbers, and underscores' 
+          return reply.status(400).send({
+            error:
+              "Username must be 3-20 characters and contain only letters, numbers, and underscores",
           });
         }
-        
+
         // Then check if it's already taken
         const existingUser = await app.prisma.user.findFirst({
-          where: { 
-            username: trimmedUsername, 
-            NOT: { id: userId }
-          }
+          where: {
+            username: trimmedUsername,
+            NOT: { id: userId },
+          },
         });
-        
+
         if (existingUser) {
           return reply.status(400).send({ error: "Username already taken" });
         }
       }
 
       // Prepare update data
-      const updateData: any = {};
-      
+      const updateData: {
+        displayName?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+        phoneNumber?: string | null;
+        avatarUrl?: string | null;
+        username?: string;
+      } = {};
+
       if (displayName !== undefined) {
         updateData.displayName = displayName.trim() || null;
       }
@@ -120,7 +134,11 @@ export default async function profileRoutes(app: FastifyInstance) {
       if (avatarUrl !== undefined) {
         updateData.avatarUrl = avatarUrl.trim() || null;
       }
-      if (username !== undefined && username !== null && username.trim() !== '') {
+      if (
+        username !== undefined &&
+        username !== null &&
+        username.trim() !== ""
+      ) {
         updateData.username = username.trim();
       }
 
@@ -140,19 +158,18 @@ export default async function profileRoutes(app: FastifyInstance) {
           walletCurrency: true,
           createdAt: true,
           lastLoginAt: true,
-        }
+        },
       });
-
 
       return {
         success: true,
-        message: 'Profile updated successfully',
-        user: updatedUser
+        message: "Profile updated successfully",
+        user: updatedUser,
       };
     } catch (error) {
-      console.error('Profile update error:', error);
+      console.error("Profile update error:", error);
       return reply.status(500).send({
-        error: error instanceof Error ? error.message : 'Internal server error'
+        error: error instanceof Error ? error.message : "Internal server error",
       });
     }
   });

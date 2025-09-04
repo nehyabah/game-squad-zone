@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -209,3 +208,8 @@ model SquadMessage {
 // SquadRole: "owner" | "admin" | "member"
 // PaymentStatus: "pending" | "completed" | "failed" | "refunded"
 // PickStatus: "pending" | "won" | "lost" | "pushed"
+enum SquadRole {
+  OWNER
+  MODERATOR
+  MEMBER
+}

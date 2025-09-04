@@ -97,13 +97,14 @@ jobs:
 
           cp backend/package.json deploy/
           cp backend/package-lock.json deploy/
-          cp backend/startup.js deploy/ 2>/dev/null || echo "No startup.js to copy"
+          cp backend/server.js deploy/ 2>/dev/null || echo "No server.js to copy"
+          cp backend/web.config deploy/ 2>/dev/null || echo "No web.config to copy"
 
           cd backend
           node -e "
           const pkg = require('./package.json');
-          pkg.scripts.start = 'node dist/src/server.azure.js';
-          pkg.main = 'dist/src/server.azure.js';
+          pkg.scripts.start = 'node server.js';
+          pkg.main = 'server.js';
           delete pkg.devDependencies;
           require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));
           "

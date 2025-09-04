@@ -64,9 +64,7 @@ export const updateSquadSchema = z.object({
 });
 
 export const updateMemberRoleSchema = z.object({
-  role: z.enum(['admin', 'member'], {
-    errorMap: () => ({ message: "Role must be either 'admin' or 'member'" })
-  }),
+  role: z.enum(['admin', 'member']).describe("Role must be either 'admin' or 'member'"),
 });
 
 export const squadSchemas = {

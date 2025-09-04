@@ -1,10 +1,10 @@
-import type { PrismaClient, SquadRole } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 
 export interface SquadMemberRecord {
   id: string;
   squadId: string;
   userId: string;
-  role: SquadRole;
+  role: string;
 }
 
 export interface SquadRecord {
@@ -59,7 +59,7 @@ export class SquadRepo {
     }) as unknown as Promise<SquadRecord | null>;
   }
 
-  async addMember(squadId: string, userId: string, role: SquadRole = 'member'): Promise<void> {
+  async addMember(squadId: string, userId: string, role: string = 'member'): Promise<void> {
     await this.prisma.squadMember.create({
       data: { squadId, userId, role },
     });

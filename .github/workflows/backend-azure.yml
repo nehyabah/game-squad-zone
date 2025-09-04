@@ -94,17 +94,23 @@ jobs:
           # Copy source files (for source maps if needed)
           cp -r backend/src deploy/
           cp -r backend/node_modules deploy/ || echo "No node_modules to copy"
+          
+          # Copy the simple server.js to root of deploy
+          cp backend/server.js deploy/ 2>/dev/null || echo "No server.js to copy"
+          
+          # Also copy server.azure.js to dist/src if it wasn't built
+          mkdir -p deploy/dist/src
+          cp backend/src/server.azure.js deploy/dist/src/ 2>/dev/null || echo "No server.azure.js"
 
           cp backend/package.json deploy/
           cp backend/package-lock.json deploy/
-          cp backend/server.js deploy/ 2>/dev/null || echo "No server.js to copy"
           cp backend/web.config deploy/ 2>/dev/null || echo "No web.config to copy"
 
           cd backend
           node -e "
           const pkg = require('./package.json');
-          pkg.scripts.start = 'node server.js';
-          pkg.main = 'server.js';
+          pkg.scripts.start = 'node dist/src/server.azure.js';
+          pkg.main = 'dist/src/server.azure.js';
           delete pkg.devDependencies;
           require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));
           "

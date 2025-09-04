@@ -46,11 +46,35 @@ module.exports = async (req, res) => {
     return;
   }
   
+  // Handle GET /api/auth/me - return test user
+  if (req.url === '/api/auth/me' && req.method === 'GET') {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({
+      id: 'test-user-1',
+      email: 'test@squadpot.dev',
+      username: 'testuser',
+      firstName: 'Test',
+      lastName: 'User',
+      emailVerified: true,
+      status: 'active'
+    }));
+    return;
+  }
+  
+  // Handle GET /api/squads - return empty squads array
+  if (req.url === '/api/squads' && req.method === 'GET') {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify([]));
+    return;
+  }
+  
   // For all other requests, return a test response
   res.statusCode = 200;
   res.setHeader('Content-Type', 'application/json');
   res.end(JSON.stringify({
-    message: 'Backend is running!',
+    message: 'Backend API is running!',
     path: req.url,
     method: req.method,
     timestamp: new Date().toISOString()

@@ -1,16 +1,12 @@
-import type {
-  FastifyInstance,
-  FastifyReply,
-  FastifyRequest,
-} from 'fastify';
-import type { PrismaClient } from '@prisma/client';
-import { PickController } from './picks.controller';
-import { PickRepo } from './picks.repo';
-import { PickService } from './picks.service';
-import { submitPicksSchema } from './picks.schema';
-import type { SubmitPicksDto } from './picks.dto';
-import { GameRepo } from '../games/games.repo';
-import { GameLineRepo } from '../games/game-lines.repo';
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import type { PrismaClient } from "@prisma/client";
+import { PickController } from "./picks.controller";
+import { PickRepo } from "./picks.repo";
+import { PickService } from "./picks.service";
+import { submitPicksSchema } from "./picks.schema";
+import type { SubmitPicksDto } from "./picks.dto";
+import { GameRepo } from "../games/games.repo";
+import { GameLineRepo } from "../games/game-lines.repo";
 
 interface FastifyWithPrisma extends FastifyInstance {
   prisma: PrismaClient;
@@ -28,38 +24,38 @@ export default async function registerPickRoutes(app: FastifyInstance) {
   const controller = new PickController(service);
 
   app.post(
-    '/picks',
-    { 
+    "/picks",
+    {
       schema: { body: submitPicksSchema },
-      preHandler: [app.auth]
+      preHandler: [app.auth],
     },
     async (req, reply) => {
       return controller.submit(req as any, reply);
-    },
+    }
   );
 
   // Add GET endpoint to retrieve user's picks for a week
   app.get(
-    '/picks/me',
+    "/picks/me",
     {
       schema: {
         querystring: {
-          type: 'object',
-          required: ['weekId'],
+          type: "object",
+          required: ["weekId"],
           properties: {
-            weekId: { type: 'string' }
-          }
-        }
+            weekId: { type: "string" },
+          },
+        },
       },
-      preHandler: [app.auth]
+      preHandler: [app.auth],
     },
     async (req: any, reply: FastifyReply) => {
       const userId = req.currentUser!.id;
       const picks = await service.getUserPicks(userId, req.query.weekId);
       if (!picks) {
         return reply.code(404).send({
-          type: 'https://errors.game-squad-zone/picks-not-found',
-          title: 'No picks found for this week',
+          type: "https://errors.game-squad-zone/picks-not-found",
+          title: "No picks found for this week",
           status: 404,
         });
       }
@@ -69,7 +65,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
 
   // Add GET endpoint to retrieve all user's picks history
   app.get(
-    '/picks/history',
+    "/picks/history",
     { preHandler: [app.auth] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const userId = req.currentUser!.id;
@@ -80,32 +76,35 @@ export default async function registerPickRoutes(app: FastifyInstance) {
 
   // Add GET endpoint to retrieve any user's picks for a week
   app.get(
-    '/picks/user/:userId',
+    "/picks/user/:userId",
     {
       schema: {
         params: {
-          type: 'object',
-          required: ['userId'],
+          type: "object",
+          required: ["userId"],
           properties: {
-            userId: { type: 'string' }
-          }
+            userId: { type: "string" },
+          },
         },
         querystring: {
-          type: 'object',
-          required: ['weekId'],
+          type: "object",
+          required: ["weekId"],
           properties: {
-            weekId: { type: 'string' }
-          }
-        }
+            weekId: { type: "string" },
+          },
+        },
       },
-      preHandler: [app.auth]
+      preHandler: [app.auth],
     },
     async (req: any, reply: FastifyReply) => {
-      const picks = await service.getUserPicks(req.params.userId, req.query.weekId);
+      const picks = await service.getUserPicks(
+        req.params.userId,
+        req.query.weekId
+      );
       if (!picks) {
         return reply.code(404).send({
-          type: 'https://errors.game-squad-zone/picks-not-found',
-          title: 'No picks found for this week',
+          type: "https://errors.game-squad-zone/picks-not-found",
+          title: "No picks found for this week",
           status: 404,
         });
       }
@@ -114,20 +113,22 @@ export default async function registerPickRoutes(app: FastifyInstance) {
   );
 
   // Add DELETE endpoint to clear picks for a week
+
   app.delete(
-    '/picks/me',
+    "/picks/me",
     {
       schema: {
         querystring: {
-          type: 'object',
-          required: ['weekId'],
+          type: "object",
+          required: ["weekId"],
           properties: {
-            weekId: { type: 'string' }
-          }
-        }
+            weekId: { type: "string" },
+          },
+        },
       },
-      preHandler: [app.auth]
+      preHandler: [app.auth],
     },
+
     async (req: any, reply: FastifyReply) => {
       return controller.deletePicks(req, reply);
     }

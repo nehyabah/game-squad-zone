@@ -1,18 +1,20 @@
-// backend/src/server.azure.js
-const { buildApp } = require("./app");
+// backend/src/server.azure.ts
+import { buildApp } from "./app.js"; // Add .js extension
 
-async function start() {
+const start = async () => {
   const app = buildApp();
   const port = process.env.PORT || 8080;
 
-  await app.listen({
-    port: Number(port),
-    host: "0.0.0.0",
-  });
-  console.log(`Fastify server running on port ${port}`);
-}
+  try {
+    await app.listen({
+      port: Number(port),
+      host: "0.0.0.0",
+    });
+    console.log(`Server running on port ${port}`);
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
+};
 
-start().catch((err) => {
-  console.error("Failed to start:", err);
-  process.exit(1);
-});
+start();

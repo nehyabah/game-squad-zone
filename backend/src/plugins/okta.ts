@@ -2,6 +2,7 @@
 import fp from "fastify-plugin";
 
 declare module "fastify" {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   interface FastifyInstance {
     verifyOktaIdToken: (idToken: string) => Promise<any>;
   }

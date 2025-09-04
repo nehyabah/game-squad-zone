@@ -37,7 +37,15 @@ export default async function authRoutes(app: FastifyInstance) {
 
     console.log("Full Auth0 URL:", authUrl);
     
-    return { authUrl };
+    // Also return debug info in response for troubleshooting
+    return { 
+      authUrl,
+      debug: {
+        redirect_uri_configured: redirectUri,
+        domain: domain,
+        client_id: clientId
+      }
+    };
   });
 
   // POST /login - Manual login with email (for development)
@@ -201,9 +209,16 @@ export default async function authRoutes(app: FastifyInstance) {
       const tokens = await tokenResponse.json();
 
       if (tokens.error) {
+        console.error("Auth0 token exchange error:", tokens);
         return reply.status(400).send({
           error: tokens.error,
           error_description: tokens.error_description,
+          debug: {
+            redirect_uri_used: redirectUri,
+            domain: domain,
+            client_id: clientId,
+            error_details: tokens
+          }
         });
       }
 

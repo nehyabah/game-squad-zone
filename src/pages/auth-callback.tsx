@@ -48,7 +48,9 @@ const AuthCallback = () => {
             // Redirect to the main app or success page
             navigate("/auth/success", { replace: true });
           } else {
-            console.error("Failed to exchange code for tokens");
+            const errorData = await response.json();
+            console.error("Failed to exchange code for tokens:", errorData);
+            alert(`Auth Error: ${errorData.error_description || errorData.error}\n\nDebug info:\nRedirect URI: ${errorData.debug?.redirect_uri_used}\nDomain: ${errorData.debug?.domain}`);
             navigate("/", { replace: true });
           }
         } else {

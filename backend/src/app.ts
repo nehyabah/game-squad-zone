@@ -27,11 +27,27 @@ export function buildApp(): FastifyInstance {
 
   // CORS
   app.register(fastifyCors, {
-    origin: isProd 
-      ? ["https://www.squadpot.dev", "https://squadpot.dev", "https://sqpbackend.vercel.app", "https://game-squad-zone-94o5.vercel.app", process.env.FRONTEND_URL!].filter(Boolean)
-      : true,
+    origin: (origin, cb) => {
+      const allowedOrigins = [
+        'https://www.squadpot.dev',
+        'https://squadpot.dev',
+        'https://sqpbackend.vercel.app',
+        'https://game-squad-zone-94o5.vercel.app',
+        'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net',
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://localhost:8080'
+      ];
+      
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin || allowedOrigins.includes(origin) || !isProd) {
+        cb(null, true);
+      } else {
+        cb(null, true); // For now, allow all origins to test
+      }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
     exposedHeaders: ["Set-Cookie"],
   });

@@ -24,7 +24,6 @@ on:
 
 env:
   NODE_VERSION: "18"
-  AZURE_WEBAPP_NAME: ${{ secrets.AZURE_API_APP_NAME }}
 
 jobs:
   lint-and-test:
@@ -47,8 +46,6 @@ jobs:
 
       - name: 🔨 Generate Prisma Client
         run: cd backend && npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: 🏗️ Type check
         run: cd backend && npm run type-check
@@ -80,8 +77,6 @@ jobs:
 
       - name: 🔨 Generate Prisma Client
         run: cd backend && npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: 🏗️ Build TypeScript
         run: cd backend && npm run build
@@ -96,7 +91,8 @@ jobs:
           cp -r backend/dist deploy/
           # Copy Prisma schema and migrations
           cp -r backend/prisma deploy/
-          # Copy node_modules (needed for runtime)
+          # Copy source files (for source maps if needed)
+          cp -r backend/src deploy/
           cp -r backend/node_modules deploy/ || echo "No node_modules to copy"
 
           cp backend/package.json deploy/
@@ -105,7 +101,7 @@ jobs:
           cd backend
           node -e "
           const pkg = require('./package.json');
-          pkg.scripts.start = 'node dist/src/main.server.js';
+          pkg.scripts.start = 'node dist/src/server.azure.js';
           delete pkg.devDependencies;
           require('fs').writeFileSync('../deploy/package.json', JSON.stringify(pkg, null, 2));
           "
@@ -130,7 +126,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://${{ secrets.AZURE_API_APP_NAME }}.azurewebsites.net
+      url: https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net
 
     steps:
       - name: 📥 Download build artifacts
@@ -160,9 +156,8 @@ jobs:
           fi
 
       - name: 🚀 Deploy to Azure App Service
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
           package: ./deploy
           clean: true
@@ -177,9 +172,8 @@ jobs:
 
       - name: 🚀 Retry Deploy to Azure App Service
         if: steps.deploy_attempt_1.outcome == 'failure'
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
           package: ./deploy
           clean: true
@@ -189,13 +183,11 @@ jobs:
           echo "🔍 Waiting for deployment to be ready..."
           sleep 60
 
-          APP_URL="https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
-          
           for i in {1..5}; do
             echo "🩺 Health check attempt $i/5"
-            if curl -f --max-time 30 "${APP_URL}/health" || \
-               curl -f --max-time 30 "${APP_URL}/api/health" || \
-               curl -f --max-time 30 "${APP_URL}/"; then
+            if curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/health" || \
+               curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/api/health" || \
+               curl -f --max-time 30 "https://squadpot-backend-dvbpatdag5a6aqff.northeurope-01.azurewebsites.net/"; then
               echo "✅ Backend is healthy!"
               break
             else
@@ -222,22 +214,8 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🟢 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: backend/package-lock.json
-
-      - name: 📦 Install dependencies
-        run: cd backend && npm ci
-
-      - name: 🗄️ Run database migrations
+      - name: 🏗️ Database setup
         run: |
-          echo "🗄️ Running Prisma database migrations..."
-          cd backend
-          npx prisma migrate deploy
-          echo "✅ Database migrations complete"
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          echo "🗄️ Prisma database migrations handled via postinstall script"
+          echo "✅ Database schema will be updated automatically on deployment"
         continue-on-error: true

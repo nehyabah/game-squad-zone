@@ -197,24 +197,21 @@ export function useAuthState() {
       } else if (token) {
         // We got an access token from successful session creation
         authAPI.setToken(token);
+        toast({
+          title: 'Welcome!',
+          description: 'You have been successfully authenticated.',
+        });
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (idToken) {
-        // We got an id_token - need to exchange it for an access token
-        try {
-          const exchangeResult = await authAPI.exchangeToken(idToken);
-          toast({
-            title: 'Welcome!',
-            description: 'You have been successfully authenticated.',
-          });
-        } catch (error) {
-          console.error('Token exchange failed:', error);
-          toast({
-            title: 'Authentication error',
-            description: 'Failed to complete authentication. Please try logging in again.',
-            variant: 'destructive',
-          });
-        }
+        // Backend sends 'token' not 'id_token', so this shouldn't happen
+        // But if it does, just use it as the access token
+        console.warn('Received id_token parameter - treating as access token');
+        authAPI.setToken(idToken);
+        toast({
+          title: 'Welcome!',
+          description: 'You have been successfully authenticated.',
+        });
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }

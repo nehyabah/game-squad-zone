@@ -197,7 +197,14 @@ export default async function authRoutes(app: FastifyInstance) {
       const tokens = await tokenResponse.json();
 
       if (tokens.error) {
-        return reply.status(400).send({
+        console.error("Auth0 token exchange error:", {
+          error: tokens.error,
+          description: tokens.error_description,
+          redirect_uri: redirectUri,
+          domain: domain,
+          client_id: clientId
+        });
+        return reply.status(401).send({
           error: tokens.error,
           error_description: tokens.error_description,
         });
@@ -278,6 +285,20 @@ export default async function authRoutes(app: FastifyInstance) {
     const clientSecret = process.env.OKTA_CLIENT_SECRET;
     let redirectUri = process.env.OKTA_REDIRECT_URI;
     
+    // Check for missing credentials
+    if (!domain || !clientId || !clientSecret) {
+      console.error("Missing Auth0 credentials in /callback:", {
+        hasDomain: !!domain,
+        hasClientId: !!clientId,
+        hasClientSecret: !!clientSecret,
+        frontendUrl: process.env.FRONTEND_URL
+      });
+      return reply.status(500).send({ 
+        error: "Server configuration error",
+        message: "Auth0 credentials not configured"
+      });
+    }
+    
     // Fallback to frontend URL if OKTA_REDIRECT_URI is not set properly
     if (!redirectUri || redirectUri.includes('localhost:3001')) {
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
@@ -300,7 +321,14 @@ export default async function authRoutes(app: FastifyInstance) {
       const tokens = await tokenResponse.json();
 
       if (tokens.error) {
-        return reply.status(400).send({
+        console.error("Auth0 token exchange error:", {
+          error: tokens.error,
+          description: tokens.error_description,
+          redirect_uri: redirectUri,
+          domain: domain,
+          client_id: clientId
+        });
+        return reply.status(401).send({
           error: tokens.error,
           error_description: tokens.error_description,
         });

@@ -31,10 +31,13 @@ export default fp(async (app) => {
     try {
       const token = req.headers.authorization?.split(" ")[1] ?? undefined;
       if (!token) {
+        console.error('[Auth] No token in Authorization header');
         return reply.code(401).send({ error: "Missing access token" });
       }
 
+      console.log('[Auth] Verifying token for request to:', req.url);
       const payload = app.jwt.verify<{ sub: string; email: string }>(token);
+      console.log('[Auth] Token verified, user ID:', payload.sub);
       
       // Check user's email verification status in database
       const user = await app.prisma.user.findUnique({
@@ -43,8 +46,10 @@ export default fp(async (app) => {
       });
 
       if (!user) {
+        console.error('[Auth] User not found in database:', payload.sub);
         return reply.code(401).send({ error: "User not found" });
       }
+      console.log('[Auth] User found:', user.email);
 
       // Email verification check disabled for development
       // if (!user.emailVerified) {
@@ -64,7 +69,8 @@ export default fp(async (app) => {
         emailVerified: user.emailVerified 
       };
     } catch (error) {
-      return reply.code(401).send({ error: "Invalid access token" });
+      console.error('[Auth] Token verification failed:', error);
+      return reply.code(401).send({ error: "Invalid access token", details: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 });

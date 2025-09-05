@@ -33,6 +33,8 @@ export function buildApp(): FastifyInstance {
         'https://squadpot.dev',
         'https://sqpbackend.vercel.app',
         'https://game-squad-zone-94o5.vercel.app',
+        'https://game-squad-zone.vercel.app',
+        'https://game-squad-zone-git-main-nehyabahs-projects.vercel.app',
         'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net',
         'http://localhost:5173',
         'http://localhost:3000',

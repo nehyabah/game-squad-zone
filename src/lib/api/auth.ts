@@ -44,6 +44,7 @@ class AuthAPI {
     options: RequestInit = {},
     isRetry: boolean = false
   ): Promise<T> {
+    console.log(`[AuthAPI] Request to ${endpoint}, has token: ${!!this.token}`);
     const response = await fetch(`${API_BASE}${endpoint}`, {
       ...options,
       headers: {
@@ -51,6 +52,7 @@ class AuthAPI {
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
         ...options.headers,
       },
+      credentials: 'include', // Important for CORS with cookies
     });
 
     if (!response.ok) {
@@ -174,8 +176,10 @@ class AuthAPI {
 
   // Token management
   setToken(token: string): void {
+    console.log('[AuthAPI] Setting token:', token ? 'Token received' : 'No token');
     this.token = token;
     localStorage.setItem('authToken', token);
+    console.log('[AuthAPI] Token saved to localStorage');
   }
 
   getToken(): string | null {

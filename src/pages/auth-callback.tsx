@@ -44,8 +44,8 @@ const AuthCallback = () => {
               // Force a small delay to ensure token is saved
               await new Promise(resolve => setTimeout(resolve, 100));
               toast({ title: 'Welcome!', description: 'You have been successfully authenticated.' });
-              // Use window.location to ensure full page reload with new token
-              window.location.href = '/auth/success';
+              // Navigate with React Router to maintain state
+              navigate('/auth/success', { replace: true });
               return;
             }
 

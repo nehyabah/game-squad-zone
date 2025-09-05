@@ -22,8 +22,9 @@ RUN npx prisma generate
 # Copy all source code
 COPY . .
 
-# Copy the database fix script
+# Copy the database fix scripts
 COPY force-fix-db.sql /app/force-fix-db.sql
+COPY emergency-fix.js /app/emergency-fix.js
 
 # Build TypeScript with more lenient settings
 RUN npx tsc --skipLibCheck --noEmitOnError false --target ES2020 --module commonjs --outDir dist --allowJs true --esModuleInterop true --resolveJsonModule true || true
@@ -60,6 +61,16 @@ async function runMigrations() {
   }
   
   console.log('🔄 Running database migrations...');
+  
+  // EMERGENCY FIX: Run the emergency fix first
+  try {
+    console.log('🚨 Running emergency database fix...');
+    const { emergencyFix } = require('./emergency-fix.js');
+    await emergencyFix();
+    console.log('✅ Emergency fix completed');
+  } catch (error) {
+    console.error('⚠️  Emergency fix failed:', error.message);
+  }
   
   // CRITICAL: First run the SQL fix to ensure authProvider is TEXT not ENUM
   try {

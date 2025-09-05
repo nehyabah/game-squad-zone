@@ -358,6 +358,27 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 201, squad);
     }
 
+    // Get user profile (wallet/profile endpoint)
+    if (pathname === '/api/profile' && req.method === 'GET') {
+      const token = getAuthToken(req);
+      const payload = verifyToken(token);
+      
+      if (!payload) {
+        return sendJSON(res, 401, { error: 'Authentication required' });
+      }
+      
+      const user = db.users.get(payload.sub);
+      if (!user) {
+        return sendJSON(res, 404, { error: 'User not found' });
+      }
+      
+      return sendJSON(res, 200, {
+        ...user,
+        walletBalance: 100.00,
+        walletCurrency: 'USD'
+      });
+    }
+
     // Get user's squads
     if (pathname === '/api/squads' && req.method === 'GET') {
       const token = getAuthToken(req);

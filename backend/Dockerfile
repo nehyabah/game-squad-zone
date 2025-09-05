@@ -30,9 +30,12 @@ RUN echo "Checking built files:" && \
 # Create a proper start script
 RUN cat > start.js << 'EOF'
 const port = process.env.PORT || 8080;
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execPromise = promisify(exec);
 
 console.log('=====================================');
-console.log('SQUADPOT BACKEND VERSION: 3.0 - FULL IMPLEMENTATION');
+console.log('SQUADPOT BACKEND VERSION: 3.1 - WITH AUTO MIGRATIONS');
 console.log('Deployment timestamp:', new Date().toISOString());
 console.log('=====================================');
 console.log('Environment check:');
@@ -44,7 +47,27 @@ console.log('  - OKTA_CLIENT_ID:', process.env.OKTA_CLIENT_ID ? 'Set' : 'Not set
 console.log('  - OKTA_CLIENT_SECRET:', process.env.OKTA_CLIENT_SECRET ? 'Set' : 'Not set');
 console.log('=====================================');
 
+async function runMigrations() {
+  if (!process.env.DATABASE_URL) {
+    console.log('⚠️  No DATABASE_URL found, skipping migrations');
+    return;
+  }
+  
+  console.log('🔄 Running database migrations...');
+  try {
+    const { stdout, stderr } = await execPromise('npx prisma migrate deploy');
+    if (stdout) console.log('Migration output:', stdout);
+    if (stderr) console.log('Migration warnings:', stderr);
+    console.log('✅ Database migrations completed successfully');
+  } catch (error) {
+    console.error('⚠️  Migration failed (non-fatal):', error.message);
+    console.log('Continuing with server startup anyway...');
+  }
+}
+
 async function start() {
+  // Run migrations first
+  await runMigrations();
   try {
     // Check if the compiled files exist
     const fs = require('fs');

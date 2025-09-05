@@ -248,7 +248,7 @@ export function useAuthState() {
     user,
     stats,
     loading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!user || authAPI.isAuthenticated(),
     emailVerificationRequired,
     profileSetupRequired,
     login,

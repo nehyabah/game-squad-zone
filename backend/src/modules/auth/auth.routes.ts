@@ -96,7 +96,7 @@ export default async function authRoutes(app: FastifyInstance) {
             lastName: "User",
             displayName: email.split("@")[0],
             status: "active",
-            emailVerified: true,
+            emailVerified: true, // Always true to bypass verification
             lastLoginAt: new Date(),
           },
           select: {
@@ -107,7 +107,7 @@ export default async function authRoutes(app: FastifyInstance) {
             lastName: true,
             displayName: true,
             avatarUrl: true,
-            emailVerified: true,
+            emailVerified: true, // Always true to bypass verification
             status: true,
           },
         });

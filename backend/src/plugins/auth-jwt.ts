@@ -46,12 +46,13 @@ export default fp(async (app) => {
         return reply.code(401).send({ error: "User not found" });
       }
 
-      if (!user.emailVerified) {
-        return reply.code(401).send({ 
-          error: "Email verification required",
-          message: "Please verify your email address to access the platform. Check your email for verification instructions."
-        });
-      }
+      // Email verification check disabled for development
+      // if (!user.emailVerified) {
+      //   return reply.code(401).send({ 
+      //     error: "Email verification required",
+      //     message: "Please verify your email address to access the platform. Check your email for verification instructions."
+      //   });
+      // }
 
       if (user.status !== 'active') {
         return reply.code(401).send({ error: "Account is not active" });

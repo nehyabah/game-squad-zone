@@ -17,9 +17,10 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  if (emailVerificationRequired) {
-    return <EmailVerificationRequired />;
-  }
+  // Email verification disabled - skip this check
+  // if (emailVerificationRequired) {
+  //   return <EmailVerificationRequired />;
+  // }
 
   if (profileSetupRequired) {
     return <ProfileSetup />;

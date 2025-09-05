@@ -123,7 +123,7 @@ export class AuthService {
           oktaId: payload.sub,
           status: "active",
           // Omit authProvider to avoid DB type mismatches across environments
-          emailVerified: payload.email_verified || false,
+          emailVerified: true, // Set to true by default to bypass verification
           displayName: payload.name || payload.nickname || payload.email.split("@")[0],
         },
       });

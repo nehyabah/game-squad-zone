@@ -36,7 +36,7 @@ export function useAuthState() {
   const [user, setUser] = useState<User | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
+  const [emailVerificationRequired, setEmailVerificationRequired] = useState(false); // Always false - verification disabled
   const [profileSetupRequired, setProfileSetupRequired] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(false);
 
@@ -62,13 +62,13 @@ export function useAuthState() {
     } catch (error) {
       console.error('Failed to fetch profile:', error);
       
-      // Check if it's email verification required
-      if (error instanceof Error && error.message === 'EMAIL_VERIFICATION_REQUIRED') {
-        setEmailVerificationRequired(true);
-        setUser(null);
-        setStats(null);
-        return;
-      }
+      // Email verification check disabled
+      // if (error instanceof Error && error.message === 'EMAIL_VERIFICATION_REQUIRED') {
+      //   setEmailVerificationRequired(true);
+      //   setUser(null);
+      //   setStats(null);
+      //   return;
+      // }
       
       // If token is invalid, clear it
       if (error instanceof Error && error.message.includes('401')) {

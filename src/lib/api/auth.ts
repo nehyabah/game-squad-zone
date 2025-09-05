@@ -58,10 +58,11 @@ class AuthAPI {
       
       // If unauthorized, check if it's email verification issue
       if (response.status === 401) {
-        if (error.error === 'Email verification required') {
-          // Don't clear token, just throw specific error for email verification
-          throw new Error('EMAIL_VERIFICATION_REQUIRED');
-        }
+        // Email verification check disabled - skip this check
+        // if (error.error === 'Email verification required') {
+        //   // Don't clear token, just throw specific error for email verification
+        //   throw new Error('EMAIL_VERIFICATION_REQUIRED');
+        // }
         
         // Clear token on any 401 error
         this.clearToken();

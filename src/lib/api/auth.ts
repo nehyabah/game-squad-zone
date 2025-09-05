@@ -197,6 +197,19 @@ class AuthAPI {
     localStorage.removeItem('authToken');
   }
 
+  // Full auth reset for debugging
+  resetAuth(): void {
+    console.log('[AuthAPI] Performing full auth reset');
+    this.token = null;
+    localStorage.clear();
+    sessionStorage.clear();
+    // Clear all cookies
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+    console.log('[AuthAPI] Auth reset complete');
+  }
+
   isAuthenticated(): boolean {
     return !!this.token;
   }

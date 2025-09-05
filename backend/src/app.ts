@@ -106,7 +106,6 @@ export function buildApp(): FastifyInstance {
           firstName: 'Test',
           lastName: 'User',
           status: 'active',
-          authProvider: 'okta',
           emailVerified: true,
         }
       });

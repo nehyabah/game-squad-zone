@@ -96,7 +96,6 @@ export default async function authRoutes(app: FastifyInstance) {
             lastName: "User",
             displayName: email.split("@")[0],
             status: "active",
-            authProvider: "okta",
             emailVerified: true,
             lastLoginAt: new Date(),
           },

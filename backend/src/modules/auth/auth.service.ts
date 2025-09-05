@@ -122,7 +122,7 @@ export class AuthService {
           lastName: payload.family_name || payload.name?.split(" ").slice(1).join(" ") || "",
           oktaId: payload.sub,
           status: "active",
-          authProvider: "auth0", // Changed from "okta" to "auth0"
+          // Omit authProvider to avoid DB type mismatches across environments
           emailVerified: payload.email_verified || false,
           displayName: payload.name || payload.nickname || payload.email.split("@")[0],
         },

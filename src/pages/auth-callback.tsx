@@ -41,8 +41,11 @@ const AuthCallback = () => {
             const data = await res.json();
             if (data?.accessToken) {
               authAPI.setToken(data.accessToken);
+              // Force a small delay to ensure token is saved
+              await new Promise(resolve => setTimeout(resolve, 100));
               toast({ title: 'Welcome!', description: 'You have been successfully authenticated.' });
-              navigate('/auth/success', { replace: true });
+              // Use window.location to ensure full page reload with new token
+              window.location.href = '/auth/success';
               return;
             }
 

@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,11 +22,11 @@ interface AuthModalProps {
 const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
   const { login, signup, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
-  
+
   // Login form
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  
+
   // Signup form
   const [signupUsername, setSignupUsername] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
@@ -29,12 +35,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!loginEmail || !loginPassword) {
       toast({
         title: "Missing fields",
         description: "Please fill in all fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -51,19 +57,24 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       toast({
         title: "Login failed",
         description: "Invalid email or password",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!signupUsername || !signupEmail || !signupPassword || !confirmPassword) {
+
+    if (
+      !signupUsername ||
+      !signupEmail ||
+      !signupPassword ||
+      !confirmPassword
+    ) {
       toast({
         title: "Missing fields",
         description: "Please fill in all fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -72,7 +83,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       toast({
         title: "Passwords don't match",
         description: "Please make sure your passwords match",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -81,7 +92,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       toast({
         title: "Password too short",
         description: "Password must be at least 6 characters",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -98,7 +109,7 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
       toast({
         title: "Signup failed",
         description: "An account with this email already exists",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -116,7 +127,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm sm:max-w-md mx-4">
         <DialogHeader>
-          <DialogTitle className="text-center font-display text-xl sm:text-2xl">Join SquadPot</DialogTitle>
+          <DialogTitle className="text-center font-display text-xl sm:text-2xl">
+            Join SquadPot
+          </DialogTitle>
           <DialogDescription className="text-center text-muted-foreground">
             Sign in to your account or create a new one to get started
           </DialogDescription>
@@ -133,7 +146,9 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               <CardContent className="space-y-4 p-0">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="loginEmail" className="text-sm font-medium">Email</label>
+                    <label htmlFor="loginEmail" className="text-sm font-medium">
+                      Email
+                    </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -147,9 +162,14 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <label htmlFor="loginPassword" className="text-sm font-medium">Password</label>
+                    <label
+                      htmlFor="loginPassword"
+                      className="text-sm font-medium"
+                    >
+                      Password
+                    </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -164,8 +184,15 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                     </div>
                   </div>
 
-                  <Button type="submit" variant="squad" className="w-full" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  <Button
+                    type="submit"
+                    variant="squad"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
                     Login to SquadPot
                   </Button>
                 </form>
@@ -182,7 +209,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
               <CardContent className="space-y-4 p-0">
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div className="space-y-2">
-                    <label htmlFor="signupUsername" className="text-sm font-medium">Username</label>
+                    <label
+                      htmlFor="signupUsername"
+                      className="text-sm font-medium"
+                    >
+                      Username
+                    </label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -197,7 +229,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="signupEmail" className="text-sm font-medium">Email</label>
+                    <label
+                      htmlFor="signupEmail"
+                      className="text-sm font-medium"
+                    >
+                      Email
+                    </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -211,9 +248,14 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <label htmlFor="signupPassword" className="text-sm font-medium">Password</label>
+                    <label
+                      htmlFor="signupPassword"
+                      className="text-sm font-medium"
+                    >
+                      Password
+                    </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -229,7 +271,12 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                   </div>
 
                   <div className="space-y-2">
-                    <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</label>
+                    <label
+                      htmlFor="confirmPassword"
+                      className="text-sm font-medium"
+                    >
+                      Confirm Password
+                    </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -244,8 +291,15 @@ const AuthModal = ({ open, onOpenChange }: AuthModalProps) => {
                     </div>
                   </div>
 
-                  <Button type="submit" variant="squad" className="w-full" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  <Button
+                    type="submit"
+                    variant="squad"
+                    className="w-full"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : null}
                     Create Account
                   </Button>
                 </form>

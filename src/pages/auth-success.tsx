@@ -1,18 +1,24 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function AuthSuccessPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, user, loading } = useAuth();
 
   useEffect(() => {
-    // The AuthProvider will automatically handle the token from URL params
-    // and redirect to the main page once authenticated
-    const timer = setTimeout(() => {
-      navigate("/");
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    // Only redirect to home once we confirm authentication is complete
+    if (!loading && isAuthenticated && user) {
+      // User is fully authenticated, safe to go to home
+      const timer = setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (!loading && !isAuthenticated) {
+      // Authentication failed, go back to login
+      navigate("/", { replace: true });
+    }
+  }, [navigate, isAuthenticated, user, loading]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">

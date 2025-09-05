@@ -1,15 +1,20 @@
 import { useAuth } from '@/hooks/use-auth';
-import EmailVerificationRequired from './EmailVerificationRequired';
 import ProfileSetup from './ProfileSetup';
-import { useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 const AuthGuard = ({ children }: AuthGuardProps) => {
-  const { user, emailVerificationRequired, profileSetupRequired, loading, isAuthenticated, login } = useAuth();
-  const location = useLocation();
+  const { user, profileSetupRequired, loading, isAuthenticated, login } = useAuth();
+
+  useEffect(() => {
+    // Only trigger login once if not authenticated and not loading
+    if (!loading && !isAuthenticated && !user && typeof login === 'function') {
+      login();
+    }
+  }, [loading, isAuthenticated, user, login]);
 
   if (loading) {
     return (
@@ -19,29 +24,8 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  // Show email verification screen instead of looping back to login
-  if (emailVerificationRequired) {
-    return <EmailVerificationRequired />;
-  }
-
-  // If we're on auth routes, don't trigger login again; let the flow complete
-  const onAuthRoute = location.pathname === '/auth/callback' || location.pathname === '/auth/success';
-  if ((!isAuthenticated || !user) && onAuthRoute) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg">Completing sign-in…</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Not authenticated: trigger login once for non-auth routes
+  // Not authenticated: show redirecting message
   if (!isAuthenticated || !user) {
-    if (typeof login === 'function') {
-      login();
-    }
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

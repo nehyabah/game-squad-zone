@@ -1,6 +1,7 @@
 // src/modules/auth/auth.service.ts
 import type { PrismaClient } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
+import crypto from "node:crypto";
 import { add } from "date-fns";
 import createError from "@fastify/error";
 
@@ -30,20 +31,46 @@ export class AuthService {
     const ttl = process.env.REFRESH_TTL || "30d";
     const expiresAt = add(new Date(), this.parseTtl(ttl));
 
-    const token = this.app.jwt.sign(
-      {
-        sub: userId,
-        email: userEmail,
-        typ: "refresh",
-      },
-      { expiresIn: ttl }
-    );
+    // Retry a few times in case of extremely rare token collisions
+    for (let attempt = 0; attempt < 3; attempt++) {
+      // Add a unique JWT ID to avoid duplicate tokens within the same second
+      const jti = (crypto as any).randomUUID
+        ? (crypto as any).randomUUID()
+        : crypto.randomBytes(16).toString("hex");
 
-    await this.prisma.session.create({
-      data: { userId, token, expiresAt, userAgent, ipAddress: ip },
-    });
+      const token = this.app.jwt.sign(
+        {
+          sub: userId,
+          email: userEmail,
+          typ: "refresh",
+          jti,
+        },
+        { expiresIn: ttl }
+      );
 
-    return { token, expiresAt };
+      try {
+        await this.prisma.session.create({
+          data: { userId, token, expiresAt, userAgent, ipAddress: ip },
+        });
+        return { token, expiresAt };
+      } catch (err: unknown) {
+        // Unique constraint on token – try again with a new jti
+        if (
+          typeof err === "object" &&
+          err !== null &&
+          (err as any).code === "P2002"
+        ) {
+          if (attempt === 2) {
+            throw err;
+          }
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    // Should never reach here
+    throw new Error("Failed to create refresh session");
   }
 
   private parseTtl(ttl: string) {

@@ -208,16 +208,25 @@ export function useAuthState() {
           // Clean up URL
           window.history.replaceState({}, document.title, window.location.pathname);
         } else if (idToken && idToken.trim() !== '') {
-          // Backend sends 'token' not 'id_token', so this shouldn't happen
-          // But if it does, just use it as the access token
-          console.warn('Received id_token parameter - treating as access token');
-          authAPI.setToken(idToken);
-          toast({
-            title: 'Welcome!',
-            description: 'You have been successfully authenticated.',
-          });
-          // Clean up URL
-          window.history.replaceState({}, document.title, window.location.pathname);
+          // If backend redirected with id_token, exchange it for our API access token
+          try {
+            console.warn('Received id_token parameter - exchanging for access token');
+            await authAPI.exchangeToken(idToken);
+            toast({
+              title: 'Welcome!',
+              description: 'You have been successfully authenticated.',
+            });
+          } catch (err) {
+            console.error('Failed to exchange id_token:', err);
+            toast({
+              title: 'Authentication failed',
+              description: 'Could not complete sign-in. Please try again.',
+              variant: 'destructive',
+            });
+          } finally {
+            // Clean up URL regardless of success/failure
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
         }
       }
       

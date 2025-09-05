@@ -16,10 +16,22 @@ export default async function authRoutes(app: FastifyInstance) {
   app.get("/login", async (req, reply) => {
     const domain = process.env.OKTA_DOMAIN;
     const clientId = process.env.OKTA_CLIENT_ID;
+    
+    // Detect if request is from localhost
+    const origin = req.headers.origin || '';
+    const referer = req.headers.referer || '';
+    const isLocalhost = origin.includes('localhost') || referer.includes('localhost');
+    
     let redirectUri = process.env.OKTA_REDIRECT_URI;
     
-    // Fallback to frontend URL if OKTA_REDIRECT_URI is not set properly
-    if (!redirectUri || redirectUri.includes('localhost:3001')) {
+    // Use localhost URL if request is from localhost
+    if (isLocalhost) {
+      // Extract the port from the origin/referer
+      const localhostMatch = (origin || referer).match(/localhost:(\d+)/);
+      const port = localhostMatch ? localhostMatch[1] : '8080';
+      redirectUri = `http://localhost:${port}/auth/callback`;
+      console.log(`Detected localhost request, using redirect URI: ${redirectUri}`);
+    } else if (!redirectUri || redirectUri.includes('localhost:3001')) {
       const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
       redirectUri = `${frontendUrl}/auth/callback`;
     }

@@ -24,7 +24,11 @@ const AuthCallback = () => {
         if (code) {
           // The backend /callback endpoint expects GET with query params
           // and will redirect back with the token, so we'll just redirect there
-          window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}`;
+          window.location.href = `${
+            import.meta.env.VITE_API_URL
+          }/api/auth/callback?code=${encodeURIComponent(
+            code
+          )}&state=${encodeURIComponent(state || "")}`;
           // The backend will handle the rest and redirect back
         } else {
           console.error("No authorization code found in callback");

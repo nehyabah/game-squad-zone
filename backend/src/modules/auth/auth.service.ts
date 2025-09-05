@@ -69,11 +69,11 @@ export class AuthService {
     refreshToken: string;
     refreshExpiresAt: Date;
   }> {
-    // For development, create a basic token exchange without full Okta verification
-    // In production, you should verify the idToken with Okta properly
+    // Decode Auth0 id_token to get user information
+    // Note: In production, you should verify the token signature with Auth0's public key
 
     try {
-      // Decode the idToken to get user info (basic decode without verification for dev)
+      // Decode the idToken to get user info
       const parts = idToken.split(".");
       if (parts.length !== 3) {
         throw new UnauthorizedError("Invalid token format");
@@ -82,35 +82,49 @@ export class AuthService {
       /* eslint-disable @typescript-eslint/no-explicit-any */
       let payload: any;
       try {
-        // Decode payload (middle part)
-        payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+        // Decode payload (middle part) - handle both regular and base64url encoding
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64 + '='.repeat((4 - base64.length % 4) % 4);
+        payload = JSON.parse(Buffer.from(padded, "base64").toString());
+        
+        console.log("Decoded Auth0 token payload:", {
+          email: payload.email,
+          sub: payload.sub,
+          name: payload.name
+        });
       } catch (e) {
-        // If decode fails, create a test user for development
-        payload = {
-          email: "dev@example.com",
-          sub: `dev-${Date.now()}`,
-          preferred_username: "devuser",
-        };
+        console.error("Failed to decode Auth0 token:", e);
+        throw new UnauthorizedError("Invalid token encoding");
+      }
+
+      // Validate required fields
+      if (!payload.email) {
+        console.error("No email in Auth0 token:", payload);
+        throw new UnauthorizedError("Email is required");
       }
 
       // Get or create user
       const user = await this.prisma.user.upsert({
-        where: { email: payload.email || "dev@example.com" },
+        where: { email: payload.email },
         update: {
           lastLoginAt: new Date(),
+          // Update name fields if they've changed in Auth0
+          firstName: payload.given_name || payload.name?.split(" ")[0] || undefined,
+          lastName: payload.family_name || payload.name?.split(" ").slice(1).join(" ") || undefined,
         },
         create: {
-          email: payload.email || "dev@example.com",
+          email: payload.email,
           username:
+            payload.nickname ||
             payload.preferred_username ||
-            payload.email?.split("@")[0] ||
-            "devuser",
-          firstName: payload.given_name || "Dev",
-          lastName: payload.family_name || "User",
-          oktaId: payload.sub || `dev-${Date.now()}`,
+            payload.email.split("@")[0],
+          firstName: payload.given_name || payload.name?.split(" ")[0] || "",
+          lastName: payload.family_name || payload.name?.split(" ").slice(1).join(" ") || "",
+          oktaId: payload.sub,
           status: "active",
-          authProvider: "okta",
-          emailVerified: true,
+          authProvider: "auth0", // Changed from "okta" to "auth0"
+          emailVerified: payload.email_verified || false,
+          displayName: payload.name || payload.nickname || payload.email.split("@")[0],
         },
       });
 

@@ -178,42 +178,47 @@ export function useAuthState() {
     const initAuth = async () => {
       setLoading(true);
       
-      // Check for auth callback in URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token');
-      const idToken = urlParams.get('id_token');
-      const error = urlParams.get('error');
+      // Only check for auth callback parameters on the success page
+      const isSuccessPage = window.location.pathname === '/auth/success';
       
-      if (error) {
-        // Handle authentication error
-        console.error('Authentication error:', error);
-        toast({
-          title: 'Authentication failed',
-          description: 'There was an error during authentication. Please try again.',
-          variant: 'destructive',
-        });
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (token) {
-        // We got an access token from successful session creation
-        authAPI.setToken(token);
-        toast({
-          title: 'Welcome!',
-          description: 'You have been successfully authenticated.',
-        });
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (idToken) {
-        // Backend sends 'token' not 'id_token', so this shouldn't happen
-        // But if it does, just use it as the access token
-        console.warn('Received id_token parameter - treating as access token');
-        authAPI.setToken(idToken);
-        toast({
-          title: 'Welcome!',
-          description: 'You have been successfully authenticated.',
-        });
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+      if (isSuccessPage) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const idToken = urlParams.get('id_token');
+        const error = urlParams.get('error');
+        
+        if (error) {
+          // Handle authentication error
+          console.error('Authentication error:', error);
+          toast({
+            title: 'Authentication failed',
+            description: 'There was an error during authentication. Please try again.',
+            variant: 'destructive',
+          });
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (token && token.trim() !== '') {
+          // We got an access token from successful session creation
+          console.log('Received token from callback:', token);
+          authAPI.setToken(token);
+          toast({
+            title: 'Welcome!',
+            description: 'You have been successfully authenticated.',
+          });
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (idToken && idToken.trim() !== '') {
+          // Backend sends 'token' not 'id_token', so this shouldn't happen
+          // But if it does, just use it as the access token
+          console.warn('Received id_token parameter - treating as access token');
+          authAPI.setToken(idToken);
+          toast({
+            title: 'Welcome!',
+            description: 'You have been successfully authenticated.',
+          });
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
       
       // No auto-authentication - let users choose their method

@@ -54,6 +54,20 @@ async function runMigrations() {
   }
   
   console.log('🔄 Running database migrations...');
+  
+  // First, try to push the schema directly
+  try {
+    console.log('📝 Pushing schema to database...');
+    const { stdout: pushOut, stderr: pushErr } = await execPromise('npx prisma db push --skip-generate');
+    if (pushOut) console.log('Schema push output:', pushOut);
+    if (pushErr && !pushErr.includes('already in sync')) console.log('Schema push warnings:', pushErr);
+    console.log('✅ Schema push completed');
+  } catch (error) {
+    console.error('⚠️  Schema push failed:', error.message);
+    // Continue anyway
+  }
+  
+  // Then try regular migrations
   try {
     const { stdout, stderr } = await execPromise('npx prisma migrate deploy');
     if (stdout) console.log('Migration output:', stdout);

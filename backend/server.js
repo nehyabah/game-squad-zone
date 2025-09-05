@@ -48,6 +48,44 @@ const server = http.createServer((req, res) => {
     return;
   }
   
+  // Auth0 callback endpoint - handles authorization code exchange
+  if (req.url.startsWith('/api/auth/callback') && req.method === 'GET') {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const code = url.searchParams.get('code');
+    const error = url.searchParams.get('error');
+    
+    if (error) {
+      // Redirect to frontend with error
+      const frontendUrl = 'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net';
+      res.writeHead(302, {
+        'Location': `${frontendUrl}/auth/success?error=${encodeURIComponent(error)}`
+      });
+      res.end();
+      return;
+    }
+    
+    if (!code) {
+      // Redirect to frontend with error
+      const frontendUrl = 'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net';
+      res.writeHead(302, {
+        'Location': `${frontendUrl}/auth/success?error=no_code`
+      });
+      res.end();
+      return;
+    }
+    
+    // In a real implementation, you would exchange the code with Auth0 here
+    // For now, generate a test token and redirect to frontend
+    const testToken = 'test-token-' + Date.now();
+    const frontendUrl = 'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net';
+    
+    res.writeHead(302, {
+      'Location': `${frontendUrl}/auth/success?token=${testToken}`
+    });
+    res.end();
+    return;
+  }
+  
   // Auth0 token exchange endpoint
   if (req.url === '/api/auth/okta/exchange' && req.method === 'POST') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -61,6 +99,23 @@ const server = http.createServer((req, res) => {
   
   // Get current user endpoint
   if (req.url === '/api/auth/me' && req.method === 'GET') {
+    // Check for authorization header
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Authentication required' }));
+      return;
+    }
+    
+    // For now, accept any token that starts with the expected format
+    // In production, you would validate this against Auth0
+    const token = authHeader.substring(7);
+    if (!token) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid token' }));
+      return;
+    }
+    
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       id: 'test-user-1',
@@ -69,7 +124,34 @@ const server = http.createServer((req, res) => {
       firstName: 'Test',
       lastName: 'User',
       emailVerified: true,
-      status: 'active'
+      status: 'active',
+      displayName: 'Test User',
+      createdAt: new Date().toISOString()
+    }));
+    return;
+  }
+  
+  // Get user stats endpoint
+  if (req.url === '/api/auth/me/stats' && req.method === 'GET') {
+    // Check for authorization header
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      res.writeHead(401, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Authentication required' }));
+      return;
+    }
+    
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      squads: {
+        owned: 0,
+        member: 0,
+        total: 0
+      },
+      payments: {
+        count: 0,
+        totalAmount: 0
+      }
     }));
     return;
   }

@@ -68,11 +68,11 @@ class AuthAPI {
         
         // Don't redirect or retry during initial auth flow or if we're already handling auth
         if (endpoint === '/api/auth/me' || endpoint === '/api/auth/refresh' || endpoint === '/api/auth/login') {
-          return Promise.reject(new Error('Authentication required'));
+          return Promise.reject(new Error('401 Authentication required'));
         }
         
         // For other endpoints, just throw error - let the UI handle the redirect
-        return Promise.reject(new Error('Authentication required'));
+        return Promise.reject(new Error('401 Authentication required'));
       }
       
       // Handle different error response formats from backend

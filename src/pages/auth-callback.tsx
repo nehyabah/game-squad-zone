@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { authAPI } from "@/lib/api/auth";
+import { toast } from "@/hooks/use-toast";
 
 const AuthCallback = () => {
   const navigate = useNavigate();
@@ -22,14 +24,36 @@ const AuthCallback = () => {
         }
 
         if (code) {
-          // The backend /callback endpoint expects GET with query params
-          // and will redirect back with the token, so we'll just redirect there
-          window.location.href = `${
-            import.meta.env.VITE_API_URL
-          }/api/auth/callback?code=${encodeURIComponent(
-            code
-          )}&state=${encodeURIComponent(state || "")}`;
-          // The backend will handle the rest and redirect back
+          // Prefer JSON exchange to avoid fragile redirects
+          try {
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            const res = await fetch(`${apiBase}/api/auth/token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code, state }),
+            });
+
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(err.error_description || err.error || `HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            if (data?.accessToken) {
+              authAPI.setToken(data.accessToken);
+              toast({ title: 'Welcome!', description: 'You have been successfully authenticated.' });
+              navigate('/auth/success', { replace: true });
+              return;
+            }
+
+            // Fallback: if no accessToken returned, attempt legacy redirect flow
+            window.location.href = `${apiBase}/api/auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || "")}`;
+          } catch (e) {
+            console.error('Token exchange failed:', e);
+            // Fallback to legacy redirect flow
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+            window.location.href = `${apiBase}/api/auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || "")}`;
+          }
         } else {
           console.error("No authorization code found in callback");
           navigate("/", { replace: true });

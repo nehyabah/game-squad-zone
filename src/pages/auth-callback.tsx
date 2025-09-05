@@ -22,36 +22,10 @@ const AuthCallback = () => {
         }
 
         if (code) {
-          // Exchange the code for tokens with backend
-          // The backend will exchange with Auth0 and return our app tokens
-          const response = await fetch(
-            `${import.meta.env.VITE_API_URL}/api/auth/token`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ code, state }),
-            }
-          );
-
-          if (response.ok) {
-            const data = await response.json();
-            
-            // Store the tokens
-            if (data.accessToken) {
-              localStorage.setItem("authToken", data.accessToken);
-              if (data.refreshToken) {
-                localStorage.setItem("refreshToken", data.refreshToken);
-              }
-            }
-
-            // Redirect to the main app or success page
-            navigate("/auth/success", { replace: true });
-          } else {
-            console.error("Failed to exchange code for tokens");
-            navigate("/", { replace: true });
-          }
+          // The backend /callback endpoint expects GET with query params
+          // and will redirect back with the token, so we'll just redirect there
+          window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}`;
+          // The backend will handle the rest and redirect back
         } else {
           console.error("No authorization code found in callback");
           navigate("/", { replace: true });

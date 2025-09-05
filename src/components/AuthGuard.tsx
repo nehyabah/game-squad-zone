@@ -1,6 +1,7 @@
 import { useAuth } from '@/hooks/use-auth';
 import EmailVerificationRequired from './EmailVerificationRequired';
 import ProfileSetup from './ProfileSetup';
+import { useLocation } from 'react-router-dom';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -8,6 +9,7 @@ interface AuthGuardProps {
 
 const AuthGuard = ({ children }: AuthGuardProps) => {
   const { user, emailVerificationRequired, profileSetupRequired, loading, isAuthenticated, login } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -17,9 +19,26 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     );
   }
 
-  // Check if user is authenticated
+  // Show email verification screen instead of looping back to login
+  if (emailVerificationRequired) {
+    return <EmailVerificationRequired />;
+  }
+
+  // If we're on auth routes, don't trigger login again; let the flow complete
+  const onAuthRoute = location.pathname === '/auth/callback' || location.pathname === '/auth/success';
+  if ((!isAuthenticated || !user) && onAuthRoute) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg">Completing sign-in…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated: trigger login once for non-auth routes
   if (!isAuthenticated || !user) {
-    // Redirect to Okta/Auth0 login
     if (typeof login === 'function') {
       login();
     }
@@ -32,11 +51,6 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
       </div>
     );
   }
-
-  // Email verification disabled - skip this check
-  // if (emailVerificationRequired) {
-  //   return <EmailVerificationRequired />;
-  // }
 
   if (profileSetupRequired) {
     return <ProfileSetup />;

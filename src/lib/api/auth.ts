@@ -44,8 +44,9 @@ class AuthAPI {
     options: RequestInit = {},
     isRetry: boolean = false
   ): Promise<T> {
-    console.log(`[AuthAPI] Request to ${endpoint}, has token: ${!!this.token}`);
-    const response = await fetch(`${API_BASE}${endpoint}`, {
+    const fullUrl = `${API_BASE}${endpoint}`;
+    console.log(`[AuthAPI] Request to ${fullUrl}, has token: ${!!this.token}`);
+    const response = await fetch(fullUrl, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -57,6 +58,11 @@ class AuthAPI {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Request failed' }));
+      console.error(`[AuthAPI] Request failed for ${endpoint}:`, {
+        status: response.status,
+        error: error,
+        hasToken: !!this.token
+      });
       
       // If unauthorized, check if it's email verification issue
       if (response.status === 401) {

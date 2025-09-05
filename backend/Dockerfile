@@ -26,6 +26,11 @@ RUN npx tsc --skipLibCheck --target ES2020 --module commonjs --outDir dist || ec
 RUN cat > start.js << 'EOF'
 const port = process.env.PORT || 8080;
 
+console.log('=====================================');
+console.log('BACKEND VERSION: 2.0 - WITH /api/auth/token endpoint');
+console.log('Deployment timestamp:', new Date().toISOString());
+console.log('=====================================');
+
 async function start() {
   try {
     const { buildApp } = require('./dist/src/app.js');
@@ -33,6 +38,10 @@ async function start() {
     await app.ready();
     await app.listen({ port: Number(port), host: '0.0.0.0' });
     console.log('Fastify server running on port', port);
+    console.log('Available auth endpoints:');
+    console.log('  - GET  /api/auth/login');
+    console.log('  - POST /api/auth/token (NEW)');
+    console.log('  - GET  /api/auth/callback');
   } catch (error) {
     console.error('Failed to start:', error);
     

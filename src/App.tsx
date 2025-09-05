@@ -19,18 +19,16 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <AuthGuard>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/auth/success" element={<AuthSuccessPage />} />
-              <Route path="/success" element={<SuccessPage />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </AuthGuard>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/success" element={<AuthSuccessPage />} />
+            <Route path="/success" element={<SuccessPage />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>

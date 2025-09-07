@@ -168,7 +168,17 @@ const ProfileSettings = ({ open, onOpenChange }: ProfileSettingsProps) => {
   if (loading) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl border-0 p-0 bg-background z-[120]">
+        <SheetContent side="bottom" className="h-[85vh] sm:h-[90vh] rounded-t-2xl border-0 p-0 bg-background z-[120]">
+          <div className="sticky top-0 z-10 bg-background border-b px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 rounded-full hover:bg-accent"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </div>
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -180,7 +190,17 @@ const ProfileSettings = ({ open, onOpenChange }: ProfileSettingsProps) => {
   if (error) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl border-0 p-0 bg-background z-[120]">
+        <SheetContent side="bottom" className="h-[85vh] sm:h-[90vh] rounded-t-2xl border-0 p-0 bg-background z-[120]">
+          <div className="sticky top-0 z-10 bg-background border-b px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 rounded-full hover:bg-accent"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </div>
           <div className="flex items-center justify-center h-full p-6">
             <div className="text-center">
               <p className="text-red-500 mb-2">Error loading profile</p>
@@ -195,7 +215,17 @@ const ProfileSettings = ({ open, onOpenChange }: ProfileSettingsProps) => {
   if (!profile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="bottom" className="h-[90vh] rounded-t-3xl border-0 p-0 bg-background z-[120]">
+        <SheetContent side="bottom" className="h-[85vh] sm:h-[90vh] rounded-t-2xl border-0 p-0 bg-background z-[120]">
+          <div className="sticky top-0 z-10 bg-background border-b px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 rounded-full hover:bg-accent"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </div>
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <p className="text-muted-foreground">No profile data available</p>
@@ -216,36 +246,47 @@ const ProfileSettings = ({ open, onOpenChange }: ProfileSettingsProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[95vh] rounded-t-2xl border-0 p-0 bg-background flex flex-col z-[120]">
-        <SheetHeader className="px-4 py-3 pb-2 flex-shrink-0">
-          <SheetTitle className="flex items-center gap-3 text-left">
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-bold">Profile Settings</h2>
-              <p className="text-xs text-muted-foreground font-normal">
-                Manage your personal information
-              </p>
-            </div>
-            {isEditing && (
+      <SheetContent side="bottom" className="h-[85vh] sm:h-[95vh] rounded-t-2xl border-0 p-0 bg-background flex flex-col z-[120]">
+        {/* Sticky Header with Close Button */}
+        <div className="sticky top-0 z-10 bg-background border-b">
+          <div className="px-4 py-3 pb-2">
+            <div className="flex items-center gap-3">
               <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                size="sm"
-                className="h-8 px-3"
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="h-8 w-8 rounded-full hover:bg-accent"
               >
-                {isSaving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4" />
-                )}
+                <ArrowLeft className="w-4 h-4" />
               </Button>
-            )}
-          </SheetTitle>
-        </SheetHeader>
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-bold">Profile Settings</h2>
+                <p className="text-xs text-muted-foreground font-normal">
+                  Manage your personal information
+                </p>
+              </div>
+              {isEditing && (
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  size="sm"
+                  className="h-8 px-3"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-32 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 pb-20 sm:pb-32 space-y-4">
           {/* Profile Header - More Compact */}
           <Card className="bg-gradient-to-r from-primary/8 to-primary/4 border-primary/20">
             <CardContent className="p-4">

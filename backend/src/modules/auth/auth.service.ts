@@ -131,6 +131,7 @@ export class AuthService {
       }
 
       // Get or create user
+      console.log("Attempting to upsert user with email:", payload.email);
       const user = await this.prisma.user.upsert({
         where: { email: payload.email },
         update: {
@@ -150,6 +151,13 @@ export class AuthService {
           emailVerified: true, // Set to true by default to bypass verification
           // Don't set displayName for new users - they'll be prompted to set it up
         },
+      });
+      
+      console.log("User upserted successfully:", {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        isNew: !user.lastLoginAt
       });
 
       // Create tokens

@@ -88,6 +88,38 @@ export function buildApp(): FastifyInstance {
     timestamp: new Date().toISOString(),
   }));
 
+  // Database connection test
+  app.get("/test-db", async () => {
+    try {
+      const userCount = await app.prisma.user.count();
+      const users = await app.prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          createdAt: true,
+        },
+        take: 5,
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      return {
+        status: "connected",
+        userCount,
+        recentUsers: users,
+        databaseUrl: process.env.DATABASE_URL?.substring(0, 30) + "...",
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        status: "error",
+        error: error instanceof Error ? error.message : "Unknown error",
+        databaseUrl: process.env.DATABASE_URL?.substring(0, 30) + "...",
+        timestamp: new Date().toISOString(),
+      };
+    }
+  });
+
   // Create test user and get token
   app.post("/test-setup", async (request, reply) => {
     const testUserId = 'test-user-123';

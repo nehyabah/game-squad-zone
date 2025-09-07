@@ -51,13 +51,14 @@ export default fp(async (app) => {
       }
       console.log('[Auth] User found:', user.email);
 
-      // Email verification check disabled for development
-      // if (!user.emailVerified) {
-      //   return reply.code(401).send({ 
-      //     error: "Email verification required",
-      //     message: "Please verify your email address to access the platform. Check your email for verification instructions."
-      //   });
-      // }
+      // Optionally require email verification (default true). Set REQUIRE_EMAIL_VERIFICATION=false to skip.
+      const requireEmailVerification = (process.env.REQUIRE_EMAIL_VERIFICATION ?? 'true').toLowerCase() !== 'false';
+      if (requireEmailVerification && !user.emailVerified) {
+        return reply.code(401).send({ 
+          error: "Email verification required",
+          message: "Please verify your email address to access the platform. Check your email for verification instructions."
+        });
+      }
 
       if (user.status !== 'active') {
         return reply.code(401).send({ error: "Account is not active" });

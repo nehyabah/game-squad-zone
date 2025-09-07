@@ -91,6 +91,7 @@ export function buildApp(): FastifyInstance {
     stripeKeyLength: process.env.STRIPE_SECRET_KEY?.length || 0,
     nodeEnv: process.env.NODE_ENV,
     port: process.env.PORT,
+    requireEmailVerification: (process.env.REQUIRE_EMAIL_VERIFICATION ?? 'true').toLowerCase() !== 'false',
   }));
 
   app.get("/test-squads", async () => ({

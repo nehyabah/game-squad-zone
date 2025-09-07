@@ -261,8 +261,26 @@ const SquadManager = () => {
                         max="50"
                         value={newSquad.maxMembers}
                         onChange={(e) => {
+                          const input = e.target.value;
+                          // Allow empty field for easier typing
+                          if (input === '') {
+                            setNewSquad({ ...newSquad, maxMembers: '' as any });
+                          } else {
+                            const value = parseInt(input);
+                            // Only update if it's a valid number
+                            if (!isNaN(value)) {
+                              // Clamp to valid range
+                              const clamped = Math.min(Math.max(value, 2), 50);
+                              setNewSquad({ ...newSquad, maxMembers: clamped });
+                            }
+                          }
+                        }}
+                        onBlur={(e) => {
+                          // On blur, ensure we have a valid value
                           const value = parseInt(e.target.value);
-                          setNewSquad({ ...newSquad, maxMembers: isNaN(value) ? 10 : value });
+                          if (isNaN(value) || value < 2) {
+                            setNewSquad({ ...newSquad, maxMembers: 10 });
+                          }
                         }}
                         className="h-9 border-border/50 rounded-lg focus:ring-1 focus:ring-primary/50 text-sm"
                       />

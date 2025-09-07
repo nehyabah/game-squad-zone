@@ -213,10 +213,18 @@ export function useAuthState() {
           // We got an access token from successful session creation
           console.log('Received token from callback:', token);
           authAPI.setToken(token);
-          toast({
-            title: 'Welcome!',
-            description: 'You have been successfully authenticated.',
-          });
+          
+          // Immediately fetch the user profile after setting token
+          try {
+            await fetchProfile();
+            toast({
+              title: 'Welcome!',
+              description: 'You have been successfully authenticated.',
+            });
+          } catch (error) {
+            console.error('Failed to fetch profile after auth:', error);
+          }
+          
           // Clean up URL
           window.history.replaceState({}, document.title, window.location.pathname);
         } else if (idToken && idToken.trim() !== '') {

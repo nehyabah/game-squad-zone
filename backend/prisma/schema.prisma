@@ -140,7 +140,7 @@ model SquadMember {
   id         String    @id @default(uuid())
   squadId    String
   userId     String
-  role       String    @default("member")
+  role       String    @default("member") // Use string instead of enum
   lastReadAt DateTime?
   user       User      @relation(fields: [userId], references: [id])
   squad      Squad     @relation(fields: [squadId], references: [id], onDelete: Cascade)
@@ -200,16 +200,11 @@ model SquadMessage {
   @@index([createdAt])
 }
 
-// Enums converted to strings for SQLite compatibility
+// Enums converted to strings for compatibility
 // UserStatus: "active" | "suspended" | "deleted"
 // AuthProvider: "okta"
 // PickSetStatus: "draft" | "submitted" | "locked"
 // PickChoice: "home" | "away"
-// SquadRole: "owner" | "admin" | "member"
+// SquadRole: "owner" | "admin" | "member" | "OWNER" | "MODERATOR" | "MEMBER"
 // PaymentStatus: "pending" | "completed" | "failed" | "refunded"
 // PickStatus: "pending" | "won" | "lost" | "pushed"
-enum SquadRole {
-  OWNER
-  MODERATOR
-  MEMBER
-}

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { squadsAPI, type Squad, type CreateSquadData, type JoinSquadData } from '@/lib/api/squads';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 export function useSquads() {
   const [squads, setSquads] = useState<Squad[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   const fetchSquads = async () => {
     setLoading(true);
@@ -137,8 +139,11 @@ export function useSquads() {
   };
 
   useEffect(() => {
-    fetchSquads();
-  }, []);
+    // Only fetch squads if user is authenticated
+    if (user) {
+      fetchSquads();
+    }
+  }, [user]);
 
   return {
     squads,

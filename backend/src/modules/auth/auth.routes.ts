@@ -93,8 +93,8 @@ export default async function authRoutes(app: FastifyInstance) {
             email,
             username,
             oktaId: `manual-${Date.now()}`,
-            firstName: email.split("@")[0],
-            lastName: "User",
+            firstName: "",
+            lastName: "",
             // Don't set displayName for new users - they'll be prompted to set it up
             status: "active",
             emailVerified: true, // Always true to bypass verification

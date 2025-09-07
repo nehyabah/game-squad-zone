@@ -3,9 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Sparkles, ArrowRight, Upload } from 'lucide-react';
+import { Sparkles, ArrowRight, User, UserCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { profileAPI } from '@/lib/api/profile';
@@ -18,7 +16,6 @@ const ProfileSetup = () => {
     displayName: '',
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    avatarUrl: user?.avatarUrl || '',
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -46,7 +43,6 @@ const ProfileSetup = () => {
         displayName: formData.displayName.trim(),
         firstName: formData.firstName.trim() || undefined,
         lastName: formData.lastName.trim() || undefined,
-        avatarUrl: formData.avatarUrl.trim() || undefined,
       });
 
       toast({
@@ -68,15 +64,6 @@ const ProfileSetup = () => {
     }
   };
 
-  const getInitials = () => {
-    if (formData.displayName) {
-      return formData.displayName.substring(0, 2).toUpperCase();
-    }
-    if (formData.firstName || formData.lastName) {
-      return `${formData.firstName.charAt(0)}${formData.lastName.charAt(0)}`.toUpperCase();
-    }
-    return user?.email?.substring(0, 2).toUpperCase() || 'U';
-  };
 
   const skipSetup = async () => {
     // Set a basic display name based on email if user skips
@@ -101,112 +88,102 @@ const ProfileSetup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <Sparkles className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+      </div>
+      
+      {/* Floating orbs for depth */}
+      <div className="absolute top-20 left-20 w-72 h-72 bg-purple-500 rounded-full filter blur-[128px] opacity-20 animate-pulse"></div>
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500 rounded-full filter blur-[128px] opacity-20 animate-pulse animation-delay-2000"></div>
+      
+      <Card className="relative w-full max-w-md backdrop-blur-xl bg-white/10 dark:bg-black/20 border-white/20 shadow-2xl">
+        <CardHeader className="text-center space-y-6 pb-2">
+          <div className="mx-auto relative">
+            <div className="w-20 h-20 bg-gradient-to-br from-purple-500 via-pink-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-6 transition-transform duration-300">
+              <Sparkles className="w-10 h-10 text-white" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+              <div className="w-3 h-3 bg-white rounded-full"></div>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Welcome to Game Squad Zone!
+          <div className="space-y-2">
+            <CardTitle className="text-3xl font-bold text-white">
+              Almost there!
             </CardTitle>
-            <CardDescription className="text-sm mt-2">
-              Let's set up your profile to get started with your picks and squads.
+            <CardDescription className="text-gray-300">
+              Just a few details to personalize your experience
             </CardDescription>
           </div>
         </CardHeader>
         
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Avatar Preview */}
-            <div className="flex justify-center">
-              <Avatar className="w-20 h-20">
-                <AvatarImage src={formData.avatarUrl} alt="Profile" />
-                <AvatarFallback className="text-lg font-semibold">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Display Name - Required */}
             <div className="space-y-2">
-              <Label htmlFor="displayName" className="text-sm font-medium">
-                Display Name <span className="text-red-500">*</span>
+              <Label htmlFor="displayName" className="text-sm font-medium text-gray-200 flex items-center gap-2">
+                <UserCircle className="w-4 h-4" />
+                Display Name <span className="text-pink-400">*</span>
               </Label>
               <Input
                 id="displayName"
-                placeholder="How should others see you?"
+                placeholder="Choose your arena name"
                 value={formData.displayName}
                 onChange={(e) => handleInputChange('displayName', e.target.value)}
-                className="transition-all focus:ring-2 focus:ring-blue-500"
+                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:bg-white/15 focus:border-purple-400 transition-all"
                 required
               />
-              <p className="text-xs text-muted-foreground">
-                This is how other players will see you in squads and leaderboards
+              <p className="text-xs text-gray-400">
+                Your identity in squads and leaderboards
               </p>
             </div>
 
-            {/* First Name */}
-            <div className="space-y-2">
-              <Label htmlFor="firstName" className="text-sm font-medium">
-                First Name
-              </Label>
-              <Input
-                id="firstName"
-                placeholder="Your first name"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                className="transition-all focus:ring-2 focus:ring-blue-500"
-              />
+            {/* Name fields in a grid */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium text-gray-200 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  First Name
+                </Label>
+                <Input
+                  id="firstName"
+                  placeholder="Optional"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:bg-white/15 focus:border-purple-400 transition-all"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium text-gray-200">
+                  Last Name
+                </Label>
+                <Input
+                  id="lastName"
+                  placeholder="Optional"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-500 focus:bg-white/15 focus:border-purple-400 transition-all"
+                />
+              </div>
             </div>
 
-            {/* Last Name */}
-            <div className="space-y-2">
-              <Label htmlFor="lastName" className="text-sm font-medium">
-                Last Name
-              </Label>
-              <Input
-                id="lastName"
-                placeholder="Your last name"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                className="transition-all focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Avatar URL */}
-            <div className="space-y-2">
-              <Label htmlFor="avatarUrl" className="text-sm font-medium">
-                Profile Picture URL
-              </Label>
-              <Input
-                id="avatarUrl"
-                placeholder="https://example.com/your-photo.jpg"
-                value={formData.avatarUrl}
-                onChange={(e) => handleInputChange('avatarUrl', e.target.value)}
-                className="transition-all focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-muted-foreground">
-                Optional: Add a profile picture URL
-              </p>
-            </div>
-
-            <div className="space-y-3 pt-4">
+            <div className="space-y-3 pt-6">
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                    Setting up...
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    Creating your profile...
                   </>
                 ) : (
                   <>
-                    Complete Setup
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    Enter the Arena
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
               </Button>
@@ -216,9 +193,9 @@ const ProfileSetup = () => {
                 variant="ghost"
                 onClick={skipSetup}
                 disabled={isSubmitting}
-                className="w-full text-sm"
+                className="w-full text-sm text-gray-400 hover:text-white hover:bg-white/10 transition-all"
               >
-                Skip for now
+                I'll do this later
               </Button>
             </div>
           </form>

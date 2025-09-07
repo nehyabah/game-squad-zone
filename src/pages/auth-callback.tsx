@@ -43,7 +43,6 @@ const AuthCallback = () => {
               authAPI.setToken(data.accessToken);
               // Force a small delay to ensure token is saved
               await new Promise(resolve => setTimeout(resolve, 100));
-              toast({ title: 'Welcome!', description: 'You have been successfully authenticated.' });
               // Navigate with React Router to maintain state
               navigate('/auth/success', { replace: true });
               return;

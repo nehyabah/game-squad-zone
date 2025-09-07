@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Send, Users, Trophy, Crown, Medal, Award, Loader2, UserMinus, Share2, Copy, Check, Settings, Trash2, User } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ArrowLeft, Send, Users, Trophy, Crown, Medal, Award, Loader2, UserMinus, Share2, Copy, Check, Settings, Trash2, User, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useSquads, useSquad } from "@/hooks/use-squads";
@@ -81,6 +81,10 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const [selectedMember, setSelectedMember] = useState<{userId: string, displayName: string} | null>(null);
   const [newSquadName, setNewSquadName] = useState(squad?.name || "");
   const [updateLoading, setUpdateLoading] = useState(false);
+  
+  // Leave/Delete squad modal state
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaveLoading, setLeaveLoading] = useState(false);
   const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
   const desktopMessagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -248,19 +252,24 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   };
 
   const handleLeaveSquad = async () => {
+    setLeaveLoading(true);
     const action = isOwner ? 'delete' : 'leave';
-    const confirmed = window.confirm(
-      `Are you sure you want to ${action} "${squad?.name}"? This action cannot be undone.`
-    );
-    
-    if (!confirmed) return;
 
-    const success = isOwner 
-      ? await deleteSquad(squadId)
-      : await leaveSquad(squadId);
-      
-    if (success) {
-      onBack(); // Go back to squad list after leaving/deleting
+    try {
+      const success = isOwner 
+        ? await deleteSquad(squadId)
+        : await leaveSquad(squadId);
+        
+      if (success) {
+        setShowLeaveModal(false);
+        toast.success(isOwner ? 'Squad deleted successfully' : 'You have left the squad');
+        onBack(); // Go back to squad list after leaving/deleting
+      }
+    } catch (error) {
+      console.error('Failed to leave/delete squad:', error);
+      toast.error(`Failed to ${action} squad. Please try again.`);
+    } finally {
+      setLeaveLoading(false);
     }
   };
 
@@ -321,21 +330,10 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const hasBothFeatures = features.hasChat && features.hasLeaderboard;
 
   return (
-    <div 
-      className="h-screen flex flex-col max-w-4xl mx-auto px-2 sm:px-4 overflow-hidden relative"
-      style={{
-        backgroundImage: 'url(/AdobeStock_555028248.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
-      {/* Background overlay for better text readability */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
-      <div className="relative z-10 h-full flex flex-col">
+    <div className="h-screen flex flex-col max-w-4xl mx-auto px-2 sm:px-4 overflow-hidden">
       {/* Enhanced Header - More Compact for Mobile */}
-      <div className="flex items-center gap-2 sm:gap-3 py-2 sm:py-4 border-b border-white/20 bg-white/10 rounded-b-xl backdrop-blur-md shadow-lg flex-shrink-0">
-        <Button variant="ghost" onClick={onBack} className="p-1.5 sm:p-2 h-8 w-8 sm:h-9 sm:w-9 hover:bg-muted/50 rounded-xl">
+      <div className="flex items-center gap-2 sm:gap-3 py-2 sm:py-4 border-b border-border/50 rounded-b-xl shadow-sm flex-shrink-0">
+        <Button variant="ghost" onClick={onBack} className="p-1.5 sm:p-2 h-8 w-8 sm:h-9 sm:w-9 hover:bg-muted rounded-xl">
           <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
         </Button>
         
@@ -348,7 +346,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               <Users className="w-3 h-3 text-white/90" />
               <span className="font-medium text-white drop-shadow">{squad.members?.length || 0}/{squad.maxMembers} members</span>
             </div>
-            <div className="hidden sm:block w-1 h-1 bg-white/50 rounded-full"></div>
+            <div className="hidden sm:block w-1 h-1 bg-muted-foreground/50 rounded-full"></div>
             <div className="flex items-center gap-1">
               <Trophy className="w-3 h-3 text-yellow-400" />
               <span className="font-mono font-medium tracking-wider text-white drop-shadow">{squad.joinCode}</span>
@@ -368,7 +366,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               <DialogTrigger asChild>
                 <Button 
                   variant="outline" 
-                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 p-0 sm:p-2 text-xs font-medium text-white hover:text-white hover:bg-white/20 border-white/30 bg-white/10 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 p-0 sm:p-2 text-xs font-medium hover:bg-muted border rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
@@ -521,7 +519,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
           <Button 
             variant="outline" 
             onClick={handleShareSquad}
-            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium text-white hover:text-white hover:bg-white/20 border-white/30 bg-white/10 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium hover:bg-muted border rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
           >
             {copied ? (
               <Check className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
@@ -533,8 +531,8 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
           
           <Button 
             variant="outline" 
-            onClick={handleLeaveSquad}
-            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium text-red-300 hover:text-red-200 hover:bg-red-500/20 border-red-300/50 bg-red-500/10 backdrop-blur-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+            onClick={() => setShowLeaveModal(true)}
+            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
           >
             <UserMinus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
             <span className="hidden sm:inline">{isOwner ? 'Delete' : 'Leave'}</span>
@@ -545,7 +543,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
       {/* Mobile Top Tabs - Only show if squad has both features */}
       {hasBothFeatures && (
         <div className="sm:hidden flex-shrink-0 pb-1">
-          <div className="grid grid-cols-2 bg-white/10 border border-white/20 backdrop-blur-md rounded-lg p-0.5">
+          <div className="grid grid-cols-2 bg-muted/20 border rounded-lg p-0.5">
             <button
               onClick={() => setActiveTab("leaderboard")}
               className={`flex items-center justify-center text-xs font-medium py-0.5 px-2 rounded-md transition-all duration-200 ${
@@ -1119,7 +1117,64 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
         userId={selectedMember?.userId || ''}
         displayName={selectedMember?.displayName || ''}
       />
-      </div>
+
+      {/* Leave/Delete Squad Confirmation Modal */}
+      <Dialog open={showLeaveModal} onOpenChange={setShowLeaveModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-full">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <DialogTitle className="text-xl">
+                {isOwner ? 'Delete Squad' : 'Leave Squad'}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+          <DialogDescription className="pt-3 text-base">
+            Are you sure you want to {isOwner ? 'delete' : 'leave'} <span className="font-semibold">"{squad?.name}"</span>?
+            {isOwner && (
+              <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  <strong>Warning:</strong> Deleting this squad will permanently remove it for all {squad?.members?.length || 0} members. This action cannot be undone.
+                </p>
+              </div>
+            )}
+            {!isOwner && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                You can rejoin this squad later if you have the join code.
+              </p>
+            )}
+          </DialogDescription>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowLeaveModal(false)}
+              disabled={leaveLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleLeaveSquad}
+              disabled={leaveLoading}
+              className="gap-2"
+            >
+              {leaveLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {isOwner ? 'Deleting...' : 'Leaving...'}
+                </>
+              ) : (
+                <>
+                  {isOwner ? <Trash2 className="w-4 h-4" /> : <UserMinus className="w-4 h-4" />}
+                  {isOwner ? 'Delete Squad' : 'Leave Squad'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

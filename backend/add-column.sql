@@ -1,1 +1,0 @@
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "authProvider" TEXT DEFAULT 'okta';

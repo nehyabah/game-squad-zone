@@ -185,12 +185,19 @@ export default async function authRoutes(app: FastifyInstance) {
     const domain = process.env.OKTA_DOMAIN;
     const clientId = process.env.OKTA_CLIENT_ID;
     const clientSecret = process.env.OKTA_CLIENT_SECRET;
-    let redirectUri = process.env.OKTA_REDIRECT_URI;
     
-    // Fallback to frontend URL if OKTA_REDIRECT_URI is not set properly
-    if (!redirectUri || redirectUri.includes('localhost:3001')) {
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
-      redirectUri = `${frontendUrl}/auth/callback`;
+    // Use environment-specific redirect URI
+    let redirectUri = process.env.NODE_ENV === 'production' 
+      ? process.env.OKTA_REDIRECT_URI_PROD 
+      : process.env.OKTA_REDIRECT_URI_DEV;
+    
+    // Fallback to OKTA_REDIRECT_URI or frontend URL
+    if (!redirectUri) {
+      redirectUri = process.env.OKTA_REDIRECT_URI;
+      if (!redirectUri || redirectUri.includes('localhost:3001')) {
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+        redirectUri = `${frontendUrl}/auth/callback`;
+      }
     }
 
     try {
@@ -214,11 +221,14 @@ export default async function authRoutes(app: FastifyInstance) {
           description: tokens.error_description,
           redirect_uri: redirectUri,
           domain: domain,
-          client_id: clientId
+          client_id: clientId,
+          environment: process.env.NODE_ENV || 'development'
         });
         return reply.status(401).send({
           error: tokens.error,
           error_description: tokens.error_description,
+          redirect_uri_used: redirectUri,
+          hint: "Check that this redirect_uri is registered in Auth0 application settings"
         });
       }
       
@@ -295,7 +305,11 @@ export default async function authRoutes(app: FastifyInstance) {
     const domain = process.env.OKTA_DOMAIN;
     const clientId = process.env.OKTA_CLIENT_ID;
     const clientSecret = process.env.OKTA_CLIENT_SECRET;
-    let redirectUri = process.env.OKTA_REDIRECT_URI;
+    
+    // Use environment-specific redirect URI
+    let redirectUri = process.env.NODE_ENV === 'production' 
+      ? process.env.OKTA_REDIRECT_URI_PROD 
+      : process.env.OKTA_REDIRECT_URI_DEV;
     
     // Check for missing credentials
     if (!domain || !clientId || !clientSecret) {
@@ -311,10 +325,13 @@ export default async function authRoutes(app: FastifyInstance) {
       });
     }
     
-    // Fallback to frontend URL if OKTA_REDIRECT_URI is not set properly
-    if (!redirectUri || redirectUri.includes('localhost:3001')) {
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
-      redirectUri = `${frontendUrl}/auth/callback`;
+    // Fallback to OKTA_REDIRECT_URI or frontend URL
+    if (!redirectUri) {
+      redirectUri = process.env.OKTA_REDIRECT_URI;
+      if (!redirectUri || redirectUri.includes('localhost:3001')) {
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+        redirectUri = `${frontendUrl}/auth/callback`;
+      }
     }
 
     try {
@@ -338,11 +355,14 @@ export default async function authRoutes(app: FastifyInstance) {
           description: tokens.error_description,
           redirect_uri: redirectUri,
           domain: domain,
-          client_id: clientId
+          client_id: clientId,
+          environment: process.env.NODE_ENV || 'development'
         });
         return reply.status(401).send({
           error: tokens.error,
           error_description: tokens.error_description,
+          redirect_uri_used: redirectUri,
+          hint: "Check that this redirect_uri is registered in Auth0 application settings"
         });
       }
       

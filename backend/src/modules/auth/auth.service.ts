@@ -44,7 +44,7 @@ export class AuthService {
           email: userEmail,
           typ: "refresh",
           jti,
-        },
+        } as any,
         { expiresIn: ttl }
       );
 

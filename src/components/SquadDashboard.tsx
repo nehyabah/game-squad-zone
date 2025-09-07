@@ -330,26 +330,26 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const hasBothFeatures = features.hasChat && features.hasLeaderboard;
 
   return (
-    <div className="h-screen flex flex-col max-w-4xl mx-auto px-2 sm:px-4 overflow-hidden">
-      {/* Enhanced Header - More Compact for Mobile */}
-      <div className="flex items-center gap-2 sm:gap-3 py-2 sm:py-4 border-b border-border/50 rounded-b-xl shadow-sm flex-shrink-0">
-        <Button variant="ghost" onClick={onBack} className="p-1.5 sm:p-2 h-8 w-8 sm:h-9 sm:w-9 hover:bg-muted rounded-xl">
-          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
+    <div className="h-screen flex flex-col max-w-5xl mx-auto px-2 sm:px-6 overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Enhanced Header with Glassmorphism */}
+      <div className="flex items-center gap-2 sm:gap-4 py-2 sm:py-4 mb-2 sm:mb-3 bg-card/60 backdrop-blur-xl border border-border/40 rounded-xl sm:rounded-2xl flex-shrink-0">
+        <Button variant="ghost" onClick={onBack} className="p-1.5 sm:p-2.5 h-8 w-8 sm:h-10 sm:w-10 hover:bg-primary/10 rounded-full transition-all">
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
         
-        <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1">
-          <h1 className="text-base sm:text-lg font-bold text-white truncate drop-shadow-lg leading-tight">
+        <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1.5">
+          <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate leading-tight">
             {squad.name}
           </h1>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-xs text-white/80">
-            <div className="flex items-center gap-1">
-              <Users className="w-3 h-3 text-white/90" />
-              <span className="font-medium text-white drop-shadow">{squad.members?.length || 0}/{squad.maxMembers} members</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs">
+            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/10 rounded-full">
+              <Users className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-primary" />
+              <span className="font-semibold text-foreground text-[11px] sm:text-xs">{squad.members?.length || 0}/{squad.maxMembers}</span>
             </div>
-            <div className="hidden sm:block w-1 h-1 bg-muted-foreground/50 rounded-full"></div>
-            <div className="flex items-center gap-1">
-              <Trophy className="w-3 h-3 text-yellow-400" />
-              <span className="font-mono font-medium tracking-wider text-white drop-shadow">{squad.joinCode}</span>
+            <div className="hidden sm:block w-1 h-1 bg-primary/30 rounded-full"></div>
+            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-full">
+              <Trophy className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-yellow-500" />
+              <span className="font-mono font-bold tracking-wider text-foreground text-[11px] sm:text-xs">{squad.joinCode}</span>
             </div>
           </div>
         </div>
@@ -365,16 +365,16 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
             }}>
               <DialogTrigger asChild>
                 <Button 
-                  variant="outline" 
-                  className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 p-0 sm:p-2 text-xs font-medium hover:bg-muted border rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+                  variant="ghost" 
+                  className="h-8 w-8 sm:h-10 sm:w-auto sm:px-4 p-0 sm:p-2 text-xs font-semibold hover:bg-primary/10 rounded-full sm:rounded-xl transition-all duration-200 bg-gradient-to-r from-transparent to-primary/5"
                 >
-                  <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="w-[95vw] max-w-md mx-auto p-0 gap-0 border-0 bg-card rounded-2xl shadow-xl max-h-[90vh] overflow-hidden">
-                <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-4 border-b border-border/50">
+              <DialogContent className="w-[95vw] max-w-md mx-auto p-0 gap-0 border border-border/50 bg-card/95 backdrop-blur-xl rounded-2xl max-h-[90vh] overflow-hidden">
+                <div className="bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-5 border-b border-primary/20">
                   <DialogHeader>
-                    <DialogTitle className="text-base font-semibold text-center">Squad Settings</DialogTitle>
+                    <DialogTitle className="text-lg font-bold text-center bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">Squad Settings</DialogTitle>
                   </DialogHeader>
                 </div>
                 
@@ -517,24 +517,24 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
           )}
           
           <Button 
-            variant="outline" 
+            variant="ghost" 
             onClick={handleShareSquad}
-            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium hover:bg-muted border rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+            className="h-8 sm:h-10 px-2 sm:px-4 text-xs font-semibold hover:bg-primary/10 rounded-full sm:rounded-xl transition-all duration-200 bg-gradient-to-r from-transparent to-primary/5"
           >
             {copied ? (
-              <Check className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+              <Check className="w-4 h-4 sm:w-4 sm:h-4 sm:mr-1.5 text-green-600" />
             ) : (
-              <Share2 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+              <Share2 className="w-4 h-4 sm:w-4 sm:h-4 sm:mr-1.5" />
             )}
             <span className="hidden sm:inline">{copied ? 'Copied!' : 'Share'}</span>
           </Button>
           
           <Button 
-            variant="outline" 
+            variant="ghost" 
             onClick={() => setShowLeaveModal(true)}
-            className="h-8 sm:h-9 px-2 sm:px-3 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
+            className="h-8 sm:h-10 px-2 sm:px-4 text-xs font-semibold text-red-600 hover:text-red-700 hover:bg-red-500/10 rounded-full sm:rounded-xl transition-all duration-200"
           >
-            <UserMinus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1.5" />
+            <UserMinus className="w-4 h-4 sm:w-4 sm:h-4 sm:mr-1.5" />
             <span className="hidden sm:inline">{isOwner ? 'Delete' : 'Leave'}</span>
           </Button>
         </div>
@@ -542,24 +542,24 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
 
       {/* Mobile Top Tabs - Only show if squad has both features */}
       {hasBothFeatures && (
-        <div className="sm:hidden flex-shrink-0 pb-1">
-          <div className="grid grid-cols-2 bg-muted/20 border rounded-lg p-0.5">
+        <div className="sm:hidden flex-shrink-0 pb-2">
+          <div className="grid grid-cols-2 bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-xl border border-primary/20 rounded-xl p-0.5">
             <button
               onClick={() => setActiveTab("leaderboard")}
-              className={`flex items-center justify-center text-xs font-medium py-0.5 px-2 rounded-md transition-all duration-200 ${
+              className={`flex items-center justify-center text-xs font-semibold py-1.5 px-2 rounded-lg transition-all duration-300 ${
                 activeTab === "leaderboard" 
-                  ? "bg-white/20 text-white shadow-sm backdrop-blur-sm" 
-                  : "text-white/70 hover:text-white hover:bg-white/10"
+                  ? "bg-white dark:bg-primary text-primary dark:text-primary-foreground" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-primary/20"
               }`}
             >
               🏆 Ranks
             </button>
             <button
               onClick={() => setActiveTab("chat")}
-              className={`flex items-center justify-center text-xs font-medium py-0.5 px-2 rounded-md transition-all duration-200 ${
+              className={`flex items-center justify-center text-xs font-semibold py-1.5 px-2 rounded-lg transition-all duration-300 ${
                 activeTab === "chat" 
-                  ? "bg-white/20 text-white shadow-sm backdrop-blur-sm" 
-                  : "text-white/70 hover:text-white hover:bg-white/10"
+                  ? "bg-white dark:bg-primary text-primary dark:text-primary-foreground" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/50 dark:hover:bg-primary/20"
               }`}
             >
               💬 Chat
@@ -571,9 +571,9 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
       {/* Mobile Content */}
       <div className="sm:hidden flex-1 flex flex-col min-h-0">
         {((hasBothFeatures && activeTab === "chat") || (!hasBothFeatures && features.hasChat)) && (
-          <div className="flex flex-col min-h-0 max-h-[65vh] border border-primary/10 rounded-xl bg-background/95 backdrop-blur-sm shadow-lg">
+          <div className="flex flex-col min-h-0 max-h-[70vh] border border-primary/20 rounded-xl bg-card/95 backdrop-blur-xl">
             {/* Enhanced Chat Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-gradient-to-r from-muted/30 via-muted/20 to-transparent rounded-t-xl flex-shrink-0">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-t-xl flex-shrink-0">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-primary/10 rounded-lg">
                   <Send className="w-3 h-3 text-primary" />
@@ -660,17 +660,17 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
         )}
 
         {((hasBothFeatures && activeTab === "leaderboard") || (!hasBothFeatures && features.hasLeaderboard)) && (
-          <div className="flex flex-col min-h-0 max-h-[65vh] border border-primary/10 rounded-xl bg-background/95 backdrop-blur-sm shadow-lg">
+          <div className="flex flex-col min-h-0 max-h-[70vh] border border-primary/20 rounded-xl bg-card/95 backdrop-blur-xl">
             {/* Enhanced Leaderboard Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-gradient-to-r from-yellow-50/50 via-orange-50/30 to-transparent dark:from-yellow-900/20 dark:via-orange-900/10 rounded-t-xl flex-shrink-0">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-gradient-to-r from-yellow-500/10 via-orange-500/5 to-transparent rounded-t-xl flex-shrink-0">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                  <Trophy className="w-3 h-3 text-yellow-600 dark:text-yellow-400" />
+                <div className="p-1.5 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg">
+                  <Trophy className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400" />
                 </div>
-                <span className="text-sm font-semibold text-foreground">Leaderboard</span>
+                <span className="text-sm font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">Leaderboard</span>
               </div>
-              <div className="flex items-center gap-1 px-2 py-1 bg-muted/50 rounded-full">
-                <span className="text-xs font-medium text-muted-foreground">{memberRanking.length} players</span>
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-primary/10 to-primary/5 rounded-full">
+                <span className="text-xs font-semibold text-foreground">{memberRanking.length} players</span>
               </div>
             </div>
             
@@ -679,11 +679,11 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               {memberRanking.map((member, index) => (
                 <div 
                   key={getDisplayName(member)}
-                  className={`flex items-center justify-between p-2 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${
-                    member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
-                  } ${index === 0 ? 'bg-gradient-to-r from-yellow-50/50 to-transparent' : ''} ${
-                    index === 1 ? 'bg-gradient-to-r from-gray-50/50 to-transparent' : ''
-                  } ${index === 2 ? 'bg-gradient-to-r from-orange-50/50 to-transparent' : ''}`}
+                  className={`flex items-center justify-between p-2 border-b border-border/20 hover:bg-primary/5 transition-all duration-200 cursor-pointer ${
+                    member.isCurrentUser ? 'bg-primary/10 border-l-4 border-l-primary' : ''
+                  } ${index === 0 ? 'bg-gradient-to-r from-yellow-500/10 via-yellow-500/5 to-transparent' : ''} ${
+                    index === 1 ? 'bg-gradient-to-r from-gray-400/10 via-gray-400/5 to-transparent' : ''
+                  } ${index === 2 ? 'bg-gradient-to-r from-orange-500/10 via-orange-500/5 to-transparent' : ''}`}
                   onClick={() => setSelectedMember({
                     userId: member.userId,
                     displayName: getDisplayName(member)
@@ -693,8 +693,8 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                     <div className="flex items-center justify-center w-5 h-5 flex-shrink-0">
                       {getRankIcon(member.rank)}
                     </div>
-                    <Avatar className="w-5 h-5">
-                      <AvatarFallback className="text-xs font-medium">
+                    <Avatar className="w-6 h-6 ring-1 ring-primary/20">
+                      <AvatarFallback className="text-[10px] font-bold bg-gradient-to-br from-primary/20 to-primary/10">
                         {getInitials(member)}
                       </AvatarFallback>
                     </Avatar>
@@ -745,8 +745,8 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
       {hasBothFeatures ? (
         <div className="hidden sm:block flex-1 flex flex-col min-h-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col flex-1">
-            <TabsList className="grid w-full grid-cols-2 h-9 mb-2 flex-shrink-0">
-              <TabsTrigger value="leaderboard" className="text-sm">🏆 Leaderboard</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-11 mb-3 flex-shrink-0 bg-gradient-to-r from-primary/5 to-primary/10 backdrop-blur-xl border border-primary/20 rounded-xl p-1">
+              <TabsTrigger value="leaderboard" className="text-sm font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-primary transition-all duration-300 rounded-lg">🏆 Leaderboard</TabsTrigger>
               <TabsTrigger value="chat" className="text-sm">💬 Squad Chat</TabsTrigger>
             </TabsList>
 

@@ -186,8 +186,7 @@ const LoginPage = () => {
                   ) : (
                     <>
                       <Shield className="w-5 h-5 lg:w-6 lg:h-6 group-hover:scale-110 transition-transform duration-300" />
-                      <span className="hidden sm:inline">Enter the Arena</span>
-                      <span className="sm:hidden">Login</span>
+                      <span>Enter the Arena</span>
                       <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5 group-hover:translate-x-1 transition-transform duration-300" />
                     </>
                   )}

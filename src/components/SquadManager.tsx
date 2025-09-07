@@ -69,6 +69,21 @@ const SquadManager = () => {
   };
 
   const handleCreateSquad = async () => {
+    // Validate max members before submitting
+    if (newSquad.maxMembers > 50) {
+      toast.error("Maximum members cannot exceed 50", {
+        description: "Please enter a value between 2 and 50"
+      });
+      return;
+    }
+    
+    if (newSquad.maxMembers < 2) {
+      toast.error("Squad must have at least 2 members", {
+        description: "Please enter a value between 2 and 50"
+      });
+      return;
+    }
+    
     try {
       const squadData = {
         name: newSquad.name,
@@ -253,7 +268,7 @@ const SquadManager = () => {
                     </div>
                     
                     <div className="space-y-1">
-                      <Label htmlFor="max-members" className="text-xs font-medium text-muted-foreground">Max Members</Label>
+                      <Label htmlFor="max-members" className="text-xs font-medium text-muted-foreground">Max Members (2-50)</Label>
                       <Input
                         id="max-members"
                         type="number"
@@ -269,9 +284,8 @@ const SquadManager = () => {
                             const value = parseInt(input);
                             // Only update if it's a valid number
                             if (!isNaN(value)) {
-                              // Clamp to valid range
-                              const clamped = Math.min(Math.max(value, 2), 50);
-                              setNewSquad({ ...newSquad, maxMembers: clamped });
+                              // Don't clamp here, just store the value to allow user to see what they typed
+                              setNewSquad({ ...newSquad, maxMembers: value });
                             }
                           }
                         }}

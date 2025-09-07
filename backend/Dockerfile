@@ -22,10 +22,6 @@ RUN npx prisma generate
 # Copy all source code
 COPY . .
 
-# Copy the database fix scripts
-COPY force-fix-db.sql /app/force-fix-db.sql
-COPY emergency-fix.js /app/emergency-fix.js
-
 # Build TypeScript with more lenient settings
 RUN npx tsc --skipLibCheck --noEmitOnError false --target ES2020 --module commonjs --outDir dist --allowJs true --esModuleInterop true --resolveJsonModule true || true
 
@@ -62,68 +58,15 @@ async function runMigrations() {
   
   console.log('🔄 Running database migrations...');
   
-  // EMERGENCY FIX: Run the emergency fix first
+  // Push the schema to database (single source of truth)
   try {
-    console.log('🚨 Running emergency database fix...');
-    const { emergencyFix } = require('./emergency-fix.js');
-    await emergencyFix();
-    console.log('✅ Emergency fix completed');
-  } catch (error) {
-    console.error('⚠️  Emergency fix failed:', error.message);
-  }
-  
-  // CRITICAL: First run the SQL fix to ensure authProvider is TEXT not ENUM
-  try {
-    console.log('🔧 Running SQL fix for authProvider field...');
-    const fs = require('fs');
-    const path = require('path');
-    const fixSqlPath = path.join(__dirname, 'force-fix-db.sql');
-    
-    if (fs.existsSync(fixSqlPath)) {
-      // Extract connection details from DATABASE_URL
-      const dbUrl = process.env.DATABASE_URL;
-      const urlParts = dbUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^\/]+)\/(.+)/);
-      
-      if (urlParts) {
-        const [, user, password, host, database] = urlParts;
-        // Use psql to run the fix
-        const psqlCommand = `PGPASSWORD="${password}" psql -h ${host} -U ${user} -d ${database} -f ${fixSqlPath}`;
-        const { stdout: fixOut, stderr: fixErr } = await execPromise(psqlCommand);
-        console.log('SQL fix output:', fixOut || 'Success');
-        if (fixErr) console.log('SQL fix warnings:', fixErr);
-      }
-    }
-  } catch (error) {
-    console.error('⚠️  SQL fix failed:', error.message);
-    // Try alternative approach - direct prisma command
-    try {
-      await execPromise(`npx prisma db execute --file ./force-fix-db.sql --schema ./prisma/schema.prisma`);
-      console.log('✅ SQL fix applied via Prisma');
-    } catch (err2) {
-      console.error('Alternative SQL fix also failed:', err2.message);
-    }
-  }
-  
-  // Then try to push the schema
-  try {
-    console.log('📝 Pushing schema to database...');
+    console.log('📝 Pushing Prisma schema to database...');
     const { stdout: pushOut, stderr: pushErr } = await execPromise('npx prisma db push --skip-generate --accept-data-loss');
     if (pushOut) console.log('Schema push output:', pushOut);
     if (pushErr && !pushErr.includes('already in sync')) console.log('Schema push warnings:', pushErr);
     console.log('✅ Schema push completed');
   } catch (error) {
     console.error('⚠️  Schema push failed:', error.message);
-    // Continue anyway
-  }
-  
-  // Then try regular migrations
-  try {
-    const { stdout, stderr } = await execPromise('npx prisma migrate deploy');
-    if (stdout) console.log('Migration output:', stdout);
-    if (stderr) console.log('Migration warnings:', stderr);
-    console.log('✅ Database migrations completed successfully');
-  } catch (error) {
-    console.error('⚠️  Migration failed (non-fatal):', error.message);
     console.log('Continuing with server startup anyway...');
   }
 }

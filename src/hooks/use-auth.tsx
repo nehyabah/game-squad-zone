@@ -104,16 +104,28 @@ export function useAuthState() {
       await authAPI.logout();
       setUser(null);
       setStats(null);
+      // Clear the login attempt flag
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        window.sessionStorage.removeItem("auth.loginAttempted");
+      }
       toast({
         title: 'Logged out',
         description: 'You have been successfully logged out.',
       });
+      // Redirect to home page (Enter Arena page)
+      window.location.href = '/';
     } catch (error) {
       console.error('Logout error:', error);
       // Clear local state anyway
       authAPI.clearToken();
       setUser(null);
       setStats(null);
+      // Clear the login attempt flag even on error
+      if (typeof window !== "undefined" && window.sessionStorage) {
+        window.sessionStorage.removeItem("auth.loginAttempted");
+      }
+      // Redirect to home page even on error
+      window.location.href = '/';
     }
   };
 

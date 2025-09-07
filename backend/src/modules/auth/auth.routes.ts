@@ -1,6 +1,7 @@
 // src/modules/auth/auth.routes.ts
 import { FastifyInstance, FastifyRequest } from "fastify";
 import { AuthService } from "./auth.service";
+import crypto from "node:crypto";
 
 export default async function authRoutes(app: FastifyInstance) {
   // Initialize AuthService if it exists
@@ -84,8 +85,8 @@ export default async function authRoutes(app: FastifyInstance) {
 
       // If user doesn't exist, create them
       if (!user) {
-        const username =
-          email.split("@")[0] + Math.random().toString(36).substring(2, 7);
+        // Generate a UUID-like username
+        const username = `user_${crypto.randomBytes(8).toString('hex')}`;
 
         user = await app.prisma.user.create({
           data: {

@@ -141,10 +141,7 @@ export class AuthService {
         },
         create: {
           email: payload.email,
-          username:
-            payload.nickname ||
-            payload.preferred_username ||
-            payload.email.split("@")[0],
+          username: `user_${crypto.randomBytes(8).toString('hex')}`,
           firstName: payload.given_name || payload.name?.split(" ")[0] || "",
           lastName: payload.family_name || payload.name?.split(" ").slice(1).join(" ") || "",
           oktaId: payload.sub,

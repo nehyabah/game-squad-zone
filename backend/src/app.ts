@@ -65,11 +65,26 @@ export function buildApp(): FastifyInstance {
   // app.register(oktaPlugin);
   app.register(authJwt);
 
-  // Health check
-  app.get("/health", async () => ({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  }));
+  // Health check with database status
+  app.get("/health", async () => {
+    let dbStatus = "unknown";
+    let userCount = 0;
+    
+    try {
+      userCount = await app.prisma.user.count();
+      dbStatus = "connected";
+    } catch (error) {
+      dbStatus = "error";
+      console.error("Database health check failed:", error);
+    }
+    
+    return {
+      status: "ok",
+      database: dbStatus,
+      userCount,
+      timestamp: new Date().toISOString(),
+    };
+  });
 
   app.get("/debug/env", async () => ({
     hasStripeKey: !!process.env.STRIPE_SECRET_KEY,

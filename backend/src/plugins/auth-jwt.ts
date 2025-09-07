@@ -51,7 +51,9 @@ export default fp(async (app) => {
       }
       console.log('[Auth] User found:', user.email);
 
-      // Optionally require email verification (default true). Set REQUIRE_EMAIL_VERIFICATION=false to skip.
+      // Email verification is disabled - users have immediate access after login
+      // Uncomment the following block if you want to re-enable email verification
+      /*
       const requireEmailVerification = (process.env.REQUIRE_EMAIL_VERIFICATION ?? 'true').toLowerCase() !== 'false';
       if (requireEmailVerification && !user.emailVerified) {
         return reply.code(401).send({ 
@@ -59,6 +61,7 @@ export default fp(async (app) => {
           message: "Please verify your email address to access the platform. Check your email for verification instructions."
         });
       }
+      */
 
       if (user.status !== 'active') {
         return reply.code(401).send({ error: "Account is not active" });

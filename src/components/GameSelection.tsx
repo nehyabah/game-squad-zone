@@ -16,7 +16,11 @@ const GameSelection = () => {
   const [games, setGames] = useState<OddsGame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [weekInfo, setWeekInfo] = useState({ weekNumber: 1, start: '', end: '' });
+  const [weekInfo, setWeekInfo] = useState({
+    weekNumber: 1,
+    start: "",
+    end: "",
+  });
   const [existingPicks, setExistingPicks] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const maxGames = 3;
@@ -31,25 +35,28 @@ const GameSelection = () => {
       // Get week info for display
       const weekData = oddsApi.getWeekDateRangeForDisplay();
       setWeekInfo(weekData);
-      
+
       // Get games for current week only
       const gameData = await oddsApi.getUpcomingGames(true);
       setGames(gameData);
-      
+
       // Load existing picks for current week
       const weekId = getCurrentWeekId();
       const picks = await picksApi.getWeekPicks(weekId);
       setExistingPicks(picks);
-      
+
       // If picks exist, populate the selected picks and set edit mode
       if (picks && picks.picks) {
-        const pickMap = new Map<string, 'home' | 'away'>();
-        picks.picks.forEach(pick => {
+        const pickMap = new Map<string, "home" | "away">();
+        picks.picks.forEach((pick) => {
           pickMap.set(pick.gameId, pick.choice);
         });
         setSelectedPicks(pickMap);
         setIsEditMode(true);
-        console.log("GameSelection: Loaded existing picks in edit mode:", picks);
+        console.log(
+          "GameSelection: Loaded existing picks in edit mode:",
+          picks
+        );
       } else {
         setIsEditMode(false);
         console.log("GameSelection: No existing picks found");
@@ -63,33 +70,38 @@ const GameSelection = () => {
 
   const areGamesLocked = () => {
     const now = new Date();
-    
+
     // FOR WEEK 1 LAUNCH: Games are OPEN until the first Saturday (Sept 7, 2025) at noon
     // After that, follow normal weekly schedule
-    
-    const firstLockDate = new Date('2025-09-07T12:00:00'); // Sept 7, 2025 at noon
-    
+
+    const firstLockDate = new Date("2025-09-07T12:00:00"); // Sept 7, 2025 at noon
+
     if (now < firstLockDate) {
       // We're before the first lock - games are OPEN
       return false;
     }
-    
+
     // After first lock, follow normal weekly schedule
     const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
     const currentHour = now.getHours();
-    
+
     // Normal weekly lock schedule:
     // Saturday noon -> Wednesday: LOCKED
     // Thursday -> Saturday noon: OPEN
-    
+
     if (currentDay === 6 && currentHour >= 12) {
       return true; // Saturday after noon - LOCKED
     }
-    
-    if (currentDay === 0 || currentDay === 1 || currentDay === 2 || currentDay === 3) {
+
+    if (
+      currentDay === 0 ||
+      currentDay === 1 ||
+      currentDay === 2 ||
+      currentDay === 3
+    ) {
       return true; // Sunday through Wednesday - LOCKED
     }
-    
+
     return false; // Thursday, Friday, or Saturday before noon - OPEN
   };
 
@@ -98,7 +110,8 @@ const GameSelection = () => {
     if (areGamesLocked()) {
       toast({
         title: "Picks locked",
-        description: "Weekly picks lock at Saturday noon. You'll need to wait until next week!",
+        description:
+          "Weekly picks lock at Saturday noon. You'll need to wait until next week!",
         variant: "destructive",
       });
       return;
@@ -136,10 +149,12 @@ const GameSelection = () => {
 
     try {
       // Convert selected picks to API format
-      const picks = Array.from(selectedPicks.entries()).map(([gameId, selection]) => ({
-        gameId,
-        selection
-      }));
+      const picks = Array.from(selectedPicks.entries()).map(
+        ([gameId, selection]) => ({
+          gameId,
+          selection,
+        })
+      );
 
       const weekId = getCurrentWeekId();
 
@@ -147,7 +162,7 @@ const GameSelection = () => {
         // Delete existing picks first, then submit new ones
         await picksApi.deletePicks(weekId);
       }
-      
+
       await picksApi.submitPicks({
         weekId,
         picks,
@@ -168,16 +183,16 @@ const GameSelection = () => {
       const actionText = isEditMode ? "updated" : "submitted";
       toast({
         title: `🎉 Picks ${actionText}!`,
-        description:
-          `Your picks have been ${actionText} for this week. View them in My Picks!`,
+        description: `Your picks have been ${actionText} for this week. View them in My Picks!`,
         duration: 4000,
       });
-
     } catch (error: any) {
-      console.error('Error submitting picks:', error);
+      console.error("Error submitting picks:", error);
       toast({
         title: "Error submitting picks",
-        description: error.response?.data?.title || "Failed to save your picks. Please try again.",
+        description:
+          error.response?.data?.title ||
+          "Failed to save your picks. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -232,19 +247,27 @@ const GameSelection = () => {
           <Lock className="w-5 h-5 text-destructive" />
           <div>
             <p className="font-semibold text-sm">Weekly picks are locked</p>
-            <p className="text-xs text-muted-foreground">Picks lock every Saturday at noon. Check back Thursday for next week's games!</p>
+            <p className="text-xs text-muted-foreground">
+              Picks lock every Saturday at noon. Check back Thursday for next
+              week's games!
+            </p>
           </div>
         </div>
       )}
-      
+
       <div className="text-center space-y-2 sm:space-y-4">
         <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground">
           NFL Week {weekInfo.weekNumber} Games
         </h2>
         <p className="text-muted-foreground max-w-2xl mx-auto text-xs sm:text-base px-3">
-          {weekInfo.start && weekInfo.end ? `${weekInfo.start} - ${weekInfo.end} • ` : ''}
-          {gamesLocked ? 'Picks are locked for this week' : 
-            isEditMode ? 'Edit your 3 picks against the spread' : 'Select 3 games against the spread'}
+          {weekInfo.start && weekInfo.end
+            ? `${weekInfo.start} - ${weekInfo.end} • `
+            : ""}
+          {gamesLocked
+            ? "Picks are locked for this week"
+            : isEditMode
+            ? "Edit your 3 picks against the spread"
+            : "Select 3 games against the spread"}
         </p>
         <div className="flex items-center justify-center gap-2 flex-wrap px-3">
           <Badge
@@ -258,7 +281,13 @@ const GameSelection = () => {
             className="text-xs px-2 py-0.5"
           >
             <Clock className="w-2 h-2 mr-1" />
-            {gamesLocked ? "LOCKED" : <><span className="hidden sm:inline">Locks: </span>Sat 12PM</>}
+            {gamesLocked ? (
+              "LOCKED"
+            ) : (
+              <>
+                <span className="hidden sm:inline">Locks: </span>Sat 12PM
+              </>
+            )}
           </Badge>
         </div>
       </div>
@@ -273,188 +302,198 @@ const GameSelection = () => {
           </p>
         </div>
       ) : (
-      <div className="grid gap-4">
-        {games.map((game) => {
-          const selectedPick = selectedPicks.get(game.id);
-          const spreadValue = Math.abs(game.spread);
-          const hasSelectedPick = selectedPick !== undefined;
-          const isLocked = areGamesLocked();
+        <div className="grid gap-4">
+          {games.map((game) => {
+            const selectedPick = selectedPicks.get(game.id);
+            const spreadValue = Math.abs(game.spread);
+            const hasSelectedPick = selectedPick !== undefined;
+            const isLocked = areGamesLocked();
 
-          return (
-            <Card
-              key={game.id}
-              className={`group transition-all duration-300 ease-out border-border relative overflow-hidden ${
-                isLocked 
-                  ? 'bg-muted/20 border-muted-foreground/20 opacity-60 cursor-not-allowed'
-                  : hasSelectedPick 
-                    ? 'bg-gradient-to-br from-primary/10 via-primary/15 to-primary/20 border-primary/40 shadow-md cursor-pointer transform hover:scale-[1.02]' 
-                    : 'bg-muted/30 hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-muted/40 hover:via-muted/50 hover:to-primary/20 cursor-pointer transform hover:scale-[1.02]'
-              }`}
-              onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
-                e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
-              }}
-            >
-              <CardContent className="p-3 sm:p-4 relative overflow-hidden">
-                {/* Weekly lock indicator - shown on all games when locked */}
-                {isLocked && (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 bg-destructive/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                    <Lock className="w-3 h-3 text-destructive" />
-                    <span className="text-xs text-destructive font-medium">WEEKLY LOCK</span>
-                  </div>
-                )}
-                {/* Selected pick indicator - always show if user has made a pick */}
-                {hasSelectedPick && !isLocked && (
-                  <div className="absolute top-2 right-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
-                )}
-                {/* Show selected picks even when locked */}
-                {hasSelectedPick && isLocked && (
-                  <div className="absolute top-2 left-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
-                )}
-                {/* Mouse spotlight effect */}
-                <div
-                  className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full blur-xl bg-primary/10 w-32 h-32 -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    left: "var(--mouse-x, 50%)",
-                    top: "var(--mouse-y, 50%)",
-                  }}
-                />
-                {/* Main content */}
-                <div className="relative flex flex-col items-center gap-2">
-                  {/* Teams Layout - Logo Centered */}
-                  <div className="flex items-center justify-center gap-4 sm:gap-8 w-full">
-                    {/* Away Team */}
-                    <div className="flex flex-col items-center gap-1">
-                      <img
-                        src={game.awayTeam.logo}
-                        alt={`${game.awayTeam.name} logo`}
-                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src =
-                            "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
-                        }}
-                      />
-                      <div className="text-center">
-                        <div className="font-medium text-foreground text-[10px] sm:text-xs">
-                          {game.awayTeam.code}
+            return (
+              <Card
+                key={game.id}
+                className={`group transition-all duration-300 ease-out border-border relative overflow-hidden ${
+                  isLocked
+                    ? "bg-muted/20 border-muted-foreground/20 opacity-60 cursor-not-allowed"
+                    : hasSelectedPick
+                    ? "bg-gradient-to-br from-primary/10 via-primary/15 to-primary/20 border-primary/40 shadow-md cursor-pointer transform hover:scale-[1.02]"
+                    : "bg-muted/30 hover:border-primary/30 hover:shadow-elegant hover:bg-gradient-to-br hover:from-muted/40 hover:via-muted/50 hover:to-primary/20 cursor-pointer transform hover:scale-[1.02]"
+                }`}
+                onMouseMove={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = e.clientX - rect.left;
+                  const y = e.clientY - rect.top;
+                  e.currentTarget.style.setProperty("--mouse-x", `${x}px`);
+                  e.currentTarget.style.setProperty("--mouse-y", `${y}px`);
+                }}
+              >
+                <CardContent className="p-3 sm:p-4 relative overflow-hidden">
+                  {/* Weekly lock indicator - shown on all games when locked */}
+                  {isLocked && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-destructive/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                      <Lock className="w-3 h-3 text-destructive" />
+                      {/* <span className="text-xs text-destructive font-medium">
+                        LOCKED
+                      </span> */}
+                    </div>
+                  )}
+                  {/* Selected pick indicator - always show if user has made a pick */}
+                  {hasSelectedPick && !isLocked && (
+                    <div className="absolute top-2 right-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
+                  )}
+                  {/* Show selected picks even when locked */}
+                  {hasSelectedPick && isLocked && (
+                    <div className="absolute top-2 left-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
+                  )}
+                  {/* Mouse spotlight effect */}
+                  <div
+                    className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full blur-xl bg-primary/10 w-32 h-32 -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: "var(--mouse-x, 50%)",
+                      top: "var(--mouse-y, 50%)",
+                    }}
+                  />
+                  {/* Main content */}
+                  <div className="relative flex flex-col items-center gap-2">
+                    {/* Teams Layout - Logo Centered */}
+                    <div className="flex items-center justify-center gap-4 sm:gap-8 w-full">
+                      {/* Away Team */}
+                      <div className="flex flex-col items-center gap-1">
+                        <img
+                          src={game.awayTeam.logo}
+                          alt={`${game.awayTeam.name} logo`}
+                          className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
+                          }}
+                        />
+                        <div className="text-center">
+                          <div className="font-medium text-foreground text-[10px] sm:text-xs">
+                            {game.awayTeam.code}
+                          </div>
+                          <div className="text-muted-foreground text-[8px] sm:text-[10px] leading-tight">
+                            {game.awayTeam.name}
+                          </div>
                         </div>
-                        <div className="text-muted-foreground text-[8px] sm:text-[10px] leading-tight">
-                          {game.awayTeam.name}
+                      </div>
+
+                      {/* VS Separator */}
+                      <div className="text-muted-foreground/60 text-xs font-medium">
+                        vs
+                      </div>
+
+                      {/* Home Team */}
+                      <div className="flex flex-col items-center gap-1">
+                        <img
+                          src={game.homeTeam.logo}
+                          alt={`${game.homeTeam.name} logo`}
+                          className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src =
+                              "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
+                          }}
+                        />
+                        <div className="text-center">
+                          <div className="font-medium text-foreground text-[10px] sm:text-xs">
+                            {game.homeTeam.code}
+                          </div>
+                          <div className="text-muted-foreground text-[8px] sm:text-[10px] leading-tight">
+                            {game.homeTeam.name}
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* VS Separator */}
-                    <div className="text-muted-foreground/60 text-xs font-medium">
-                      vs
+                    {/* Game Time */}
+                    <div className="text-center text-xs text-muted-foreground mb-2">
+                      {game.time}
                     </div>
 
-                    {/* Home Team */}
-                    <div className="flex flex-col items-center gap-1">
-                      <img
-                        src={game.homeTeam.logo}
-                        alt={`${game.homeTeam.name} logo`}
-                        className="w-12 h-12 sm:w-16 sm:h-16 object-contain"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src =
-                            "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
-                        }}
-                      />
-                      <div className="text-center">
-                        <div className="font-medium text-foreground text-[10px] sm:text-xs">
-                          {game.homeTeam.code}
-                        </div>
-                        <div className="text-muted-foreground text-[8px] sm:text-[10px] leading-tight">
-                          {game.homeTeam.name}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Game Time */}
-                  <div className="text-center text-xs text-muted-foreground mb-2">
-                    {game.time}
-                  </div>
-
-                  {/* Spread Selection Buttons */}
-                  <div className="flex items-center gap-2 mt-1">
-                    {game.spread < 0 ? (
-                      <>
-                        <button
-                          onClick={() => !isLocked && handleSpreadPick(game.id, "away")}
-                          disabled={isLocked}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
-                            selectedPick === "away"
-                              ? isLocked
-                                ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
-                                : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
-                              : isLocked 
+                    {/* Spread Selection Buttons */}
+                    <div className="flex items-center gap-2 mt-1">
+                      {game.spread < 0 ? (
+                        <>
+                          <button
+                            onClick={() =>
+                              !isLocked && handleSpreadPick(game.id, "away")
+                            }
+                            disabled={isLocked}
+                            className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
+                              selectedPick === "away"
+                                ? isLocked
+                                  ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
+                                  : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
+                                : isLocked
                                 ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
                                 : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
-                          }`}
-                        >
-                          +{spreadValue}
-                        </button>
-                        <button
-                          onClick={() => !isLocked && handleSpreadPick(game.id, "home")}
-                          disabled={isLocked}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
-                            isLocked 
-                              ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
-                              : selectedPick === "home"
+                            }`}
+                          >
+                            +{spreadValue}
+                          </button>
+                          <button
+                            onClick={() =>
+                              !isLocked && handleSpreadPick(game.id, "home")
+                            }
+                            disabled={isLocked}
+                            className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
+                              isLocked
+                                ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
+                                : selectedPick === "home"
                                 ? isLocked
                                   ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
                                   : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
                                 : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
-                          }`}
-                        >
-                          -{spreadValue}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => !isLocked && handleSpreadPick(game.id, "away")}
-                          disabled={isLocked}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
-                            selectedPick === "away"
-                              ? isLocked
-                                ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
-                                : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
-                              : isLocked 
+                            }`}
+                          >
+                            -{spreadValue}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() =>
+                              !isLocked && handleSpreadPick(game.id, "away")
+                            }
+                            disabled={isLocked}
+                            className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
+                              selectedPick === "away"
+                                ? isLocked
+                                  ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
+                                  : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
+                                : isLocked
                                 ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
                                 : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
-                          }`}
-                        >
-                          -{spreadValue}
-                        </button>
-                        <button
-                          onClick={() => !isLocked && handleSpreadPick(game.id, "home")}
-                          disabled={isLocked}
-                          className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
-                            isLocked 
-                              ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
-                              : selectedPick === "home"
+                            }`}
+                          >
+                            -{spreadValue}
+                          </button>
+                          <button
+                            onClick={() =>
+                              !isLocked && handleSpreadPick(game.id, "home")
+                            }
+                            disabled={isLocked}
+                            className={`px-3 py-2 sm:px-4 sm:py-2 rounded text-sm sm:text-base font-semibold transition-all duration-200 min-w-[50px] sm:min-w-[60px] ${
+                              isLocked
+                                ? "bg-muted/20 text-muted-foreground/50 cursor-not-allowed"
+                                : selectedPick === "home"
                                 ? isLocked
                                   ? "bg-primary/60 text-primary-foreground/80 cursor-not-allowed"
                                   : "bg-primary text-primary-foreground shadow-sm hover:scale-105"
                                 : "bg-muted/50 text-muted-foreground hover:bg-muted hover:scale-105"
-                          }`}
-                        >
-                          +{spreadValue}
-                        </button>
-                      </>
-                    )}
+                            }`}
+                          >
+                            +{spreadValue}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
 
       {selectedPicks.size > 0 && games.length > 0 && !gamesLocked && (
@@ -475,9 +514,13 @@ const GameSelection = () => {
               ) : null}
               <span className="text-sm font-medium">
                 {isSubmitting
-                  ? (isEditMode ? "Updating..." : "Submitting...")
+                  ? isEditMode
+                    ? "Updating..."
+                    : "Submitting..."
                   : selectedPicks.size === maxGames
-                  ? (isEditMode ? "Update Picks" : "Submit Picks")
+                  ? isEditMode
+                    ? "Update Picks"
+                    : "Submit Picks"
                   : `Select ${maxGames - selectedPicks.size} More`}
               </span>
             </div>

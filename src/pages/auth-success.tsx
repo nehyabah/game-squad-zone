@@ -1,12 +1,25 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { authAPI } from "@/lib/api/auth";
 
 export default function AuthSuccessPage() {
   const navigate = useNavigate();
   const { isAuthenticated, user, loading } = useAuth();
 
   useEffect(() => {
+    // First, check if there's a token in the URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get("token");
+    
+    if (token) {
+      // Save the token and trigger auth state refresh
+      authAPI.setToken(token);
+      // Force reload to update auth state
+      window.location.href = "/";
+      return;
+    }
+    
     // Only redirect to home once we confirm authentication is complete
     if (!loading && isAuthenticated && user) {
       // User is fully authenticated, safe to go to home

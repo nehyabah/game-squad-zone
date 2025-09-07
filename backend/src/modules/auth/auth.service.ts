@@ -12,7 +12,7 @@ export class AuthService {
   constructor(private app: FastifyInstance, private prisma: PrismaClient) {}
 
   private signAccess(user: { id: string; email: string }) {
-    const ttl = process.env.ACCESS_TTL || "15m";
+    const ttl = process.env.ACCESS_TTL || "7d";  // Changed from 15m to 7d
     return this.app.jwt.sign(
       {
         sub: user.id,

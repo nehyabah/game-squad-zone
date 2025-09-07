@@ -169,6 +169,10 @@ class AuthAPI {
       body: JSON.stringify({}),
     });
     this.clearToken();
+    // Also clear the login attempt flag from AuthGuard
+    if (typeof window !== "undefined" && window.sessionStorage) {
+      window.sessionStorage.removeItem("auth.loginAttempted");
+    }
   }
 
   // Delete account

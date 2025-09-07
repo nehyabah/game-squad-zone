@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth.tsx";
 import { useSquads } from "@/hooks/use-squads";
 import { toast } from "@/hooks/use-toast";
 import LoginPage from "@/components/LoginPage";
+import ProfileSetup from "@/components/ProfileSetup";
 import Header from "@/components/Header";
 import SquadManagerWithConditionalTabs from "@/components/SquadManagerWithConditionalTabs";
 import GameSelection from "@/components/GameSelection";
@@ -27,7 +28,7 @@ const Index = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null);
   const [joiningSquad, setJoiningSquad] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, loading, profileSetupRequired } = useAuth();
   const { joinSquad } = useSquads();
 
   // Handle squad joining from URL parameter
@@ -136,7 +137,12 @@ const Index = () => {
     return <LoginPage />;
   }
   
-  // Show main app if authenticated
+  // Show profile setup if required
+  if (profileSetupRequired) {
+    return <ProfileSetup />;
+  }
+  
+  // Show main app if authenticated and profile is complete
   return (
     <div className="min-h-screen bg-background">
       <Header onAuthClick={() => setShowAuthModal(true)} />

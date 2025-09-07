@@ -148,7 +148,7 @@ export class AuthService {
           status: "active",
           // Omit authProvider to avoid DB type mismatches across environments
           emailVerified: true, // Set to true by default to bypass verification
-          displayName: payload.name || payload.nickname || payload.email.split("@")[0],
+          // Don't set displayName for new users - they'll be prompted to set it up
         },
       });
 

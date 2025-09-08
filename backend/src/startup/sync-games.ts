@@ -21,7 +21,7 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
   console.log('🔄 Starting game sync on server startup...');
   
   try {
-    const apiKey = process.env.VITE_ODDS_API_KEY || "78177f5cdef26278574c57dd5c03064d";
+    const apiKey = process.env.VITE_ODDS_API_KEY || "7bb8a96e709b8d2a673a01351921518d";
     const url = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/odds?apiKey=${apiKey}&regions=us&markets=spreads`;
     
     let apiGames: OddsApiGame[] = [];

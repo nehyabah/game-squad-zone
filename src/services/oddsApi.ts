@@ -91,7 +91,7 @@ const TEAM_MAPPING: Record<string, { logo: string; code: string }> = {
 };
 
 class OddsApiService {
-  private apiKey = import.meta.env.VITE_ODDS_API_KEY || "7bb8a96e709b8d2a673a01351921518d";
+  private apiKey = import.meta.env.VITE_ODDS_API_KEY || "5aa0a3d280740ab65185d78b950d7c02";
   private baseUrl = "https://api.the-odds-api.com/v4";
   
   // NFL 2025 season Week 1 starts Friday, September 5, 2025 (Friday-to-Friday weeks)

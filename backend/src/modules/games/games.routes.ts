@@ -1,14 +1,17 @@
 import { FastifyInstance } from "fastify";
-import { getCurrentWeekId } from "../../utils/weekUtils";
+import { getCurrentWeekIdSync } from "../../utils/weekUtils";
 
 export default async function gameRoutes(app: FastifyInstance) {
-  // GET /api/games - Get games for current week
+  // GET /api/games - Get games filtered by week
   app.get("/games", async (req, reply) => {
     try {
-      const weekId = getCurrentWeekId();
+      const { weekId } = req.query as { weekId?: string };
+      const targetWeekId = weekId || getCurrentWeekIdSync();
+      
+      console.log(`🎯 Games API: Requested weekId="${weekId}", targetWeekId="${targetWeekId}"`);
       
       const games = await app.prisma.game.findMany({
-        where: { weekId },
+        where: { weekId: targetWeekId },
         orderBy: { startAtUtc: 'asc' },
         include: {
           lines: {

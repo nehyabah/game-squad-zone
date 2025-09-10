@@ -7,6 +7,7 @@ import { Trophy, Medal, Award, Loader2 } from "lucide-react";
 import { getDisplayName, getInitials } from "@/lib/utils/user";
 import { useSeasonLeaderboard, useWeeklyLeaderboard } from "@/hooks/use-leaderboard";
 import { useAuth } from "@/hooks/use-auth";
+import { getCurrentWeekIdSync } from "@/lib/utils/weekUtils";
 
 interface LeaderboardDisplayEntry {
   rank: number;
@@ -16,6 +17,7 @@ interface LeaderboardDisplayEntry {
   lastName?: string;
   wins: number;
   losses: number;
+  pushes: number;
   winPercentage: number;
   points: number;
   isCurrentUser?: boolean;
@@ -75,7 +77,7 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
                   })}
                 </div>
                 <div className="text-xs text-muted-foreground hidden sm:block">
-                  {entry.wins}W - {entry.losses}L
+                  {entry.wins}W {entry.losses}L {entry.pushes}D
                 </div>
               </div>
             </div>
@@ -84,7 +86,7 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
           <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
             <div className="text-right hidden sm:block">
               <div className="text-sm font-medium text-foreground">{entry.winPercentage}%</div>
-              <div className="text-xs text-muted-foreground">Win Rate</div>
+              <div className="text-xs text-muted-foreground">W%</div>
             </div>
             
             <div className="text-right">
@@ -107,8 +109,8 @@ const Leaderboard = () => {
   const [activeTab, setActiveTab] = useState("week");
   const { user } = useAuth();
   
-  // For now, use current week - we'll need to implement week detection later
-  const currentWeekId = "2025-W1";
+  // Get current week ID dynamically
+  const currentWeekId = getCurrentWeekIdSync();
   const seasonLeaderboard = useSeasonLeaderboard();
   const weeklyLeaderboard = useWeeklyLeaderboard(currentWeekId);
   
@@ -183,7 +185,7 @@ const Leaderboard = () => {
       <Card className="bg-muted/30 border-border">
         <CardContent className="p-4">
           <div className="text-center text-sm text-muted-foreground">
-            <p><strong>Points System:</strong> Winning Pick = 10 points • Rankings by total points, then win percentage</p>
+            <p><strong>Points System:</strong> Win = 1 point • Draw = 0.5 points • Win% = (Wins + Draws/2) ÷ Total Games</p>
           </div>
         </CardContent>
       </Card>

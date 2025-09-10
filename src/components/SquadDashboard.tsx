@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { useSquads, useSquad } from "@/hooks/use-squads";
 import { useAuth } from "@/hooks/use-auth";
 import { useSquadChat } from "@/hooks/use-squad-chat";
+import { useSquadLeaderboard } from "@/hooks/use-leaderboard";
+import { getCurrentWeekIdSync } from "@/lib/utils/weekUtils";
 import type { Squad } from "@/lib/api/squads";
 import type { ChatMessage as APIChatMessage } from "@/lib/api/chat";
 import { getDisplayName, getInitials } from "@/lib/utils/user";
@@ -43,8 +45,8 @@ interface SquadMemberRanking {
   rank: number;
   wins: number;
   losses: number;
+  pushes: number;
   winPercentage: number;
-  points: number;
   isCurrentUser?: boolean;
 }
 
@@ -71,6 +73,22 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const { squad, loading, error, updateSettings, refetch } = useSquad(squadId);
   const { leaveSquad, deleteSquad } = useSquads();
   const { user } = useAuth();
+  
+  // Get current week and squad leaderboard data
+  const currentWeekId = getCurrentWeekIdSync();
+  const squadLeaderboard = useSquadLeaderboard(squadId);
+  
+  // Chat functionality with auto-refresh every 3 seconds
+  const { 
+    messages: chatMessages, 
+    loading: chatLoading, 
+    sending: chatSending, 
+    sendMessage,
+    refetch: refetchMessages,
+    isPolling
+  } = useSquadChat(squadId, 3000);
+
+  // State hooks must come after all custom hooks
   const [activeTab, setActiveTab] = useState("leaderboard");
   const [newMessage, setNewMessage] = useState("");
   const [copied, setCopied] = useState(false);
@@ -87,16 +105,6 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const [leaveLoading, setLeaveLoading] = useState(false);
   const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
   const desktopMessagesEndRef = useRef<HTMLDivElement>(null);
-  
-  // Chat functionality with auto-refresh every 3 seconds
-  const { 
-    messages: chatMessages, 
-    loading: chatLoading, 
-    sending: chatSending, 
-    sendMessage, 
-    refetch: refetchMessages,
-    isPolling
-  } = useSquadChat(squadId, 3000);
 
   // Mark messages as read when component mounts or when switching to chat tab
   useEffect(() => {
@@ -113,7 +121,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
     markAsRead();
   }, [squadId, activeTab]);
 
-  // Format chat messages for compatibility (moved before useEffect that depends on it)
+  // Format chat messages for compatibility
   const formattedChatMessages: ChatMessage[] = chatMessages.map(msg => ({
     id: msg.id,
     username: msg.user.username,
@@ -152,6 +160,11 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
     }
   }, [squad?.maxMembers, squad?.name]);
 
+  // Calculate member ranking from squad leaderboard data
+  const memberRanking = useMemo(() => {
+    return squadLeaderboard.data || [];
+  }, [squadLeaderboard.data]);
+
   // Early returns after all hooks
   if (loading) {
     return (
@@ -178,21 +191,6 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
     hasChat: true, // Chat is now implemented
     hasLeaderboard: true, // Show member leaderboard using real data
   };
-
-  // Generate member ranking from real squad data
-  const memberRanking: SquadMemberRanking[] = squad.members.map((member, index) => ({
-    userId: member.user?.id || member.userId,
-    username: member.user?.username || member.username || 'Unknown',
-    displayName: member.user?.displayName || null,
-    firstName: member.user?.firstName || null,
-    lastName: member.user?.lastName || null,
-    rank: index + 1,
-    wins: 0, // TODO: Implement win/loss tracking
-    losses: 0,
-    winPercentage: 0,
-    points: 0,
-    isCurrentUser: member.user?.id === user?.id,
-  }));
 
   const quickEmojis = ["🔥", "😂", "🤣", "👏", "💯", "❤️"];
 
@@ -704,34 +702,24 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                         {member.isCurrentUser && <span className="ml-1 text-xs font-normal text-primary/70">(You)</span>}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {member.wins === 0 && member.losses === 0 ? (
+                        {member.wins === 0 && member.losses === 0 && member.pushes === 0 ? (
                           <span className="text-muted-foreground/60">—</span>
                         ) : (
-                          `${member.wins}W - ${member.losses}L`
+                          `${member.wins}W ${member.losses}L ${member.pushes}D`
                         )}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <div className="text-right min-w-[28px]">
-                      <div className="font-bold text-primary text-sm">
-                        {member.points === 0 ? (
-                          <span className="text-muted-foreground/60 font-normal">—</span>
-                        ) : (
-                          member.points
-                        )}
-                      </div>
-                      <div className="text-muted-foreground text-xs">pts</div>
-                    </div>
                     <div className="text-right min-w-[24px]">
                       <div className="font-medium text-sm">
-                        {member.wins === 0 && member.losses === 0 ? (
+                        {member.wins === 0 && member.losses === 0 && member.pushes === 0 ? (
                           <span className="text-muted-foreground/60">—</span>
                         ) : (
                           `${member.winPercentage}%`
                         )}
                       </div>
-                      <div className="text-muted-foreground text-xs">win</div>
+                      <div className="text-muted-foreground text-xs">W%</div>
                     </div>
                   </div>
                 </div>
@@ -802,10 +790,10 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                 {member.isCurrentUser && <span className="ml-1 text-xs font-normal text-primary/70">(You)</span>}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {member.wins === 0 && member.losses === 0 ? (
+                                {member.wins === 0 && member.losses === 0 && member.pushes === 0 ? (
                                   <span className="text-muted-foreground/60">—</span>
                                 ) : (
-                                  `${member.wins}W - ${member.losses}L`
+                                  `${member.wins}W ${member.losses}L ${member.pushes}D`
                                 )}
                               </div>
                             </div>
@@ -821,29 +809,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                 `${member.winPercentage}%`
                               )}
                             </div>
-                            <div className="text-xs text-muted-foreground">Win Rate</div>
-                          </div>
-                          
-                          <div className="text-right">
-                            <div className="font-bold text-sm sm:text-lg text-primary">
-                              {member.points === 0 ? (
-                                <span className="text-muted-foreground/60 font-normal text-sm">—</span>
-                              ) : (
-                                member.points
-                              )}
-                            </div>
-                            <div className="text-xs text-muted-foreground">Points</div>
-                          </div>
-                          
-                          {/* Mobile compact view */}
-                          <div className="text-right sm:hidden">
-                            <div className="text-xs text-muted-foreground">
-                              {member.wins === 0 && member.losses === 0 ? (
-                                <span className="text-muted-foreground/40">—</span>
-                              ) : (
-                                `${member.winPercentage}%`
-                              )}
-                            </div>
+                            <div className="text-xs text-muted-foreground">W%</div>
                           </div>
                         </div>
                       </div>
@@ -1058,10 +1024,10 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                               {member.isCurrentUser && <span className="ml-1 text-xs font-normal text-primary/70">(You)</span>}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {member.wins === 0 && member.losses === 0 ? (
+                              {member.wins === 0 && member.losses === 0 && member.pushes === 0 ? (
                                 <span className="text-muted-foreground/60">—</span>
                               ) : (
-                                `${member.wins}W - ${member.losses}L`
+                                `${member.wins}W ${member.losses}L ${member.pushes}D`
                               )}
                             </div>
                           </div>
@@ -1071,35 +1037,15 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                       <div className="flex items-center gap-3 sm:gap-6">
                         <div className="text-right hidden sm:block">
                           <div className="font-semibold text-foreground">
-                            {member.wins === 0 && member.losses === 0 ? (
+                            {member.wins === 0 && member.losses === 0 && member.pushes === 0 ? (
                               <span className="text-muted-foreground/60">—</span>
                             ) : (
                               `${member.winPercentage}%`
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground">Win Rate</div>
+                          <div className="text-xs text-muted-foreground">W%</div>
                         </div>
                         
-                        <div className="text-right">
-                          <div className="font-bold text-sm sm:text-lg text-primary">
-                            {member.points === 0 ? (
-                              <span className="text-muted-foreground/60 font-normal text-sm">—</span>
-                            ) : (
-                              member.points
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">Points</div>
-                        </div>
-                        
-                        <div className="text-right sm:hidden">
-                          <div className="text-xs text-muted-foreground">
-                            {member.wins === 0 && member.losses === 0 ? (
-                              <span className="text-muted-foreground/40">—</span>
-                            ) : (
-                              `${member.winPercentage}%`
-                            )}
-                          </div>
-                        </div>
                       </div>
                     </div>
                   ))}

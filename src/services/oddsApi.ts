@@ -94,14 +94,14 @@ class OddsApiService {
   private apiKey = import.meta.env.VITE_ODDS_API_KEY || "5aa0a3d280740ab65185d78b950d7c02";
   private baseUrl = "https://api.the-odds-api.com/v4";
   
-  // NFL 2025 season Week 1 starts Friday, September 5, 2025 (Friday-to-Friday weeks)
-  // Update this each season or make it configurable  
+  // NFL 2025 season starts Friday, September 5, 2025
+  // Weeks run Friday to Tuesday for pick'em pools
   private readonly SEASON_START = new Date('2025-09-05T00:00:00Z');
   private readonly CURRENT_SEASON = 2025;
   
   /**
    * Calculate the current NFL week based on date
-   * NFL weeks run Friday to Friday for fantasy purposes
+   * NFL weeks run Friday to Tuesday (5 days for picks)
    */
   private getCurrentNFLWeek(): number {
     const now = new Date();
@@ -112,45 +112,34 @@ class OddsApiService {
       return 1;
     }
     
-    // Find the first Friday of the season (when Week 1 starts)
-    const firstFriday = new Date(seasonStart);
-    const dayOfWeek = firstFriday.getDay(); // 0 = Sunday, 5 = Friday
-    const daysUntilFriday = dayOfWeek <= 5 ? 5 - dayOfWeek : 7 - dayOfWeek + 5;
-    firstFriday.setDate(firstFriday.getDate() + daysUntilFriday);
-    firstFriday.setHours(0, 0, 0, 0);
+    // Calculate days since season start (Friday)
+    const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
     
-    // If before the first Friday, return week 1
-    if (now < firstFriday) {
-      return 1;
-    }
+    // Each week is 7 days
+    // Week 1: Friday Sep 5 - Thursday Sep 11
+    // Week 2: Friday Sep 12 - Thursday Sep 18
+    // etc.
+    const week = Math.floor(daysSinceStart / 7) + 1;
     
-    // Calculate days since first Friday
-    const daysSinceFirstFriday = Math.floor((now.getTime() - firstFriday.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Each week is 7 days, starting from week 1
-    const week = Math.floor(daysSinceFirstFriday / 7) + 1;
-    
-    // NFL regular season has 18 weeks
-    return Math.min(week, 18);
+    // NFL regular season has 18 weeks, then playoffs
+    // Allow up to week 22 for playoffs/Super Bowl
+    return Math.min(week, 22);
   }
   
   /**
-   * Get the date range for a specific NFL week (Friday to Friday)
+   * Get the date range for a specific NFL week (Friday to Tuesday)
    * @param week - The week number (1-18)
    * @returns Object with start and end dates for the week
    */
   private getWeekDateRange(week: number): { start: Date; end: Date } {
-    // Season start is already set to the first Friday (September 5, 2025)
-    const firstFriday = new Date(this.SEASON_START);
-    firstFriday.setHours(0, 0, 0, 0);
+    // Season starts on Friday September 5, 2025
+    const weekStart = new Date(this.SEASON_START);
+    weekStart.setDate(weekStart.getDate() + (week - 1) * 7);
+    weekStart.setHours(0, 0, 0, 0);
     
-    // Calculate the Friday of the given week (weeks start on Friday)
-    const weekStart = new Date(firstFriday);
-    weekStart.setDate(firstFriday.getDate() + (week - 1) * 7);
-    
-    // Week ends on Thursday (6 days later)
+    // Week ends on Tuesday (4 days later: Fri, Sat, Sun, Mon, Tue)
     const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setDate(weekStart.getDate() + 4);
     weekEnd.setHours(23, 59, 59, 999);
     
     return { start: weekStart, end: weekEnd };
@@ -213,11 +202,9 @@ class OddsApiService {
   }
 
   async getUpcomingGames(onlyCurrentWeek: boolean = true): Promise<OddsGame[]> {
-    const currentWeek = this.getCurrentNFLWeek();
-    
     try {
       const url = `${this.baseUrl}/sports/americanfootball_nfl/odds?apiKey=${this.apiKey}&regions=us&markets=spreads`;
-      console.log("📡 API URL:", url.replace(this.apiKey, '[API_KEY_HIDDEN]'));
+      console.log("📡 Fetching NFL games from Odds API...");
       
       const response = await fetch(url);
 
@@ -227,15 +214,88 @@ class OddsApiService {
       }
 
       const data: OddsApiGame[] = await response.json();
+      console.log(`✅ Received ${data.length} games from API`);
       
-      // Filter games for the upcoming week if requested
-      let filteredGames = data;
-      if (onlyCurrentWeek) {
-        filteredGames = data.filter(game => this.isGameInUpcomingWeek(game.commence_time));
-        
-        const { start, end } = this.getWeekDateRange(currentWeek);
+      if (data.length === 0) {
+        console.log("⚠️ No games from API, using fallback games");
+        return this.getFallbackGames();
       }
       
+      // Determine the current week dynamically
+      // First, check if we have any games to determine the season year
+      const firstGameDate = new Date(data[0].commence_time);
+      const gameYear = firstGameDate.getFullYear();
+      
+      // Dynamically set season start based on the year of the games
+      // NFL season typically starts first Thursday/Friday of September
+      const seasonStart = new Date(`${gameYear}-09-01T00:00:00Z`);
+      // Find first Friday of September
+      while (seasonStart.getDay() !== 5) { // 5 = Friday
+        seasonStart.setDate(seasonStart.getDate() + 1);
+      }
+      
+      // Calculate current week based on TODAY's date
+      const today = new Date();
+      let currentWeek = 1;
+      
+      if (today >= seasonStart) {
+        const daysSinceStart = Math.floor((today.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
+        currentWeek = Math.floor(daysSinceStart / 7) + 1;
+        // Cap at week 22 for playoffs
+        currentWeek = Math.min(currentWeek, 22);
+      }
+      
+      // Filter games for current week (Friday to Tuesday)
+      let filteredGames = data;
+      if (onlyCurrentWeek && data.length > 0) {
+        // Find the earliest game date to determine the actual current week
+        const sortedGames = [...data].sort((a, b) => 
+          new Date(a.commence_time).getTime() - new Date(b.commence_time).getTime()
+        );
+        const firstGameDate = new Date(sortedGames[0].commence_time);
+        
+        // Find which Friday this game belongs to
+        const gameDayOfWeek = firstGameDate.getDay();
+        let weekStartDate = new Date(firstGameDate);
+        
+        // If game is on Wed or Thu, it belongs to previous week
+        if (gameDayOfWeek === 3 || gameDayOfWeek === 4) {
+          // Go back to previous Friday
+          const daysToSubtract = gameDayOfWeek === 3 ? 5 : 6;
+          weekStartDate.setDate(weekStartDate.getDate() - daysToSubtract);
+        } else if (gameDayOfWeek !== 5) {
+          // Go back to most recent Friday
+          const daysToSubtract = gameDayOfWeek === 6 ? 1 : // Saturday -> -1
+                                  gameDayOfWeek === 0 ? 2 : // Sunday -> -2
+                                  gameDayOfWeek === 1 ? 3 : // Monday -> -3
+                                  gameDayOfWeek === 2 ? 4 : // Tuesday -> -4
+                                  0;
+          weekStartDate.setDate(weekStartDate.getDate() - daysToSubtract);
+        }
+        
+        weekStartDate.setHours(0, 0, 0, 0);
+        
+        // Week ends on Tuesday (4 days after Friday)
+        const weekEndDate = new Date(weekStartDate);
+        weekEndDate.setDate(weekStartDate.getDate() + 4);
+        weekEndDate.setHours(23, 59, 59, 999);
+        
+        // Calculate week number
+        const weeksSinceStart = Math.floor((weekStartDate.getTime() - seasonStart.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1;
+        const displayWeek = Math.max(1, Math.min(weeksSinceStart, 22));
+        
+        console.log(`📅 Week ${displayWeek}: ${weekStartDate.toLocaleDateString()} (Fri) to ${weekEndDate.toLocaleDateString()} (Tue)`);
+        
+        filteredGames = data.filter(game => {
+          const gameDate = new Date(game.commence_time);
+          return gameDate >= weekStartDate && gameDate <= weekEndDate;
+        });
+        
+        console.log(`📊 Showing ${filteredGames.length} games for Week ${displayWeek}`);
+        
+        // Update currentWeek to reflect actual week
+        currentWeek = displayWeek;
+      }
       
       return filteredGames.map(game => ({
         id: game.id,

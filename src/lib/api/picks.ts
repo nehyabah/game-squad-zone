@@ -30,6 +30,11 @@ export interface Pick {
   spreadAtPick: number;
   lineSource: string;
   createdAtUtc: string;
+  // Result fields from backend
+  status: 'pending' | 'won' | 'lost' | 'pushed';
+  result?: string; // Format: "won:10" or "lost:0" etc
+  payout?: number;
+  odds?: number;
   game?: {
     id: string;
     homeTeam: string;
@@ -84,5 +89,11 @@ export const picksApi = {
   // Delete picks for a specific week
   deletePicks: async (weekId: string): Promise<void> => {
     await api.delete(`/picks/me?weekId=${weekId}`);
+  },
+
+  // Get complete pick history for any user
+  getUserPickHistory: async (userId: string): Promise<PickSet[]> => {
+    const response = await api.get(`/picks/user/${userId}/history`);
+    return response.data;
   },
 };

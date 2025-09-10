@@ -112,6 +112,27 @@ export default async function registerPickRoutes(app: FastifyInstance) {
     }
   );
 
+  // Add GET endpoint to retrieve any user's complete pick history
+  app.get(
+    "/picks/user/:userId/history",
+    {
+      schema: {
+        params: {
+          type: "object",
+          required: ["userId"],
+          properties: {
+            userId: { type: "string" },
+          },
+        },
+      },
+      preHandler: [app.auth],
+    },
+    async (req: any, reply: FastifyReply) => {
+      const history = await service.getUserPickHistory(req.params.userId);
+      return reply.send(history);
+    }
+  );
+
   // Add DELETE endpoint to clear picks for a week
 
   app.delete(

@@ -211,8 +211,10 @@ export class ScoringService {
       }
     }
 
-    const totalDecidedPicks = wins + losses;
-    const winPercentage = totalDecidedPicks > 0 ? (wins / totalDecidedPicks) * 100 : 0;
+    // New formula: (wins + pushes/2) / total_games
+    // Total games = total picks (wins + losses + pushes)
+    const totalGames = wins + losses + pushes;
+    const winPercentage = totalGames > 0 ? ((wins + (pushes / 2)) / totalGames) * 100 : 0;
 
     return {
       totalPoints,

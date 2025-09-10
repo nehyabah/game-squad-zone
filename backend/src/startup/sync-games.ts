@@ -36,35 +36,45 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
       console.log(`📊 Found ${apiGames.length} games from API`);
     } catch (error) {
       console.log('⚠️ API request failed, using fallback games for database sync');
-      // Use fallback games if API fails
+      // Week 2 fallback games with current dates for testing
+      const now = new Date();
+      const today = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+      
       apiGames = [
         {
-          id: 'fallback-1',
+          id: '2024-W2-GAME-1',
           home_team: 'Philadelphia Eagles',
           away_team: 'Dallas Cowboys',
-          commence_time: '2025-09-07T17:00:00Z',
+          commence_time: `${today}T17:00:00Z`,
           bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Philadelphia Eagles', point: -3.5 }] }] }]
         },
         {
-          id: 'fallback-2', 
+          id: '2024-W2-GAME-2', 
           home_team: 'Kansas City Chiefs',
           away_team: 'Buffalo Bills',
-          commence_time: '2025-09-07T20:30:00Z',
+          commence_time: `${today}T20:30:00Z`,
           bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Kansas City Chiefs', point: 2.5 }] }] }]
         },
         {
-          id: 'fallback-3',
+          id: '2024-W2-GAME-3',
           home_team: 'San Francisco 49ers',
           away_team: 'Green Bay Packers',
-          commence_time: '2025-09-08T00:15:00Z',
+          commence_time: `${today}T21:15:00Z`,
           bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'San Francisco 49ers', point: -1.5 }] }] }]
         },
         {
-          id: 'fallback-4',
+          id: '2024-W2-GAME-4',
           home_team: 'Miami Dolphins', 
           away_team: 'New York Jets',
-          commence_time: '2025-09-09T00:15:00Z',
+          commence_time: `${today}T23:30:00Z`,
           bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Miami Dolphins', point: 4.5 }] }] }]
+        },
+        {
+          id: '2024-W2-GAME-5',
+          home_team: 'Los Angeles Rams',
+          away_team: 'Seattle Seahawks',
+          commence_time: `${today}T21:00:00Z`,
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Los Angeles Rams', point: -2.5 }] }] }]
         }
       ];
     }

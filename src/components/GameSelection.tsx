@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { oddsApi, OddsGame } from "@/services/oddsApi";
 import { usePicks } from "@/contexts/PicksContext";
 import { picksApi } from "@/lib/api/picks";
-import { getCurrentWeekId } from "@/lib/utils/weekUtils";
+import { getCurrentWeekIdSync } from "@/lib/utils/weekUtils";
 import confetti from "canvas-confetti";
 
 const GameSelection = () => {
@@ -36,12 +36,12 @@ const GameSelection = () => {
       const weekData = oddsApi.getWeekDateRangeForDisplay();
       setWeekInfo(weekData);
 
-      // Get games for current week only
+      // Get games for current week only (Friday to Tuesday)
       const gameData = await oddsApi.getUpcomingGames(true);
       setGames(gameData);
 
       // Load existing picks for current week
-      const weekId = getCurrentWeekId();
+      const weekId = getCurrentWeekIdSync();
       const picks = await picksApi.getWeekPicks(weekId);
       setExistingPicks(picks);
 
@@ -69,40 +69,32 @@ const GameSelection = () => {
   };
 
   const areGamesLocked = () => {
+    // TESTING: Always return false to unlock games for testing
+    return false;
+    
+    /* Original lock logic - commented out for testing
     const now = new Date();
-
-    // FOR WEEK 1 LAUNCH: Games are OPEN until the first Saturday (Sept 7, 2025) at noon
-    // After that, follow normal weekly schedule
-
-    const firstLockDate = new Date("2025-09-07T12:00:00"); // Sept 7, 2025 at noon
-
-    if (now < firstLockDate) {
-      // We're before the first lock - games are OPEN
-      return false;
-    }
-
-    // After first lock, follow normal weekly schedule
-    const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
+    const dayOfWeek = now.getDay();
     const currentHour = now.getHours();
-
-    // Normal weekly lock schedule:
-    // Saturday noon -> Wednesday: LOCKED
-    // Thursday -> Saturday noon: OPEN
-
-    if (currentDay === 6 && currentHour >= 12) {
-      return true; // Saturday after noon - LOCKED
+    
+    // Games lock on Saturday at noon (12:00 PM)
+    // Days: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+    // Games are locked from Saturday noon through Wednesday
+    // Games unlock on Thursday and stay open through Saturday noon
+    
+    // If it's Saturday and past noon, games are locked
+    if (dayOfWeek === 6 && currentHour >= 12) {
+      return true;
     }
-
-    if (
-      currentDay === 0 ||
-      currentDay === 1 ||
-      currentDay === 2 ||
-      currentDay === 3
-    ) {
-      return true; // Sunday through Wednesday - LOCKED
+    
+    // If it's Sunday, Monday, Tuesday, or Wednesday, games are locked
+    if (dayOfWeek === 0 || dayOfWeek === 1 || dayOfWeek === 2 || dayOfWeek === 3) {
+      return true;
     }
-
-    return false; // Thursday, Friday, or Saturday before noon - OPEN
+    
+    // Otherwise games are open (Thursday, Friday, or Saturday before noon)
+    return false;
+    */
   };
 
   const handleSpreadPick = (gameId: string, team: "home" | "away") => {
@@ -111,7 +103,7 @@ const GameSelection = () => {
       toast({
         title: "Picks locked",
         description:
-          "Weekly picks lock at Saturday noon. You'll need to wait until next week!",
+          "Weekly picks lock Saturday at noon. Picks reopen on Thursday!",
         variant: "destructive",
       });
       return;
@@ -156,7 +148,7 @@ const GameSelection = () => {
         })
       );
 
-      const weekId = getCurrentWeekId();
+      const weekId = getCurrentWeekIdSync();
 
       if (isEditMode && existingPicks) {
         // Delete existing picks first, then submit new ones
@@ -248,7 +240,7 @@ const GameSelection = () => {
           <div>
             <p className="font-semibold text-sm">Weekly picks are locked</p>
             <p className="text-xs text-muted-foreground">
-              Picks lock every Saturday at noon. Check back Thursday for next
+              Picks lock Saturday at noon. Check back Thursday for next
               week's games!
             </p>
           </div>

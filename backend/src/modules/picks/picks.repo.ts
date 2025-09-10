@@ -30,7 +30,11 @@ export class PickRepo {
     return this.prisma.pickSet.findFirst({
       where: { userId, weekId },
       include: {
-        picks: true
+        picks: {
+          include: {
+            game: true
+          }
+        }
       }
     }) as unknown as Promise<PickSetRecord | null>;
   }

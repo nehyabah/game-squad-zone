@@ -80,8 +80,9 @@ export class LeaderboardRepo {
         }
       }
 
-      const totalDecided = wins + losses;
-      const winPercentage = totalDecided > 0 ? (wins / totalDecided) * 100 : 0;
+      // New formula: (wins + pushes/2) / total_games
+      const totalGames = wins + losses + pushes;
+      const winPercentage = totalGames > 0 ? ((wins + (pushes / 2)) / totalGames) * 100 : 0;
 
       entries.push({
         userId: pickSet.user.id,
@@ -218,8 +219,9 @@ export class LeaderboardRepo {
           });
         }
 
-        const totalDecided = wins + losses;
-        const winPercentage = totalDecided > 0 ? (wins / totalDecided) * 100 : 0;
+        // New formula: (wins + pushes/2) / total_games
+        const totalGames = wins + losses + pushes;
+        const winPercentage = totalGames > 0 ? ((wins + (pushes / 2)) / totalGames) * 100 : 0;
 
         stats = {
           totalPoints: points,

@@ -99,11 +99,9 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
       return;
     }
     
-    console.log('🧹 Clearing existing game data for sync...');
-    await prisma.pick.deleteMany();
-    await prisma.pickSet.deleteMany();
-    await prisma.gameLine.deleteMany();
-    await prisma.game.deleteMany();
+    console.log('🚫 Data clearing DISABLED - preserving all existing picks and games');
+    console.log('   Manual entries will not be deleted on server restart');
+    // All clearing operations disabled to preserve manually entered data
     
     console.log('💾 Syncing games to database...');
     

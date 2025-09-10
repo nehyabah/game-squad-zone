@@ -145,6 +145,21 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
   };
 
   const getPickResult = (pick: any) => {
+    // Use database status if available, otherwise fall back to calculation
+    if (pick.status && pick.status !== 'pending') {
+      switch (pick.status) {
+        case 'won':
+          return { status: 'won', icon: CheckCircle2, color: 'text-green-500' };
+        case 'lost':
+          return { status: 'lost', icon: XCircle, color: 'text-red-500' };
+        case 'pushed':
+          return { status: 'push', icon: Minus, color: 'text-yellow-500' };
+        default:
+          return { status: 'pending', icon: Minus, color: 'text-muted-foreground' };
+      }
+    }
+
+    // Fallback: calculate based on game scores if no database status
     if (!pick.game?.completed || pick.game.homeScore === null || pick.game.awayScore === null) {
       return { status: 'pending', icon: Minus, color: 'text-muted-foreground' };
     }

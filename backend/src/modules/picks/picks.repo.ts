@@ -18,6 +18,10 @@ export interface PickRecord {
   spreadAtPick: number;
   lineSource: string;
   createdAt: Date;
+  status: 'pending' | 'won' | 'lost' | 'pushed';
+  result?: string;
+  payout?: number;
+  odds?: number;
 }
 
 /**
@@ -31,8 +35,30 @@ export class PickRepo {
       where: { userId, weekId },
       include: {
         picks: {
-          include: {
-            game: true
+          select: {
+            id: true,
+            pickSetId: true,
+            gameId: true,
+            choice: true,
+            spreadAtPick: true,
+            lineSource: true,
+            createdAtUtc: true,
+            status: true,
+            result: true,
+            payout: true,
+            odds: true,
+            game: {
+              select: {
+                id: true,
+                homeTeam: true,
+                awayTeam: true,
+                startAtUtc: true,
+                weekId: true,
+                homeScore: true,
+                awayScore: true,
+                completed: true
+              }
+            }
           }
         }
       }
@@ -95,8 +121,30 @@ export class PickRepo {
       where: { userId },
       include: {
         picks: {
-          include: {
-            game: true
+          select: {
+            id: true,
+            pickSetId: true,
+            gameId: true,
+            choice: true,
+            spreadAtPick: true,
+            lineSource: true,
+            createdAtUtc: true,
+            status: true,
+            result: true,
+            payout: true,
+            odds: true,
+            game: {
+              select: {
+                id: true,
+                homeTeam: true,
+                awayTeam: true,
+                startAtUtc: true,
+                weekId: true,
+                homeScore: true,
+                awayScore: true,
+                completed: true
+              }
+            }
           }
         }
       },

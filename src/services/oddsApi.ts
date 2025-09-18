@@ -202,12 +202,10 @@ class OddsApiService {
   }
 
   async getUpcomingGames(onlyCurrentWeek: boolean = true): Promise<OddsGame[]> {
-    // Hard-coded Week 3 games with fixed spreads
+    // Hard-coded Week 3 games with fixed spreads - ALWAYS return these
     const hardCodedWeek3Games = this.getHardCodedWeek3Games();
-    if (hardCodedWeek3Games.length > 0) {
-      console.log("🎯 Using hard-coded Week 3 games with fixed spreads");
-      return hardCodedWeek3Games;
-    }
+    console.log("🎯 Using hard-coded Week 3 games with fixed spreads", hardCodedWeek3Games.length);
+    return hardCodedWeek3Games;
 
     try {
       const url = `${this.baseUrl}/sports/americanfootball_nfl/odds?apiKey=${this.apiKey}&regions=us&markets=spreads`;
@@ -424,15 +422,25 @@ class OddsApiService {
       }
     ];
 
-    return games.map((game, index) => ({
-      id: `week3-${index + 1}`,
-      homeTeam: this.mapTeam(game.home),
-      awayTeam: this.mapTeam(game.away),
-      spread: game.spread.home,
-      time: `${game.date}, ${game.time}`,
-      commenceTime: new Date(`2025-${game.date} ${game.time}`).toISOString(),
-      week: 3
-    }));
+    return games.map((game, index) => {
+      // Convert date format: "Sep 21" to "2025-09-21"
+      const dateMap: { [key: string]: string } = {
+        "Sep 21": "2025-09-21",
+        "Sep 22": "2025-09-22", 
+        "Sep 23": "2025-09-23"
+      };
+      const isoDate = dateMap[game.date] || "2025-09-21";
+      
+      return {
+        id: `week3-${index + 1}`,
+        homeTeam: this.mapTeam(game.home),
+        awayTeam: this.mapTeam(game.away),
+        spread: game.spread.home,
+        time: `${game.date}, ${game.time}`,
+        commenceTime: new Date(`${isoDate}T${game.time}:00Z`).toISOString(),
+        week: 3
+      };
+    });
   }
 
   private getFallbackGames(): OddsGame[] {

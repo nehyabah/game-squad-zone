@@ -67,8 +67,8 @@ async function getCurrentNFLWeek(): Promise<number> {
  */
 function getCurrentNFLWeekSync(): number {
   // TODO: PRODUCTION FIX REQUIRED - Remove hardcoded week and restore dynamic calculation
-  // For now, return Week 2 as requested
-  return 2;
+  // For now, return Week 3 as requested
+  return 3;
   
   /* Original logic for reference:
   const now = new Date();

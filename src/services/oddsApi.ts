@@ -104,26 +104,30 @@ class OddsApiService {
    * NFL weeks run Friday to Tuesday (5 days for picks)
    */
   private getCurrentNFLWeek(): number {
-    const now = new Date();
-    const seasonStart = this.SEASON_START;
+    // HARDCODED: Force current week to be Week 3 for demo
+    return 3;
     
-    // If before season start, return week 1
-    if (now < seasonStart) {
-      return 1;
-    }
-    
-    // Calculate days since season start (Friday)
-    const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Each week is 7 days
-    // Week 1: Friday Sep 5 - Thursday Sep 11
-    // Week 2: Friday Sep 12 - Thursday Sep 18
-    // etc.
-    const week = Math.floor(daysSinceStart / 7) + 1;
-    
-    // NFL regular season has 18 weeks, then playoffs
-    // Allow up to week 22 for playoffs/Super Bowl
-    return Math.min(week, 22);
+    // Original logic commented out:
+    // const now = new Date();
+    // const seasonStart = this.SEASON_START;
+    // 
+    // // If before season start, return week 1
+    // if (now < seasonStart) {
+    //   return 1;
+    // }
+    // 
+    // // Calculate days since season start (Friday)
+    // const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
+    // 
+    // // Each week is 7 days
+    // // Week 1: Friday Sep 5 - Thursday Sep 11
+    // // Week 2: Friday Sep 12 - Thursday Sep 18
+    // // etc.
+    // const week = Math.floor(daysSinceStart / 7) + 1;
+    // 
+    // // NFL regular season has 18 weeks, then playoffs
+    // // Allow up to week 22 for playoffs/Super Bowl
+    // return Math.min(week, 22);
   }
   
   /**
@@ -529,7 +533,7 @@ class OddsApiService {
   
   // Get week date range for display
   getWeekDateRangeForDisplay(week?: number): { start: string; end: string; weekNumber: number } {
-    const weekNumber = week || 3; // Force display to show Week 3
+    const weekNumber = week || this.getCurrentNFLWeek(); // Use current week (hardcoded to 3)
     const { start, end } = this.getWeekDateRange(weekNumber);
     
     return {

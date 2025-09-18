@@ -202,6 +202,13 @@ class OddsApiService {
   }
 
   async getUpcomingGames(onlyCurrentWeek: boolean = true): Promise<OddsGame[]> {
+    // Hard-coded Week 3 games with fixed spreads
+    const hardCodedWeek3Games = this.getHardCodedWeek3Games();
+    if (hardCodedWeek3Games.length > 0) {
+      console.log("🎯 Using hard-coded Week 3 games with fixed spreads");
+      return hardCodedWeek3Games;
+    }
+
     try {
       const url = `${this.baseUrl}/sports/americanfootball_nfl/odds?apiKey=${this.apiKey}&regions=us&markets=spreads`;
       console.log("📡 Fetching NFL games from Odds API...");
@@ -321,6 +328,113 @@ class OddsApiService {
     }
   }
 
+  private getHardCodedWeek3Games(): OddsGame[] {
+    // Hard-coded Week 3 games with fixed spreads for this weekend
+    const games = [
+      {
+        home: "Pittsburgh Steelers",
+        away: "New England Patriots", 
+        date: "Sep 21",
+        time: "18:01",
+        spread: { home: -1.5, away: +1.5 }
+      },
+      {
+        home: "Los Angeles Rams",
+        away: "Philadelphia Eagles",
+        date: "Sep 21", 
+        time: "18:01",
+        spread: { home: +3.5, away: -3.5 }
+      },
+      {
+        home: "Green Bay Packers",
+        away: "Cleveland Browns",
+        date: "Sep 21",
+        time: "18:01", 
+        spread: { home: -7.5, away: +7.5 }
+      },
+      {
+        home: "Las Vegas Raiders",
+        away: "Washington Commanders",
+        date: "Sep 21",
+        time: "18:01",
+        spread: { home: +3.5, away: -3.5 }
+      },
+      {
+        home: "Cincinnati Bengals", 
+        away: "Minnesota Vikings",
+        date: "Sep 21",
+        time: "18:01",
+        spread: { home: -3.5, away: +3.5 }
+      },
+      {
+        home: "New York Jets",
+        away: "Tampa Bay Buccaneers",
+        date: "Sep 21",
+        time: "18:01",
+        spread: { home: +6.5, away: -6.5 }
+      },
+      {
+        home: "Indianapolis Colts",
+        away: "Tennessee Titans", 
+        date: "Sep 21",
+        time: "18:01",
+        spread: { home: -4.5, away: +4.5 }
+      },
+      {
+        home: "Houston Texans",
+        away: "Jacksonville Jaguars",
+        date: "Sep 21", 
+        time: "18:01",
+        spread: { home: +2.5, away: -2.5 }
+      },
+      {
+        home: "New Orleans Saints",
+        away: "Seattle Seahawks",
+        date: "Sep 21",
+        time: "18:01",
+        spread: { home: +2.5, away: -2.5 }
+      },
+      {
+        home: "Arizona Cardinals",
+        away: "San Francisco 49ers",
+        date: "Sep 21",
+        time: "21:26",
+        spread: { home: +2.5, away: -2.5 }
+      },
+      {
+        home: "Kansas City Chiefs", 
+        away: "New York Giants",
+        date: "Sep 22",
+        time: "01:21",
+        spread: { home: -5.5, away: +5.5 }
+      },
+      {
+        home: "Detroit Lions",
+        away: "Baltimore Ravens",
+        date: "Sep 23", 
+        time: "01:16",
+        spread: { home: +5.5, away: -5.5 }
+      },
+      {
+        home: "Denver Broncos",
+        away: "Los Angeles Chargers",
+        date: "Sep 21",
+        time: "21:06",
+        spread: { home: +2.5, away: -2.5 }
+      }
+    ];
+
+    return games.map((game, index) => ({
+      id: `week3-${index + 1}`,
+      homeTeam: this.mapTeam(game.home),
+      awayTeam: this.mapTeam(game.away),
+      spread: game.spread.home,
+      time: `${game.date}, ${game.time}`,
+      commenceTime: new Date(`2025-${game.date} ${game.time}`).toISOString(),
+      week: 3
+    }));
+  }
+
   private getFallbackGames(): OddsGame[] {
     // NFL Week 1 2025 typically starts Thursday Sep 4 and runs through Monday Sep 8
     // Using realistic dates for NFL Week 1 games
@@ -407,7 +521,7 @@ class OddsApiService {
   
   // Get week date range for display
   getWeekDateRangeForDisplay(week?: number): { start: string; end: string; weekNumber: number } {
-    const weekNumber = week || this.getCurrentNFLWeek();
+    const weekNumber = week || 3; // Force display to show Week 3
     const { start, end } = this.getWeekDateRange(weekNumber);
     
     return {

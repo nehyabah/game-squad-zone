@@ -89,103 +89,104 @@ const UpcomingGames = () => {
             const hasSelectedPick = selectedPick !== undefined;
             
             return (
-            <div
-              key={game.id}
-              className={`border rounded-lg p-4 transition-colors relative ${
-                hasSelectedPick 
-                  ? 'border-primary/60 bg-gradient-to-br from-primary/5 to-primary/10 shadow-sm' 
-                  : 'border-border hover:border-primary/30'
-              }`}
-            >
-              {/* Selected pick indicator */}
-              {hasSelectedPick && (
-                <div className="absolute top-2 right-2">
-                  <Badge variant="default" className="text-xs px-2 py-1 flex items-center gap-1">
-                    <Target className="w-3 h-3" />
-                    My Pick
+              <div
+                key={game.id}
+                className={`border rounded-lg p-4 transition-colors relative ${
+                  hasSelectedPick 
+                    ? 'border-primary/60 bg-gradient-to-br from-primary/5 to-primary/10 shadow-sm' 
+                    : 'border-border hover:border-primary/30'
+                }`}
+              >
+                {/* Selected pick indicator */}
+                {hasSelectedPick && (
+                  <div className="absolute top-2 right-2">
+                    <Badge variant="default" className="text-xs px-2 py-1 flex items-center gap-1">
+                      <Target className="w-3 h-3" />
+                      My Pick
+                    </Badge>
+                  </div>
+                )}
+                {/* Header with time */}
+                <div className="flex items-center justify-between mb-3">
+                  <Badge variant="outline" className="text-xs">
+                    <Clock className="w-3 h-3 mr-1" />
+                    {game.time}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    Spread
                   </Badge>
                 </div>
-              )}
-              {/* Header with time */}
-              <div className="flex items-center justify-between mb-3">
-                <Badge variant="outline" className="text-xs">
-                  <Clock className="w-3 h-3 mr-1" />
-                  {game.time}
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  <TrendingUp className="w-3 h-3 mr-1" />
-                  Spread
-                </Badge>
-              </div>
 
-              {/* Teams */}
-              <div className="space-y-3">
-                {/* Away Team */}
-                <div className={`flex items-center justify-between p-2 rounded ${
-                  selectedPick === 'away' ? 'bg-primary/15 border border-primary/30' : ''
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={game.awayTeam.logo}
-                      alt={`${game.awayTeam.name} logo`}
-                      className="w-8 h-8 object-contain"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src =
-                          "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
-                      }}
-                    />
-                    <div>
-                      <div className={`font-medium text-sm ${
+                {/* Teams */}
+                <div className="space-y-3">
+                  {/* Away Team */}
+                  <div className={`flex items-center justify-between p-2 rounded ${
+                    selectedPick === 'away' ? 'bg-primary/15 border border-primary/30' : ''
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={game.awayTeam.logo}
+                        alt={`${game.awayTeam.name} logo`}
+                        className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
+                        }}
+                      />
+                      <div>
+                        <div className={`font-medium text-sm ${
+                          selectedPick === 'away' ? 'text-primary font-bold' : ''
+                        }`}>{game.awayTeam.code}</div>
+                        <div className="text-xs text-muted-foreground">
+                          @ {game.homeTeam.code}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-mono text-sm font-medium ${
                         selectedPick === 'away' ? 'text-primary font-bold' : ''
-                      }`}>{game.awayTeam.code}</div>
-                      <div className="text-xs text-muted-foreground">
-                        @ {game.homeTeam.code}
+                      }`}>
+                        {formatSpread(game.spread, false)}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className={`font-mono text-sm font-medium ${
-                      selectedPick === 'away' ? 'text-primary font-bold' : ''
-                    }`}>
-                      {formatSpread(game.spread, false)}
-                    </div>
-                  </div>
-                </div>
 
-                {/* Home Team */}
-                <div className={`flex items-center justify-between p-2 rounded ${
-                  selectedPick === 'home' ? 'bg-primary/15 border border-primary/30' : ''
-                }`}>
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={game.homeTeam.logo}
-                      alt={`${game.homeTeam.name} logo`}
-                      className="w-8 h-8 object-contain"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src =
-                          "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
-                      }}
-                    />
-                    <div>
-                      <div className={`font-medium text-sm ${
-                        selectedPick === 'home' ? 'text-primary font-bold' : ''
-                      }`}>{game.homeTeam.code}</div>
-                      <div className="text-xs text-muted-foreground">
-                        vs {game.awayTeam.code}
+                  {/* Home Team */}
+                  <div className={`flex items-center justify-between p-2 rounded ${
+                    selectedPick === 'home' ? 'bg-primary/15 border border-primary/30' : ''
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={game.homeTeam.logo}
+                        alt={`${game.homeTeam.name} logo`}
+                        className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src =
+                            "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
+                        }}
+                      />
+                      <div>
+                        <div className={`font-medium text-sm ${
+                          selectedPick === 'home' ? 'text-primary font-bold' : ''
+                        }`}>{game.homeTeam.code}</div>
+                        <div className="text-xs text-muted-foreground">
+                          vs {game.awayTeam.code}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`font-mono text-sm font-medium ${
-                      selectedPick === 'home' ? 'text-primary font-bold' : ''
-                    }`}>
-                      {formatSpread(game.spread, true)}
+                    <div className="text-right">
+                      <div className={`font-mono text-sm font-medium ${
+                        selectedPick === 'home' ? 'text-primary font-bold' : ''
+                      }`}>
+                        {formatSpread(game.spread, true)}
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         
         {games.length === 0 && (

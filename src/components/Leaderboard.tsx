@@ -37,12 +37,11 @@ const getRankIcon = (rank: number) => {
 };
 
 const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
-  <div className="bg-card border border-border rounded-lg shadow-sm">
+  <div className="bg-card border border-border rounded-lg shadow-sm max-h-96 overflow-y-auto">
     <div className="p-3 border-b border-border">
       <h3 className="font-semibold text-sm text-foreground">Rankings</h3>
     </div>
-    <div className="divide-y divide-border">
-      {data.map((entry, index) => (
+    <div className="divide-y divide-border">{data.map((entry, index) => (
         <div 
           key={entry.rank}
           className={`flex items-center justify-between p-3 sm:p-4 hover:bg-muted/50 transition-colors ${

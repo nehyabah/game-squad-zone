@@ -333,11 +333,11 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
               <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center gap-3 sm:gap-6">
                   {/* Picked Team Logo - Clean without background */}
-                  <div className="flex-shrink-0 relative">
-                    <img 
-                      src={getTeamLogo(selectedTeam)} 
-                      alt={`${selectedTeam} logo`}
-                      className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain"
+                   <div className="flex-shrink-0 relative">
+                     <img 
+                       src={getTeamLogo(typeof selectedTeam === 'string' ? selectedTeam : selectedTeam.name)} 
+                       alt={`${typeof selectedTeam === 'string' ? selectedTeam : selectedTeam.name} logo`}
+                       className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 object-contain"
                       onError={(e) => {
                         e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
                       }}
@@ -352,20 +352,22 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
                   
                   {/* Game Info - Compact Typography */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm sm:text-base md:text-lg leading-tight">
-                      <span className="font-bold text-foreground text-sm sm:text-lg">{selectedTeam.split(' ').pop()}</span>
-                      <span className="text-muted-foreground/70 mx-1 sm:mx-3 text-xs sm:text-sm">vs</span>
-                      <span className="text-foreground text-sm sm:text-base">{opponentTeam.split(' ').pop()}</span>
-                    </div>
+                     <div className="text-sm sm:text-base md:text-lg leading-tight">
+                       <span className="font-bold text-foreground text-sm sm:text-lg">
+                         {typeof selectedTeam === 'string' ? selectedTeam.split(' ').pop() : selectedTeam.code}
+                       </span>
+                       <span className="text-muted-foreground/70 mx-1 sm:mx-3 text-xs sm:text-sm">vs</span>
+                       <span className="text-foreground text-sm sm:text-base">
+                         {typeof opponentTeam === 'string' ? opponentTeam.split(' ').pop() : opponentTeam.code}
+                       </span>
+                     </div>
                     
-                    {/* Game scores for completed games */}
-                    {pick.game.completed && pick.game.homeScore !== null && pick.game.awayScore !== null && (
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span>Final: {pick.game.awayTeam.split(' ').pop()} {pick.game.awayScore}</span>
-                        <span>-</span>
-                        <span>{pick.game.homeTeam.split(' ').pop()} {pick.game.homeScore}</span>
-                      </div>
-                    )}
+                     {/* Game scores for completed games */}
+                     {false && (
+                       <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                         <span>Final: Game scores temporarily disabled</span>
+                       </div>
+                     )}
                     
                     <div className="flex items-center gap-2 sm:gap-4 mt-1 sm:mt-2">
                       <div className="flex items-center gap-1 sm:gap-2">

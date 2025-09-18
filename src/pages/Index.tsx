@@ -14,6 +14,7 @@ import AccountMenu from "@/components/AccountMenu";
 import CountdownTimer from "@/components/CountdownTimer";
 import Wallet from "@/components/Wallet";
 import WalletPaymentHandler from "@/components/WalletPaymentHandler";
+import Leaderboard from "@/components/Leaderboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -171,7 +172,7 @@ const Index = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* Desktop Tabs */}
-          <TabsList className="hidden sm:grid w-full grid-cols-4 max-w-3xl mx-auto mb-16 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
+          <TabsList className="hidden sm:grid w-full grid-cols-5 max-w-4xl mx-auto mb-16 h-12 bg-primary/10 backdrop-blur-md border border-primary/20 rounded-xl p-1 shadow-lg">
             <TabsTrigger
               value="fixtures"
               className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
@@ -189,6 +190,12 @@ const Index = () => {
               className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
               My Picks
+            </TabsTrigger>
+            <TabsTrigger
+              value="leaderboard"
+              className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
+            >
+              Leaderboard
             </TabsTrigger>
             <TabsTrigger
               value="wallet"
@@ -448,6 +455,10 @@ const Index = () => {
 
           <TabsContent value="games" className="space-y-8">
             <MyPicks onEditPicks={() => setActiveTab("fixtures")} />
+          </TabsContent>
+
+          <TabsContent value="leaderboard" className="space-y-8">
+            <Leaderboard />
           </TabsContent>
 
           <TabsContent value="wallet" className="space-y-8">

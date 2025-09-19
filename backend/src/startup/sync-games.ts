@@ -35,46 +35,99 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
       apiGames = await response.json();
       console.log(`📊 Found ${apiGames.length} games from API`);
     } catch (error) {
-      console.log('⚠️ API request failed, using fallback games for database sync');
-      // Week 2 fallback games with current dates for testing
-      const now = new Date();
-      const today = now.toISOString().split('T')[0]; // YYYY-MM-DD format
-      
+      console.log('⚠️ API request failed, using Week 3 fallback games to match frontend');
+      // Week 3 hardcoded games - must match frontend exactly
       apiGames = [
         {
-          id: '2024-W2-GAME-1',
-          home_team: 'Philadelphia Eagles',
-          away_team: 'Dallas Cowboys',
-          commence_time: `${today}T17:00:00Z`,
-          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Philadelphia Eagles', point: -3.5 }] }] }]
+          id: 'week3-1',
+          home_team: 'Pittsburgh Steelers',
+          away_team: 'New England Patriots',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Pittsburgh Steelers', point: -1.5 }] }] }]
         },
         {
-          id: '2024-W2-GAME-2', 
-          home_team: 'Kansas City Chiefs',
-          away_team: 'Buffalo Bills',
-          commence_time: `${today}T20:30:00Z`,
-          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Kansas City Chiefs', point: 2.5 }] }] }]
-        },
-        {
-          id: '2024-W2-GAME-3',
-          home_team: 'San Francisco 49ers',
-          away_team: 'Green Bay Packers',
-          commence_time: `${today}T21:15:00Z`,
-          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'San Francisco 49ers', point: -1.5 }] }] }]
-        },
-        {
-          id: '2024-W2-GAME-4',
-          home_team: 'Miami Dolphins', 
-          away_team: 'New York Jets',
-          commence_time: `${today}T23:30:00Z`,
-          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Miami Dolphins', point: 4.5 }] }] }]
-        },
-        {
-          id: '2024-W2-GAME-5',
+          id: 'week3-2',
           home_team: 'Los Angeles Rams',
+          away_team: 'Philadelphia Eagles',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Los Angeles Rams', point: 3.5 }] }] }]
+        },
+        {
+          id: 'week3-3',
+          home_team: 'Green Bay Packers',
+          away_team: 'Cleveland Browns',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Green Bay Packers', point: -7.5 }] }] }]
+        },
+        {
+          id: 'week3-4',
+          home_team: 'Las Vegas Raiders',
+          away_team: 'Washington Commanders',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Las Vegas Raiders', point: 3.5 }] }] }]
+        },
+        {
+          id: 'week3-5',
+          home_team: 'Cincinnati Bengals',
+          away_team: 'Minnesota Vikings',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Cincinnati Bengals', point: -3.5 }] }] }]
+        },
+        {
+          id: 'week3-6',
+          home_team: 'New York Jets',
+          away_team: 'Tampa Bay Buccaneers',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'New York Jets', point: 6.5 }] }] }]
+        },
+        {
+          id: 'week3-7',
+          home_team: 'Indianapolis Colts',
+          away_team: 'Tennessee Titans',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Indianapolis Colts', point: -4.5 }] }] }]
+        },
+        {
+          id: 'week3-8',
+          home_team: 'Houston Texans',
+          away_team: 'Jacksonville Jaguars',
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Houston Texans', point: 2.5 }] }] }]
+        },
+        {
+          id: 'week3-9',
+          home_team: 'New Orleans Saints',
           away_team: 'Seattle Seahawks',
-          commence_time: `${today}T21:00:00Z`,
-          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Los Angeles Rams', point: -2.5 }] }] }]
+          commence_time: '2025-09-21T18:01:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'New Orleans Saints', point: 2.5 }] }] }]
+        },
+        {
+          id: 'week3-10',
+          home_team: 'Arizona Cardinals',
+          away_team: 'San Francisco 49ers',
+          commence_time: '2025-09-21T21:26:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Arizona Cardinals', point: 2.5 }] }] }]
+        },
+        {
+          id: 'week3-11',
+          home_team: 'Kansas City Chiefs',
+          away_team: 'New York Giants',
+          commence_time: '2025-09-22T01:21:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Kansas City Chiefs', point: -5.5 }] }] }]
+        },
+        {
+          id: 'week3-12',
+          home_team: 'Detroit Lions',
+          away_team: 'Baltimore Ravens',
+          commence_time: '2025-09-23T01:16:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Detroit Lions', point: 5.5 }] }] }]
+        },
+        {
+          id: 'week3-13',
+          home_team: 'Denver Broncos',
+          away_team: 'Los Angeles Chargers',
+          commence_time: '2025-09-21T21:06:00Z',
+          bookmakers: [{ markets: [{ key: 'spreads', outcomes: [{ name: 'Denver Broncos', point: 2.5 }] }] }]
         }
       ];
     }
@@ -109,7 +162,7 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
       const gameData = {
         id: apiGame.id,
         startAtUtc: new Date(apiGame.commence_time),
-        weekId: getWeekIdFromDate(new Date(apiGame.commence_time)),
+        weekId: '2025-W3', // Force Week 3 to match frontend
         homeTeam: apiGame.home_team,
         awayTeam: apiGame.away_team,
         homeScore: null,

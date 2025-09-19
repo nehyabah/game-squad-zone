@@ -163,7 +163,7 @@ const server = http.createServer(async (req, res) => {
       // Return Auth0 login URL
       const domain = 'dev-xfta2nvjhpm5pku5.us.auth0.com';
       const clientId = 'uBX39CJShJPMpgtLH9drNZkMaPsMVM7V';
-      const redirectUri = 'http://localhost:8081/auth/callback';
+      const redirectUri = 'http://localhost:8080/auth/callback';
       
       const authUrl = 
         `https://${domain}/authorize?` +
@@ -182,7 +182,7 @@ const server = http.createServer(async (req, res) => {
       
       if (error) {
         res.writeHead(302, {
-          'Location': `http://localhost:8081/auth/success?error=${encodeURIComponent(error)}`
+          'Location': `http://localhost:8080/auth/success?error=${encodeURIComponent(error)}`
         });
         res.end();
         return;
@@ -190,7 +190,7 @@ const server = http.createServer(async (req, res) => {
       
       if (!code) {
         res.writeHead(302, {
-          'Location': 'http://localhost:8081/auth/success?error=no_code'
+          'Location': 'http://localhost:8080/auth/success?error=no_code'
         });
         res.end();
         return;
@@ -235,7 +235,7 @@ const server = http.createServer(async (req, res) => {
       
       // Redirect to frontend with token
       res.writeHead(302, {
-        'Location': `http://localhost:8081/auth/success?token=${token}`
+        'Location': `http://localhost:8080/auth/success?token=${token}`
       });
       res.end();
       return;

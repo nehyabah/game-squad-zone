@@ -423,6 +423,20 @@ class OddsApiService {
         date: "Sep 21",
         time: "21:06",
         spread: { home: +2.5, away: -2.5 }
+      },
+      {
+        home: "Atlanta Falcons",
+        away: "Carolina Panthers",
+        date: "Sep 21",
+        time: "18:00",
+        spread: { home: -5.5, away: +5.5 }
+      },
+      {
+        home: "Dallas Cowboys",
+        away: "Chicago Bears",
+        date: "Sep 21",
+        time: "18:00",
+        spread: { home: -1.5, away: +1.5 }
       }
     ];
 

@@ -20,6 +20,7 @@ import registerPickRoutes from "./modules/picks/picks.routes";
 import leaderboardRoutes from "./modules/leaderboards/leaderboards.routes";
 import gameRoutes from "./modules/games/games.routes";
 import { syncGamesOnStartup } from "./startup/sync-games";
+import { AutoScoringService } from "./services/auto-scoring.service";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: true });
@@ -243,9 +244,18 @@ export function buildApp(): FastifyInstance {
   // Game routes
   app.register(gameRoutes, { prefix: "/api" });
 
-  // Sync games on startup
+  // Sync games and start auto-scoring on startup
   app.ready(() => {
     syncGamesOnStartup(app.prisma);
+    
+    // Initialize auto-scoring service
+    const autoScoring = new AutoScoringService(app.prisma);
+    
+    // Start periodic auto-scoring (every 30 minutes)
+    autoScoring.startAutoScoring(30);
+    
+    // Run initial check for completed games
+    autoScoring.processCompletedGames();
   });
 
   return app;

@@ -9,6 +9,7 @@ interface CheckoutButtonProps {
   priceId?: string;
   children?: React.ReactNode;
   className?: string;
+  disabled?: boolean;
 }
 
 export default function CheckoutButton({
@@ -16,6 +17,7 @@ export default function CheckoutButton({
   priceId,
   children = "Pay with Stripe",
   className,
+  disabled = false,
 }: CheckoutButtonProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -101,7 +103,7 @@ export default function CheckoutButton({
       onClick={handleClick}
       variant="default"
       className={className}
-      disabled={isLoading}
+      disabled={disabled || isLoading}
     >
       {isLoading ? "Processing..." : children}
     </Button>

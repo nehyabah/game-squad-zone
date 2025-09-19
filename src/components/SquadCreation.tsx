@@ -58,7 +58,8 @@ const SquadCreation = ({ onSquadCreated }: SquadCreationProps) => {
     }
 
     const squad = await createSquad({
-      name: squadName.trim()
+      name: squadName.trim(),
+      maxMembers: 10
     });
 
     if (squad) {

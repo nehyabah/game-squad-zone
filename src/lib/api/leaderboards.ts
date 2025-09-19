@@ -13,6 +13,7 @@ export interface LeaderboardEntry {
   pushes: number;
   winPercentage: number;
   rank: number;
+  isCurrentUser?: boolean;
 }
 
 export interface WeeklyLeaderboardEntry extends LeaderboardEntry {

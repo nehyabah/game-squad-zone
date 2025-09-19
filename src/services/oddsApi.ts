@@ -394,7 +394,7 @@ class OddsApiService {
         away: "Seattle Seahawks",
         date: "Sep 21",
         time: "18:01",
-        spread: { home: -7.5, away: +7.5 }
+        spread: { home: +7.5, away: -7.5 }
       },
       {
         home: "Arizona Cardinals",

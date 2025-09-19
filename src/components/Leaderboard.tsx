@@ -41,23 +41,23 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
     <div className="p-3 border-b border-border">
       <h3 className="font-semibold text-sm text-foreground">Rankings</h3>
     </div>
-    <div className="divide-y divide-border">
+    <div className="divide-y divide-border max-h-[60vh] sm:max-h-[70vh] overflow-y-auto scroll-smooth pb-2" style={{ scrollbarWidth: 'thin' }}>
       {data.map((entry, index) => (
         <div 
           key={entry.rank}
-          className={`flex items-center justify-between p-3 sm:p-4 hover:bg-muted/50 transition-colors ${
+          className={`flex items-center justify-between p-2 sm:p-4 hover:bg-muted/50 transition-colors ${
             entry.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
           } ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent' : ''} ${
             index === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent' : ''
           } ${index === 2 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''}`}
         >
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            <div className="flex items-center justify-center w-6 h-6 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+            <div className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0">
               {getRankIcon(entry.rank)}
             </div>
             
-            <div className="flex items-center gap-2">
-              <Avatar className="w-6 h-6 flex-shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+              <Avatar className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0">
                 <AvatarFallback className="text-xs font-medium">
                   {getInitials({
                     username: entry.username, 
@@ -67,8 +67,8 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
                   })}
                 </AvatarFallback>
               </Avatar>
-              <div className="min-w-0">
-                <div className={`text-sm font-medium truncate ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
+              <div className="min-w-0 flex-1">
+                <div className={`text-xs sm:text-sm font-medium truncate ${entry.isCurrentUser ? 'text-primary' : 'text-foreground'}`}>
                   {getDisplayName({
                     username: entry.username,
                     displayName: entry.displayName,
@@ -76,14 +76,15 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
                     lastName: entry.lastName
                   })}
                 </div>
-                <div className="text-xs text-muted-foreground hidden sm:block">
-                  {entry.wins}W {entry.losses}L {entry.pushes}D
+                <div className="text-xs text-muted-foreground">
+                  <span className="sm:hidden">{entry.wins}W-{entry.losses}L{entry.pushes > 0 ? `-${entry.pushes}D` : ''}</span>
+                  <span className="hidden sm:inline">{entry.wins}W {entry.losses}L {entry.pushes}D</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
             <div className="text-right hidden sm:block">
               <div className="text-sm font-medium text-foreground">{entry.winPercentage}%</div>
               <div className="text-xs text-muted-foreground">W%</div>
@@ -91,10 +92,11 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
             
             <div className="text-right">
               <div className="font-bold text-primary text-sm sm:text-base">{entry.points}</div>
-              <div className="text-xs text-muted-foreground">Points</div>
+              <div className="text-xs text-muted-foreground hidden sm:block">Points</div>
+              <div className="text-xs text-muted-foreground sm:hidden">pts</div>
             </div>
             
-            {/* Mobile compact view */}
+            {/* Mobile win percentage */}
             <div className="text-right sm:hidden">
               <div className="text-xs text-muted-foreground">{entry.winPercentage}%</div>
             </div>

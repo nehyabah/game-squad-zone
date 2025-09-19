@@ -328,7 +328,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const hasBothFeatures = features.hasChat && features.hasLeaderboard;
 
   return (
-    <div className="h-screen flex flex-col max-w-5xl mx-auto px-2 sm:px-6 overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen flex flex-col max-w-5xl mx-auto px-2 sm:px-6 bg-gradient-to-br from-background via-background to-primary/5">
       {/* Enhanced Header with Glassmorphism */}
       <div className="flex items-center gap-2 sm:gap-4 py-2 sm:py-4 mb-2 sm:mb-3 bg-card/60 backdrop-blur-xl border border-border/40 rounded-xl sm:rounded-2xl flex-shrink-0">
         <Button variant="ghost" onClick={onBack} className="p-1.5 sm:p-2.5 h-8 w-8 sm:h-10 sm:w-10 hover:bg-primary/10 rounded-full transition-all">
@@ -569,7 +569,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
       {/* Mobile Content */}
       <div className="sm:hidden flex-1 flex flex-col min-h-0">
         {((hasBothFeatures && activeTab === "chat") || (!hasBothFeatures && features.hasChat)) && (
-          <div className="flex flex-col min-h-0 max-h-[70vh] border border-primary/20 rounded-xl bg-card/95 backdrop-blur-xl">
+          <div className="flex flex-col flex-1 min-h-0 border border-primary/20 rounded-xl bg-card/95 backdrop-blur-xl">
             {/* Enhanced Chat Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-t-xl flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -658,7 +658,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
         )}
 
         {((hasBothFeatures && activeTab === "leaderboard") || (!hasBothFeatures && features.hasLeaderboard)) && (
-          <div className="flex flex-col min-h-0 max-h-[70vh] border border-primary/20 rounded-xl bg-card/95 backdrop-blur-xl">
+          <div className="flex flex-col flex-1 min-h-0 border border-primary/20 rounded-xl bg-card/95 backdrop-blur-xl">
             {/* Enhanced Leaderboard Header */}
             <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 bg-gradient-to-r from-yellow-500/10 via-orange-500/5 to-transparent rounded-t-xl flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -671,9 +671,9 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                 <span className="text-xs font-semibold text-foreground">{memberRanking.length} players</span>
               </div>
             </div>
-            
+
             {/* Leaderboard Content */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="overflow-y-auto scroll-smooth" style={{ scrollbarWidth: 'thin', height: '60vh' }}>
               {memberRanking.map((member, index) => (
                 <div 
                   key={getDisplayName(member)}
@@ -758,7 +758,14 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                 </div>
                 
                 {/* Desktop Leaderboard Content */}
-                <div className="flex-1 overflow-y-auto">
+                <div
+                  className="border border-red-500"
+                  style={{
+                    height: '400px',
+                    overflowY: 'scroll',
+                    maxHeight: '400px'
+                  }}
+                >
                   <div className="divide-y divide-border">
                     {memberRanking.map((member, index) => (
                       <div 
@@ -993,7 +1000,14 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                 <CardTitle className="text-base sm:text-lg">🏆 Leaderboard</CardTitle>
               </CardHeader>
               <CardContent className="relative p-0">
-                <div className="divide-y divide-border">
+                <div
+                  className="divide-y divide-border border border-blue-500"
+                  style={{
+                    height: '400px',
+                    overflowY: 'scroll',
+                    maxHeight: '400px'
+                  }}
+                >
                   {memberRanking.map((member, index) => (
                     <div 
                       key={getDisplayName(member)}

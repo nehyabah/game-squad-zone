@@ -26,12 +26,6 @@ const Header = ({ onAuthClick }: HeaderProps) => {
           </div>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-8">
-          <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">Picks</a>
-          <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">Leaderboard</a>
-          <a href="#" className="text-foreground hover:text-primary font-medium transition-smooth">My Squads</a>
-        </nav>
 
         {/* User Actions */}
         <div className="flex items-center gap-4">

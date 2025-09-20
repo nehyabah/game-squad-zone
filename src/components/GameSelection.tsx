@@ -69,32 +69,8 @@ const GameSelection = () => {
   };
 
   const areGamesLocked = () => {
-    // TESTING: Always return false to unlock games for testing
-    return false;
-    
-    /* Original lock logic - commented out for testing
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const currentHour = now.getHours();
-    
-    // Games lock on Saturday at noon (12:00 PM)
-    // Days: 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
-    // Games are locked from Saturday noon through Wednesday
-    // Games unlock on Thursday and stay open through Saturday noon
-    
-    // If it's Saturday and past noon, games are locked
-    if (dayOfWeek === 6 && currentHour >= 12) {
-      return true;
-    }
-    
-    // If it's Sunday, Monday, Tuesday, or Wednesday, games are locked
-    if (dayOfWeek === 0 || dayOfWeek === 1 || dayOfWeek === 2 || dayOfWeek === 3) {
-      return true;
-    }
-    
-    // Otherwise games are open (Thursday, Friday, or Saturday before noon)
-    return false;
-    */
+    // Check if picks are locked based on database status
+    return existingPicks && existingPicks.status === 'locked';
   };
 
   const handleSpreadPick = (gameId: string, team: "home" | "away") => {

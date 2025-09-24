@@ -21,6 +21,7 @@ const GameSelection = () => {
     start: "",
     end: "",
   });
+  /* eslint-disable  @typescript-eslint/no-explicit-any */
   const [existingPicks, setExistingPicks] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const maxGames = 3;
@@ -70,7 +71,7 @@ const GameSelection = () => {
 
   const areGamesLocked = () => {
     // Check if picks are locked based on database status
-    return existingPicks && existingPicks.status === 'locked';
+    return existingPicks && existingPicks.status === "locked";
   };
 
   const handleSpreadPick = (gameId: string, team: "home" | "away") => {
@@ -141,19 +142,68 @@ const GameSelection = () => {
       setIsEditMode(true);
 
       // Confetti celebration
+      // First burst
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: 120,
+        spread: 150,
         origin: { y: 0.6 },
-        colors: ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b"],
+        colors: [
+          "#06d6a0",
+          "#118ab2",
+          "#073b4c",
+          "#ffd166",
+          "#f72585",
+          "#7209b7",
+          "#560bad",
+          "#480ca8",
+          "#3a0ca3",
+          "#3f37c9",
+          "#4cc9f0",
+          "#f77f00",
+          "#fcbf49",
+          "#eae2b7",
+          "#d62828",
+          "#003049",
+        ],
+        scalar: 1.1,
+        startVelocity: 30,
       });
 
+      // Second burst with slight delay
+      setTimeout(() => {
+        confetti({
+          particleCount: 100,
+          spread: 150,
+          origin: { y: 0.65 },
+          colors: [
+            "#06d6a0",
+            "#118ab2",
+            "#073b4c",
+            "#ffd166",
+            "#f72585",
+            "#7209b7",
+            "#560bad",
+            "#480ca8",
+            "#3a0ca3",
+            "#3f37c9",
+            "#4cc9f0",
+            "#f77f00",
+            "#fcbf49",
+            "#eae2b7",
+            "#d62828",
+            "#003049",
+          ],
+          scalar: 0.9,
+          startVelocity: 25,
+        });
+      }, 200);
       const actionText = isEditMode ? "updated" : "submitted";
       toast({
         title: `🎉 Picks ${actionText}!`,
         description: `Your picks have been ${actionText} for this week. View them in My Picks!`,
         duration: 4000,
       });
+      /* eslint-disable  @typescript-eslint/no-explicit-any */
     } catch (error: any) {
       console.error("Error submitting picks:", error);
       toast({
@@ -216,8 +266,8 @@ const GameSelection = () => {
           <div>
             <p className="font-semibold text-sm">Weekly picks are locked</p>
             <p className="text-xs text-muted-foreground">
-              Picks lock Saturday at noon. Check back Thursday for next
-              week's games!
+              Picks lock Saturday at noon. Check back Thursday for next week's
+              games!
             </p>
           </div>
         </div>

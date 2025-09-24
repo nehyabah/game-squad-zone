@@ -21,6 +21,8 @@ import leaderboardRoutes from "./modules/leaderboards/leaderboards.routes";
 import gameRoutes from "./modules/games/games.routes";
 import { syncGamesOnStartup } from "./startup/sync-games";
 import { AutoScoringService } from "./services/auto-scoring.service";
+import { GameSyncService } from "./services/game-sync.service";
+import { PickLockingService } from "./services/pick-locking.service";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: true });
@@ -187,7 +189,7 @@ export function buildApp(): FastifyInstance {
   app.get("/test-leaderboard", async (request, reply) => {
     const scoringService = new (await import('./modules/scoring/scoring.service')).ScoringService(app.prisma);
     const leaderboardRepo = new (await import('./modules/leaderboards/leaderboards.repo')).LeaderboardRepo(app.prisma, scoringService);
-    
+
     try {
       const seasonLeaderboard = await leaderboardRepo.fetchSeasonLeaderboard();
       return {
@@ -198,6 +200,48 @@ export function buildApp(): FastifyInstance {
     } catch (error: any) {
       return {
         error: 'Failed to fetch leaderboard',
+        message: error.message,
+        stack: error.stack
+      };
+    }
+  });
+
+  // Test Wednesday caching manually
+  app.get("/test-wednesday-cache", async (request, reply) => {
+    const { GameSyncService } = await import('./services/game-sync.service');
+    const gameSyncService = new GameSyncService(app.prisma);
+
+    try {
+      // Force a sync check regardless of day
+      await gameSyncService['checkAndSyncNewWeek']();
+      return {
+        message: 'Wednesday cache test completed',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error: any) {
+      return {
+        error: 'Failed to run Wednesday cache',
+        message: error.message,
+        stack: error.stack
+      };
+    }
+  });
+
+  // Test Saturday pick locking manually
+  app.get("/test-pick-locking", async (request, reply) => {
+    const { PickLockingService } = await import('./services/pick-locking.service');
+    const pickLockingService = new PickLockingService(app.prisma);
+
+    try {
+      // Force pick locking regardless of day
+      await pickLockingService.lockPicksNow();
+      return {
+        message: 'Pick locking test completed',
+        timestamp: new Date().toISOString()
+      };
+    } catch (error: any) {
+      return {
+        error: 'Failed to run pick locking',
         message: error.message,
         stack: error.stack
       };
@@ -244,17 +288,30 @@ export function buildApp(): FastifyInstance {
   // Game routes
   app.register(gameRoutes, { prefix: "/api" });
 
-  // Sync games and start auto-scoring on startup
+  // Sync games and start services on startup
   app.ready(() => {
+    // One-time sync on startup (keeps existing games)
     syncGamesOnStartup(app.prisma);
-    
+
     // Initialize auto-scoring service
     const autoScoring = new AutoScoringService(app.prisma);
-    
+
+    // Initialize Wednesday spread caching service
+    const gameSync = new GameSyncService(app.prisma);
+
+    // Initialize Saturday pick locking service
+    const pickLocking = new PickLockingService(app.prisma);
+
     // Start periodic auto-scoring (every 30 minutes)
     autoScoring.startAutoScoring(30);
-    
-    // Run initial check for completed games
+
+    // Start Wednesday spread caching (every hour)
+    gameSync.startGameSyncScheduler();
+
+    // Start Saturday pick locking (every hour)
+    pickLocking.startPickLockingScheduler();
+
+    // Run initial checks
     autoScoring.processCompletedGames();
   });
 

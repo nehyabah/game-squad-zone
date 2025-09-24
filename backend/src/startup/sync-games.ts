@@ -159,10 +159,14 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
     console.log('💾 Syncing games to database...');
     
     for (const apiGame of apiGames) {
+      // Calculate week dynamically based on game date
+      const gameDate = new Date(apiGame.commence_time);
+      const weekId = getWeekIdFromDate(gameDate);
+
       const gameData = {
         id: apiGame.id,
-        startAtUtc: new Date(apiGame.commence_time),
-        weekId: '2025-W3', // Force Week 3 to match frontend
+        startAtUtc: gameDate,
+        weekId: weekId,
         homeTeam: apiGame.home_team,
         awayTeam: apiGame.away_team,
         homeScore: null,
@@ -170,7 +174,17 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
         completed: false
       };
       
-      await prisma.game.create({ data: gameData });
+      // Use upsert to handle existing games gracefully
+      await prisma.game.upsert({
+        where: { id: apiGame.id },
+        update: {
+          startAtUtc: gameDate,
+          weekId: weekId,
+          homeTeam: apiGame.home_team,
+          awayTeam: apiGame.away_team,
+        },
+        create: gameData,
+      });
       
       // Extract spread
       let spread = 0;
@@ -192,15 +206,34 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
         spread += 0.5;
       }
       
-      // Create game line
-      const lineData = {
-        gameId: apiGame.id,
-        spread: spread,
-        source: 'odds-api',
-        fetchedAtUtc: new Date()
-      };
-      
-      await prisma.gameLine.create({ data: lineData });
+      // Only create new game line if spread has changed significantly (more than 0.5 points)
+      const existingLine = await prisma.gameLine.findFirst({
+        where: {
+          gameId: apiGame.id,
+          source: 'odds-api'
+        },
+        orderBy: { fetchedAtUtc: 'desc' }
+      });
+
+      const shouldCreateNewLine = !existingLine ||
+        Math.abs((existingLine.spread || 0) - spread) >= 0.5;
+
+      if (shouldCreateNewLine) {
+        const lineData = {
+          gameId: apiGame.id,
+          spread: spread,
+          source: 'odds-api',
+          fetchedAtUtc: new Date()
+        };
+
+        await prisma.gameLine.create({ data: lineData });
+
+        if (existingLine) {
+          console.log(`📊 Updated spread for ${apiGame.home_team}: ${existingLine.spread} → ${spread}`);
+        } else {
+          console.log(`📊 Initial spread for ${apiGame.home_team}: ${spread}`);
+        }
+      }
     }
     
     console.log(`✅ Game sync completed! Synced ${apiGames.length} games`);

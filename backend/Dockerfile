@@ -58,16 +58,25 @@ async function runMigrations() {
   
   console.log('🔄 Running database migrations...');
   
-  // Push the schema to database (single source of truth)
+  // Run safe database migrations (preserves existing data)
   try {
-    console.log('📝 Pushing Prisma schema to database...');
-    const { stdout: pushOut, stderr: pushErr } = await execPromise('npx prisma db push --skip-generate --accept-data-loss');
-    if (pushOut) console.log('Schema push output:', pushOut);
-    if (pushErr && !pushErr.includes('already in sync')) console.log('Schema push warnings:', pushErr);
-    console.log('✅ Schema push completed');
+    console.log('📝 Running database migrations...');
+    const { stdout: migrateOut, stderr: migrateErr } = await execPromise('npx prisma migrate deploy');
+    if (migrateOut) console.log('Migration output:', migrateOut);
+    if (migrateErr && !migrateErr.includes('already applied')) console.log('Migration warnings:', migrateErr);
+    console.log('✅ Database migrations completed');
   } catch (error) {
-    console.error('⚠️  Schema push failed:', error.message);
-    console.log('Continuing with server startup anyway...');
+    console.error('⚠️  Migration failed, trying schema sync without data loss...');
+    try {
+      // Fallback to schema push WITHOUT data loss flag
+      const { stdout: pushOut, stderr: pushErr } = await execPromise('npx prisma db push --skip-generate');
+      if (pushOut) console.log('Schema sync output:', pushOut);
+      if (pushErr) console.log('Schema sync warnings:', pushErr);
+      console.log('✅ Schema sync completed (data preserved)');
+    } catch (pushError) {
+      console.error('⚠️  Schema sync also failed:', pushError.message);
+      console.log('Continuing with server startup anyway...');
+    }
   }
 }
 

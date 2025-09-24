@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { calculateSpreadResult } from '../../utils/spreadCalculator';
 
 export interface ScoringResult {
   pickId: string;
@@ -36,28 +37,71 @@ export class ScoringService {
 
     const homeScore = game.homeScore;
     const awayScore = game.awayScore;
-    const homeDiff = homeScore - awayScore;
-    
+
     let status: string = 'pending';
     let points = 0;
+    let result = '';
 
-    // Simple moneyline calculation based on choice (home/away)
-    if (homeDiff === 0) {
-      status = 'pushed';
-    } else {
-      const homeWon = homeDiff > 0;
-      const pickedHome = pick.choice === 'home';
-      
-      if ((homeWon && pickedHome) || (!homeWon && !pickedHome)) {
+    try {
+      // Use spread calculation instead of simple moneyline
+      const spreadResult = calculateSpreadResult(
+        homeScore,
+        awayScore,
+        pick.spreadAtPick,
+        pick.choice as 'home' | 'away'
+      );
+
+      if (spreadResult.isPush) {
+        status = 'pushed';
+        points = 0;
+        result = 'push:0';
+      } else if (spreadResult.userWon) {
         status = 'won';
-        points = this.getBasicPoints();
+        points = spreadResult.points; // Usually 10
+        result = `won:${points}`;
       } else {
         status = 'lost';
+        points = 0;
+        result = 'lost:0';
+      }
+
+      console.log(`Pick scoring: ${spreadResult.explanation}`);
+
+    } catch (error) {
+      console.error(`Spread calculation error for pick ${pickId}:`, error);
+      // Fallback to simple moneyline if spread calc fails
+      const homeDiff = homeScore - awayScore;
+      if (homeDiff === 0) {
+        status = 'pushed';
+        result = 'push:0';
+      } else {
+        const homeWon = homeDiff > 0;
+        const pickedHome = pick.choice === 'home';
+      
+        if ((homeWon && pickedHome) || (!homeWon && !pickedHome)) {
+          status = 'won';
+          points = this.getBasicPoints();
+          result = `won:${points}`;
+        } else {
+          status = 'lost';
+          points = 0;
+          result = 'lost:0';
+        }
       }
     }
 
     // Calculate payout based on odds and points
     const payout = status === 'won' && pick.odds ? this.calculatePayout(points, pick.odds) : 0;
+
+    // Update the pick in the database with the calculated result
+    await this.prisma.pick.update({
+      where: { id: pickId },
+      data: {
+        status: status,
+        result: result,
+        payout: payout
+      }
+    });
 
     return {
       pickId,
@@ -101,16 +145,7 @@ export class ScoringService {
       const result = await this.calculatePickResult(pick.id);
       if (result) {
         results.push(result);
-        
-        // Update pick in database
-        await this.prisma.pick.update({
-          where: { id: pick.id },
-          data: {
-            status: result.status,
-            result: `${result.status}:${result.points}`,
-            payout: result.payout
-          }
-        });
+        // Database update now happens inside calculatePickResult
       }
     }
 

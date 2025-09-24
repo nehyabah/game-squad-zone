@@ -15,6 +15,7 @@ export default async function gameRoutes(app: FastifyInstance) {
         orderBy: { startAtUtc: 'asc' },
         include: {
           lines: {
+            where: { source: 'odds-api-wednesday' }, // Only Wednesday cached spreads
             orderBy: { fetchedAtUtc: 'desc' },
             take: 1
           }

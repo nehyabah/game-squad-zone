@@ -104,30 +104,37 @@ class OddsApiService {
    * NFL weeks run Friday to Tuesday (5 days for picks)
    */
   private getCurrentNFLWeek(): number {
-    // HARDCODED: Force current week to be Week 3 for demo
-    return 3;
-    
-    // Original logic commented out:
-    // const now = new Date();
-    // const seasonStart = this.SEASON_START;
-    // 
-    // // If before season start, return week 1
-    // if (now < seasonStart) {
-    //   return 1;
-    // }
-    // 
-    // // Calculate days since season start (Friday)
-    // const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
-    // 
-    // // Each week is 7 days
-    // // Week 1: Friday Sep 5 - Thursday Sep 11
-    // // Week 2: Friday Sep 12 - Thursday Sep 18
-    // // etc.
-    // const week = Math.floor(daysSinceStart / 7) + 1;
-    // 
-    // // NFL regular season has 18 weeks, then playoffs
-    // // Allow up to week 22 for playoffs/Super Bowl
-    // return Math.min(week, 22);
+    const now = new Date();
+    const seasonStart = this.SEASON_START;
+
+    // If before season start, return week 1
+    if (now < seasonStart) {
+      return 1;
+    }
+
+    // Calculate days since season start (Friday)
+    const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Each week is 7 days, but we show next week starting Wednesday
+    // Week 1: Friday Sep 5 - Thursday Sep 11 (show until Tue Sep 9)
+    // Week 2: Friday Sep 12 - Thursday Sep 18 (show starting Wed Sep 10)
+    // Week 3: Friday Sep 19 - Thursday Sep 25 (show starting Wed Sep 17)
+    // Week 4: Friday Sep 26 - Thursday Oct 2 (show starting Wed Sep 24)
+
+    const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+
+    // Calculate base week from season start
+    let week = Math.floor(daysSinceStart / 7) + 1;
+
+    // If today is Wednesday (3) or later in the week, show next week's games
+    // This gives users Wed-Thu-Fri to make picks for games starting Friday
+    if (currentDayOfWeek >= 3) { // Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
+      week += 1;
+    }
+
+    // NFL regular season has 18 weeks, then playoffs
+    // Allow up to week 22 for playoffs/Super Bowl
+    return Math.min(week, 22);
   }
   
   /**
@@ -206,14 +213,43 @@ class OddsApiService {
   }
 
   async getUpcomingGames(onlyCurrentWeek: boolean = true): Promise<OddsGame[]> {
-    // Hard-coded Week 3 games with fixed spreads - ALWAYS return these
-    const hardCodedWeek3Games = this.getHardCodedWeek3Games();
-    console.log("🎯 Using hard-coded Week 3 games with fixed spreads", hardCodedWeek3Games.length);
-    return hardCodedWeek3Games;
+    // Use cached spreads from backend API instead of live odds to ensure consistency
+    try {
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const currentWeek = this.getCurrentNFLWeek();
+      const weekId = `2025-W${currentWeek}`;
 
+      const url = `${API_BASE}/api/games?weekId=${weekId}`;
+      console.log(`📡 Fetching cached games from backend API for ${weekId}...`);
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        console.warn("⚠️ Backend API not available, falling back to live odds API");
+        return this.getLiveOddsGames(onlyCurrentWeek);
+      }
+
+      const games = await response.json();
+      console.log(`✅ Received ${games.length} cached games from backend`);
+
+      if (games.length === 0) {
+        console.log("⚠️ No cached games found, falling back to live odds API");
+        return this.getLiveOddsGames(onlyCurrentWeek);
+      }
+
+      return games;
+
+    } catch (error) {
+      console.error("Error fetching cached games from backend:", error);
+      console.log("⚠️ Falling back to live odds API");
+      return this.getLiveOddsGames(onlyCurrentWeek);
+    }
+  }
+
+  private async getLiveOddsGames(onlyCurrentWeek: boolean = true): Promise<OddsGame[]> {
     try {
       const url = `${this.baseUrl}/sports/americanfootball_nfl/odds?apiKey=${this.apiKey}&regions=us&markets=spreads`;
-      console.log("📡 Fetching NFL games from Odds API...");
+      console.log("📡 Fetching NFL games from live Odds API...");
       
       const response = await fetch(url);
 

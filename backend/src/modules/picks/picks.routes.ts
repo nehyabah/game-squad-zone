@@ -20,7 +20,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
   const repo = new PickRepo(prisma);
   const gameRepo = new GameRepo(prisma);
   const gameLineRepo = new GameLineRepo(prisma);
-  const service = new PickService(repo, gameRepo, gameLineRepo);
+  const service = new PickService(repo, gameRepo, gameLineRepo, prisma);
   const controller = new PickController(service);
 
   app.post(
@@ -29,6 +29,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
       schema: { body: submitPicksSchema },
       preHandler: [app.auth],
     },
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     async (req, reply) => {
       return controller.submit(req as any, reply);
     }
@@ -49,6 +50,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
       },
       preHandler: [app.auth],
     },
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     async (req: any, reply: FastifyReply) => {
       const userId = req.currentUser!.id;
       const picks = await service.getUserPicks(userId, req.query.weekId);
@@ -96,6 +98,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
       },
       preHandler: [app.auth],
     },
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     async (req: any, reply: FastifyReply) => {
       const picks = await service.getUserPicks(
         req.params.userId,
@@ -127,6 +130,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
       },
       preHandler: [app.auth],
     },
+    /* eslint-disable  @typescript-eslint/no-explicit-any */
     async (req: any, reply: FastifyReply) => {
       const history = await service.getUserPickHistory(req.params.userId);
       return reply.send(history);

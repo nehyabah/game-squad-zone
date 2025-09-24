@@ -3,6 +3,7 @@ import { PickRepo, type PickSetRecord } from './picks.repo';
 import { GameRepo } from '../games/games.repo';
 import { GameLineRepo } from '../games/game-lines.repo';
 import { AppError } from '../../core/errors';
+import { PickLockingService } from '../../services/pick-locking.service';
 
 /**
  * Picks module business logic.
@@ -15,7 +16,7 @@ export class GameWeekMismatchError extends AppError {
 
 export class PicksLockedError extends AppError {
   constructor() {
-    super('Cannot submit picks - game has already started');
+    super('Cannot submit picks - deadline has passed (Saturday 12 PM)');
   }
 }
 
@@ -33,12 +34,16 @@ export class InvalidPickCountError extends AppError {
 
 export class PickService {
   private readonly cache = new Map<string, PickSetRecord>();
+  private readonly pickLockingService: PickLockingService;
 
   constructor(
     private readonly pickRepo: PickRepo,
     private readonly gameRepo: GameRepo,
     private readonly gameLineRepo: GameLineRepo,
-  ) {}
+    prisma: any, // PrismaClient instance
+  ) {
+    this.pickLockingService = new PickLockingService(prisma);
+  }
 
   async submitWeeklyPicks(
     data: SubmitPicksDto,
@@ -56,18 +61,21 @@ export class PickService {
       throw new InvalidPickCountError();
     }
 
-    // Validate all games are from the same week and not locked
+    // Check if picks are locked (Saturday 12 PM deadline)
+    const arePicksLocked = await this.pickLockingService.arePicksLockedForCurrentWeek();
+    if (arePicksLocked) {
+      throw new PicksLockedError();
+    }
+
+    // Validate all games are from the same week
     const gameIds = data.picks.map((p) => p.gameId);
     const games = await this.gameRepo.findByIds(gameIds);
 
     for (const game of games) {
-      // TESTING: Temporarily disable week validation for testing
-      // if (game.weekId !== data.weekId) {
-      //   throw new GameWeekMismatchError();
-      // }
-      if (new Date() >= game.startAtUtc) {
-        throw new PicksLockedError();
+      if (game.weekId !== data.weekId) {
+        throw new GameWeekMismatchError();
       }
+      // Note: Individual game start times no longer matter - only Saturday 12 PM deadline
     }
 
     // Check for existing PickSet (one per user per week, no squadId)

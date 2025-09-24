@@ -76,20 +76,20 @@ interface SquadMemberRanking {
 }
 
 const getRankIcon = (rank: number) => {
-  switch (rank) {
-    case 1:
-      return <Crown className="w-4 h-4 text-yellow-500" />;
-    case 2:
-      return <Medal className="w-4 h-4 text-gray-400" />;
-    case 3:
-      return <Award className="w-4 h-4 text-amber-600" />;
-    default:
-      return (
-        <span className="w-4 h-4 flex items-center justify-center text-muted-foreground font-bold text-xs">
-          {rank}
-        </span>
-      );
+  if (rank <= 3) {
+    return (
+      <div className="w-6 h-6 rounded-full bg-muted/50 border border-border/30 flex items-center justify-center">
+        {rank === 1 ? (
+          <div className="w-2 h-2 rounded-full bg-amber-500" />
+        ) : rank === 2 ? (
+          <div className="w-2 h-2 rounded-full bg-gray-400" />
+        ) : (
+          <div className="w-2 h-2 rounded-full bg-orange-500" />
+        )}
+      </div>
+    );
   }
+  return null;
 };
 
 interface SquadDashboardProps {
@@ -365,7 +365,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   return (
     <div className="min-h-screen flex flex-col max-w-5xl mx-auto px-2 sm:px-6 bg-gradient-to-br from-background via-background to-primary/5">
       {/* Enhanced Header with Glassmorphism */}
-      <div className="flex items-center gap-2 sm:gap-4 py-2 sm:py-4 mb-2 sm:mb-3 bg-card/60 backdrop-blur-xl border border-border/40 rounded-xl sm:rounded-2xl flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-4 py-2 sm:py-4 mb-2 sm:mb-3 px-3 sm:px-6 bg-card/60 backdrop-blur-xl border border-border/40 rounded-xl sm:rounded-2xl flex-shrink-0">
         <Button
           variant="ghost"
           onClick={onBack}
@@ -374,25 +374,10 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
 
-        <div className="flex-1 min-w-0 space-y-0.5 sm:space-y-1.5">
+        <div className="flex-1 min-w-0">
           <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate leading-tight">
             {squad.name}
           </h1>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs">
-            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-primary/10 rounded-full">
-              <Users className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-primary" />
-              <span className="font-semibold text-foreground text-[11px] sm:text-xs">
-                {squad.members?.length || 0}/{squad.maxMembers}
-              </span>
-            </div>
-            <div className="hidden sm:block w-1 h-1 bg-primary/30 rounded-full"></div>
-            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-0.5 sm:py-1 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-full">
-              <Trophy className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-yellow-500" />
-              <span className="font-mono font-bold tracking-wider text-foreground text-[11px] sm:text-xs">
-                {squad.joinCode}
-              </span>
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2">
@@ -844,7 +829,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                     </Avatar>
                     <div className="min-w-0 flex-1">
                       <div
-                        className={`text-sm font-semibold ${
+                        className={`text-sm ${
                           member.isCurrentUser
                             ? "text-primary"
                             : "text-foreground"
@@ -876,7 +861,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                         member.pushes === 0 ? (
                           <span className="text-muted-foreground/60">—</span>
                         ) : (
-                          `${member.winPercentage}%`
+                          `${(member.winPercentage / 100).toFixed(2)}`
                         )}
                       </div>
                       <div className="text-muted-foreground text-xs">W%</div>
@@ -987,7 +972,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                             </Avatar>
                             <div>
                               <div
-                                className={`text-sm font-semibold ${
+                                className={`text-sm ${
                                   member.isCurrentUser
                                     ? "text-primary"
                                     : "text-foreground"
@@ -1023,7 +1008,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                   —
                                 </span>
                               ) : (
-                                `${member.winPercentage}%`
+                                `${(member.winPercentage / 100).toFixed(2)}`
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground">
@@ -1333,7 +1318,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                           </Avatar>
                           <div>
                             <div
-                              className={`text-sm font-semibold ${
+                              className={`text-sm ${
                                 member.isCurrentUser
                                   ? "text-primary"
                                   : "text-foreground"
@@ -1371,7 +1356,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                 —
                               </span>
                             ) : (
-                              `${member.winPercentage}%`
+                              `${(member.winPercentage / 100).toFixed(2)}`
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground">

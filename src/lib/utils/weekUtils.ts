@@ -3,9 +3,7 @@
  * Advances to next week when all current week games are completed
  */
 export async function getCurrentWeekId(): Promise<string> {
-  const currentYear = new Date().getFullYear();
-  const currentWeek = await getCurrentNFLWeek();
-  return `${currentYear}-W${currentWeek}`;
+  return '2025-W4';
 }
 
 /**
@@ -13,9 +11,7 @@ export async function getCurrentWeekId(): Promise<string> {
  * Uses date-only calculation without checking game completion
  */
 export function getCurrentWeekIdSync(): string {
-  const currentYear = new Date().getFullYear();
-  const currentWeek = getCurrentNFLWeekSync();
-  return `${currentYear}-W${currentWeek}`;
+  return '2025-W4';
 }
 
 /**
@@ -50,12 +46,6 @@ function getCurrentNFLWeekSync(): number {
 
   // Calculate base week from season start
   let week = Math.floor(daysSinceStart / 7) + 1;
-
-  // If today is Wednesday (3) or later in the week, show next week's games
-  // This gives users Wed-Thu-Fri to make picks for games starting Friday
-  if (currentDayOfWeek >= 3) { // Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
-    week += 1;
-  }
 
   // NFL regular season has 18 weeks, then playoffs
   return Math.min(week, 22);
@@ -95,39 +85,31 @@ function getCurrentNFLWeekSync(): number {
 async function getCurrentNFLWeek(): Promise<number> {
   const now = new Date();
   const currentYear = now.getFullYear();
-  
-  // NFL season typically starts first Thursday in September
-  const seasonStart = new Date(currentYear, 8, 1); // September 1st
-  while (seasonStart.getDay() !== 4) { // Find first Thursday (day 4)
-    seasonStart.setDate(seasonStart.getDate() + 1);
+
+  // NFL season starts Friday, September 5, 2025 for 2025 season
+  let seasonStart: Date;
+  if (currentYear === 2025) {
+    seasonStart = new Date('2025-09-05T00:00:00Z');
+  } else {
+    // For other years, find first Thursday in September
+    seasonStart = new Date(currentYear, 8, 1); // September 1st
+    while (seasonStart.getDay() !== 4) { // Find first Thursday (day 4)
+      seasonStart.setDate(seasonStart.getDate() + 1);
+    }
   }
-  
+
   // If before season start, return week 1
   if (now < seasonStart) {
     return 1;
   }
-  
+
   // Calculate days since season start
   const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
-  
+
   // Each week is 7 days, starting from week 1
   const baseWeek = Math.floor(daysSinceStart / 7) + 1;
-  
-  // Check if all games in the current base week are completed
-  // If so, advance to next week for better UX
-  try {
-    const currentWeekId = `${currentYear}-W${baseWeek}`;
-    const allGamesCompleted = await checkAllWeekGamesCompleted(currentWeekId);
-    
-    if (allGamesCompleted && baseWeek < 18) {
-      return baseWeek + 1;
-    }
-  } catch (error) {
-    // If we can't check games, fall back to date-based calculation
-    console.warn('Could not check game completion status, using date-based week');
-  }
-  
-  // NFL regular season has 18 weeks
+
+  // Don't auto-advance based on completion - let manual control handle this
   return Math.min(baseWeek, 18);
 }
 

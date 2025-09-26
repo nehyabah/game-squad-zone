@@ -126,11 +126,11 @@ class OddsApiService {
     // Calculate base week from season start
     let week = Math.floor(daysSinceStart / 7) + 1;
 
-    // If today is Wednesday (3) or later in the week, show next week's games
-    // This gives users Wed-Thu-Fri to make picks for games starting Friday
-    if (currentDayOfWeek >= 3) { // Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
-      week += 1;
-    }
+    // Don't auto-advance weeks - let manual control handle this
+    // Users should pick for the current week's games
+    // if (currentDayOfWeek >= 3) { // Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
+    //   week += 1;
+    // }
 
     // NFL regular season has 18 weeks, then playoffs
     // Allow up to week 22 for playoffs/Super Bowl

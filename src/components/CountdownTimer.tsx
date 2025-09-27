@@ -14,21 +14,44 @@ const CountdownTimer = () => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      // Set target to next Saturday at 12:00 PM EST
       const now = new Date();
-      const currentDay = now.getDay(); // 0 = Sunday, 6 = Saturday
-      const daysUntilSaturday = currentDay === 6 ? 7 : (6 - currentDay);
-      
-      const targetDate = new Date(now);
-      targetDate.setDate(now.getDate() + daysUntilSaturday);
-      targetDate.setHours(12, 0, 0, 0); // 12:00 PM
-      
-      // If it's Saturday and past 12 PM, target next Saturday
-      if (currentDay === 6 && now.getHours() >= 12) {
-        targetDate.setDate(targetDate.getDate() + 7);
+
+      // Work in Eastern Time - create a proper ET Date object
+      const nowET = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      const currentDayET = nowET.getDay(); // 0 = Sunday, 6 = Saturday
+
+      // Find next Saturday at noon Eastern Time
+      let targetET = new Date(nowET);
+
+      if (currentDayET === 6) {
+        // Today is Saturday in ET
+        const saturdayNoonET = new Date(nowET);
+        saturdayNoonET.setHours(12, 0, 0, 0);
+
+        if (nowET < saturdayNoonET) {
+          // Before noon on Saturday - target today at noon
+          targetET = saturdayNoonET;
+        } else {
+          // After noon on Saturday - target next Saturday at noon
+          targetET.setDate(nowET.getDate() + 7);
+          targetET.setHours(12, 0, 0, 0);
+        }
+      } else {
+        // Not Saturday - find next Saturday
+        const daysUntilSaturday = (6 - currentDayET + 7) % 7 || 7;
+        targetET.setDate(nowET.getDate() + daysUntilSaturday);
+        targetET.setHours(12, 0, 0, 0);
       }
 
-      const difference = targetDate.getTime() - now.getTime();
+      // Convert back to local time for accurate difference calculation
+      // Get the offset difference between ET and local time
+      const etOffset = nowET.getTimezoneOffset();
+      const localOffset = now.getTimezoneOffset();
+      const offsetMs = (localOffset - etOffset) * 60 * 1000;
+
+      // Target time in local timezone
+      const targetLocal = new Date(targetET.getTime() + offsetMs);
+      const difference = targetLocal.getTime() - now.getTime();
 
       if (difference > 0) {
         setIsLocked(false);

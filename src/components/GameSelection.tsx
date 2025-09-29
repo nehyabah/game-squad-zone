@@ -70,6 +70,13 @@ const GameSelection = () => {
   };
 
   const areGamesLocked = () => {
+    // FORCE LOCKED FOR 48 HOURS (until Oct 1, 2025)
+    const now = new Date();
+    const forceLockedUntil = new Date('2025-10-01T15:39:00Z');
+    if (now < forceLockedUntil) {
+      return true; // Force locked
+    }
+
     // Check if picks are locked based on database status
     return existingPicks && existingPicks.status === "locked";
   };

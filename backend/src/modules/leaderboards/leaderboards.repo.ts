@@ -56,33 +56,17 @@ export class LeaderboardRepo {
     const entries: WeeklyLeaderboardEntry[] = [];
 
     for (const pickSet of pickSets) {
-      let points = 0;
-      let wins = 0;
-      let losses = 0;
-      let pushes = 0;
+      // Get season stats for overall win percentage ranking
+      const seasonStats = await this.scoringService.getUserSeasonStats(pickSet.user.id);
 
-      // Calculate user's stats for this week
+      // Get weekly points for this specific week
+      let weeklyPoints = 0;
       for (const pick of pickSet.picks) {
-        switch (pick.status) {
-          case 'won':
-            wins++;
-            if (pick.result) {
-              const pickPoints = parseInt(pick.result.split(':')[1] || '0');
-              points += pickPoints;
-            }
-            break;
-          case 'lost':
-            losses++;
-            break;
-          case 'pushed':
-            pushes++;
-            break;
+        if (pick.status === 'won' && pick.result) {
+          const pickPoints = parseInt(pick.result.split(':')[1] || '0');
+          weeklyPoints += pickPoints;
         }
       }
-
-      // New formula: (wins + pushes/2) / total_games
-      const totalGames = wins + losses + pushes;
-      const winPercentage = totalGames > 0 ? ((wins + (pushes / 2)) / totalGames) * 100 : 0;
 
       entries.push({
         userId: pickSet.user.id,
@@ -90,20 +74,20 @@ export class LeaderboardRepo {
         displayName: pickSet.user.displayName,
         firstName: pickSet.user.firstName,
         lastName: pickSet.user.lastName,
-        points,
-        wins,
-        losses,
-        pushes,
-        winPercentage: Math.round(winPercentage * 100) / 100,
+        points: weeklyPoints, // Weekly points for this specific week
+        wins: seasonStats.wins, // Season totals for ranking
+        losses: seasonStats.losses, // Season totals for ranking
+        pushes: seasonStats.pushes, // Season totals for ranking
+        winPercentage: seasonStats.winPercentage, // Season win percentage for ranking
         weekId,
         rank: 0 // Will be assigned after sorting
       });
     }
 
-    // Sort by points descending, then by win percentage
+    // Sort by win percentage descending, then by points
     entries.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.winPercentage - a.winPercentage;
+      if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
+      return b.points - a.points;
     });
 
     // Assign ranks
@@ -154,10 +138,10 @@ export class LeaderboardRepo {
       });
     }
 
-    // Sort by points descending, then by win percentage
+    // Sort by win percentage descending, then by points
     entries.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.winPercentage - a.winPercentage;
+      if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
+      return b.points - a.points;
     });
 
     // Assign ranks
@@ -250,10 +234,10 @@ export class LeaderboardRepo {
       });
     }
 
-    // Sort by points descending, then by win percentage
+    // Sort by win percentage descending, then by points
     entries.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      return b.winPercentage - a.winPercentage;
+      if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
+      return b.points - a.points;
     });
 
     // Assign ranks

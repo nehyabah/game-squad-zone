@@ -313,10 +313,8 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
             const selectedTeam = pick.choice === 'home' ? pick.game.homeTeam : pick.game.awayTeam;
             const opponentTeam = pick.choice === 'home' ? pick.game.awayTeam : pick.game.homeTeam;
             
-            const actualSpread = pick.spreadAtPick;
-            const spreadValue = Math.abs(actualSpread);
-            const isPickingFavorite = (actualSpread < 0 && pick.choice === 'home') || (actualSpread > 0 && pick.choice === 'away');
-            const displaySpread = isPickingFavorite ? `-${spreadValue}` : `+${spreadValue}`;
+            const displaySpread = pick.spreadAtPick > 0 ? `+${pick.spreadAtPick}` : `${pick.spreadAtPick}`;
+            const isPickingFavorite = pick.spreadAtPick < 0;
             
             const ResultIcon = pick.result.icon;
 

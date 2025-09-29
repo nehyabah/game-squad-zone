@@ -12,7 +12,14 @@ export function useSeasonLeaderboard() {
       setLoading(true);
       setError(null);
       const result = await leaderboardAPI.getSeasonLeaderboard();
-      setData(result);
+
+      // Sort by win percentage descending, then by points descending
+      const sortedResult = result.sort((a, b) => {
+        if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
+        return b.points - a.points;
+      });
+
+      setData(sortedResult);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch season leaderboard';
       setError(errorMessage);
@@ -36,12 +43,19 @@ export function useWeeklyLeaderboard(weekId: string) {
 
   const fetchData = async () => {
     if (!weekId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
       const result = await leaderboardAPI.getWeeklyLeaderboard(weekId);
-      setData(result);
+
+      // Sort by win percentage descending, then by points descending
+      const sortedResult = result.sort((a, b) => {
+        if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
+        return b.points - a.points;
+      });
+
+      setData(sortedResult);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch weekly leaderboard';
       setError(errorMessage);
@@ -65,12 +79,19 @@ export function useSquadLeaderboard(squadId: string, weekId?: string) {
 
   const fetchData = async () => {
     if (!squadId) return;
-    
+
     try {
       setLoading(true);
       setError(null);
       const result = await leaderboardAPI.getSquadLeaderboard(squadId, weekId);
-      setData(result);
+
+      // Sort by win percentage descending, then by points descending
+      const sortedResult = result.sort((a, b) => {
+        if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
+        return b.points - a.points;
+      });
+
+      setData(sortedResult);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch squad leaderboard';
       setError(errorMessage);
@@ -102,7 +123,14 @@ export function useLeaderboard(params?: {
       setLoading(true);
       setError(null);
       const result = await leaderboardAPI.getLeaderboard(params);
-      setData(result);
+
+      // Sort by win percentage descending, then by points descending
+      const sortedResult = result.sort((a, b) => {
+        if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
+        return b.points - a.points;
+      });
+
+      setData(sortedResult);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch leaderboard';
       setError(errorMessage);

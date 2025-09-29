@@ -275,9 +275,10 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
 
                     const selectedTeam = pick.choice === 'home' ? pick.game.homeTeam : pick.game.awayTeam;
                     const isHomeSelected = pick.choice === 'home';
+                    const displaySpread = pick.spreadAtPick === 0 ? 'EVEN' :
+                      pick.spreadAtPick > 0 ? `+${pick.spreadAtPick}` : `${pick.spreadAtPick}`;
                     const result = getPickResult(pick);
                     const ResultIcon = result.icon;
-
                     return (
                       <div key={pick.id} className={`relative p-3 sm:p-4 rounded-xl sm:rounded-2xl border transition-all duration-300 hover:scale-[1.01] sm:hover:scale-[1.02] hover:shadow-lg backdrop-blur-sm ${
                         result.status === 'won' ? 'bg-gradient-to-r from-green-50/80 via-green-50/60 to-green-50/80 border-green-200/60 shadow-green-100/50' : 
@@ -323,7 +324,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
                           <div className="flex items-center gap-2 sm:gap-3">
                             <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-background/60 rounded-full border border-border/40">
                               <span className="text-[10px] sm:text-xs text-muted-foreground">
-                                {pick.spreadAtPick > 0 ? '+' : ''}{pick.spreadAtPick}
+                                {displaySpread}
                               </span>
                             </div>
                             <div className="relative">

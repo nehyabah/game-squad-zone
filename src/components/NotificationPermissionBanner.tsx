@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { X, Bell, BellOff, TestTube } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { usePushNotifications } from '@/hooks/use-push-notifications';
+import React, { useState, useEffect } from "react";
+import { X, Bell, BellOff, TestTube } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 interface NotificationPermissionBannerProps {
   onDismiss?: () => void;
   showTestButton?: boolean;
-  variant?: 'banner' | 'card' | 'inline';
+  variant?: "banner" | "card" | "inline";
 }
 
 export function NotificationPermissionBanner({
   onDismiss,
   showTestButton = true,
-  variant = 'banner'
+  variant = "banner",
 }: NotificationPermissionBannerProps) {
   const [isDismissed, setIsDismissed] = useState(false);
   const {
@@ -26,126 +26,115 @@ export function NotificationPermissionBanner({
     subscribe,
     unsubscribe,
     sendTest,
-    requestPermission
+    requestPermission,
   } = usePushNotifications();
 
-  // Check if banner was previously dismissed
   useEffect(() => {
-    const bannerDismissed = localStorage.getItem('notification-banner-dismissed');
-    const notificationInteracted = localStorage.getItem('notification-interacted');
+    const bannerDismissed = localStorage.getItem(
+      "notification-banner-dismissed"
+    );
+    const notificationInteracted = localStorage.getItem(
+      "notification-interacted"
+    );
 
-    // Hide banner if:
-    // 1. User manually dismissed it
-    // 2. User has already interacted with notifications (granted or denied)
-    // 3. Notifications are already subscribed
-    if (bannerDismissed === 'true' || notificationInteracted === 'true' || isSubscribed) {
+    if (
+      bannerDismissed === "true" ||
+      notificationInteracted === "true" ||
+      isSubscribed
+    ) {
       setIsDismissed(true);
     }
   }, [isSubscribed]);
 
-  // Auto-dismiss after successful subscription
   useEffect(() => {
     if (isSubscribed) {
-      localStorage.setItem('notification-interacted', 'true');
+      localStorage.setItem("notification-interacted", "true");
       setIsDismissed(true);
     }
   }, [isSubscribed]);
 
   const handleDismiss = () => {
-    localStorage.setItem('notification-banner-dismissed', 'true');
+    localStorage.setItem("notification-banner-dismissed", "true");
     setIsDismissed(true);
     onDismiss?.();
   };
 
   const handlePermissionAction = async (action: () => Promise<void>) => {
-    // Mark that user has interacted with notifications
-    localStorage.setItem('notification-interacted', 'true');
+    localStorage.setItem("notification-interacted", "true");
     await action();
   };
 
-  if (!isSupported || isDismissed) {
-    return null;
-  }
-
-  // Don't show banner if user has already denied permission
-  if (permission === 'denied') {
+  if (!isSupported || isDismissed || permission === "denied") {
     return null;
   }
 
   const getStatusInfo = () => {
     if (isSubscribed) {
       return {
-        icon: <Bell className="w-5 h-5 text-green-600" />,
-        title: 'Notifications Enabled',
-        description: 'You\'ll receive pick reminders and score updates',
-        actionText: 'Disable',
-        actionVariant: 'outline' as const,
+        icon: <Bell className="w-4 h-4 text-green-600" />,
+        title: "Notifications On",
+        description: "Get pick reminders",
+        actionText: "Disable",
+        actionVariant: "outline" as const,
         action: unsubscribe,
-        badgeVariant: 'default' as const,
-        badgeText: 'Active'
-      };
-    }
-
-    if (permission === 'denied') {
-      return {
-        icon: <BellOff className="w-5 h-5 text-red-600" />,
-        title: 'Notifications Blocked',
-        description: 'Enable in browser settings to receive reminders',
-        actionText: 'Try Again',
-        actionVariant: 'outline' as const,
-        action: requestPermission,
-        badgeVariant: 'destructive' as const,
-        badgeText: 'Blocked'
+        badgeVariant: "default" as const,
+        badgeText: "Active",
       };
     }
 
     return {
-      icon: <Bell className="w-5 h-5 text-blue-600" />,
-      title: 'Enable Notifications',
-      description: 'Get reminders when it\'s time to make your picks',
-      actionText: 'Enable',
-      actionVariant: 'default' as const,
+      icon: <Bell className="w-4 h-4 text-blue-600" />,
+      title: "Enable Notifications",
+      description: "Get reminders for picks",
+      actionText: "Enable",
+      actionVariant: "default" as const,
       action: subscribe,
-      badgeVariant: 'secondary' as const,
-      badgeText: 'Available'
+      badgeVariant: "secondary" as const,
+      badgeText: "Off",
     };
   };
 
   const statusInfo = getStatusInfo();
 
-  if (variant === 'banner') {
+  if (variant === "banner") {
     return (
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-b border-blue-200 dark:border-blue-800">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              {statusInfo.icon}
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-b border-blue-100 dark:border-blue-900/30">
+        <div className="px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            {/* Icon & Content */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-white/80 dark:bg-gray-800/80 flex items-center justify-center shrink-0">
+                {statusInfo.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">
                     {statusInfo.title}
                   </h3>
-                  <Badge variant={statusInfo.badgeVariant} className="text-xs">
+                  <Badge
+                    variant={statusInfo.badgeVariant}
+                    className="text-[10px] h-4 px-1.5"
+                  >
                     {statusInfo.badgeText}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-[10px] text-gray-600 dark:text-gray-400 truncate">
                   {statusInfo.description}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* Actions */}
+            <div className="flex items-center gap-1 shrink-0">
               {showTestButton && isSubscribed && (
                 <Button
                   onClick={sendTest}
                   disabled={isLoading}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="flex items-center space-x-1"
+                  className="h-7 w-7 p-0"
                 >
-                  <TestTube className="w-4 h-4" />
-                  <span>Test</span>
+                  <TestTube className="w-3.5 h-3.5" />
                 </Button>
               )}
 
@@ -154,17 +143,18 @@ export function NotificationPermissionBanner({
                 disabled={isLoading}
                 variant={statusInfo.actionVariant}
                 size="sm"
+                className="h-7 px-2.5 text-xs font-medium"
               >
-                {isLoading ? 'Loading...' : statusInfo.actionText}
+                {isLoading ? "..." : statusInfo.actionText}
               </Button>
 
               <Button
                 onClick={handleDismiss}
                 variant="ghost"
                 size="sm"
-                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>
@@ -173,60 +163,67 @@ export function NotificationPermissionBanner({
     );
   }
 
-  if (variant === 'card') {
+  if (variant === "card") {
     return (
-      <Card className="w-full">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
-              {statusInfo.icon}
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <h3 className="text-sm font-medium">
-                    {statusInfo.title}
-                  </h3>
-                  <Badge variant={statusInfo.badgeVariant} className="text-xs">
-                    {statusInfo.badgeText}
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                  {statusInfo.description}
-                </p>
-
-                {status && isSubscribed && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {status.subscriptionCount} device{status.subscriptionCount !== 1 ? 's' : ''} subscribed
-                    {status.recentNotifications.length > 0 && (
-                      <span className="ml-2">
-                        • Last notification: {new Date(status.recentNotifications[0].sentAt).toLocaleDateString()}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+      <Card className="w-full border-border/50">
+        <CardContent className="p-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
+              <Bell className="w-5 h-5 text-white" />
             </div>
 
-            <div className="flex items-center space-x-2">
-              {showTestButton && isSubscribed && (
-                <Button
-                  onClick={sendTest}
-                  disabled={isLoading}
-                  variant="outline"
-                  size="sm"
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-semibold">{statusInfo.title}</h3>
+                <Badge
+                  variant={statusInfo.badgeVariant}
+                  className="text-xs h-5"
                 >
-                  <TestTube className="w-4 h-4 mr-1" />
-                  Test
-                </Button>
-              )}
+                  {statusInfo.badgeText}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                {statusInfo.description}
+              </p>
 
-              <Button
-                onClick={() => handlePermissionAction(statusInfo.action)}
-                disabled={isLoading}
-                variant={statusInfo.actionVariant}
-                size="sm"
-              >
-                {isLoading ? 'Loading...' : statusInfo.actionText}
-              </Button>
+              {status &&
+                isSubscribed &&
+                status.recentNotifications.length > 0 && (
+                  <p className="text-[10px] text-muted-foreground">
+                    Last:{" "}
+                    {new Date(
+                      status.recentNotifications[0].sentAt
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                )}
+
+              <div className="flex items-center gap-2 mt-3">
+                <Button
+                  onClick={() => handlePermissionAction(statusInfo.action)}
+                  disabled={isLoading}
+                  variant={statusInfo.actionVariant}
+                  size="sm"
+                  className="h-8 flex-1 text-xs font-medium"
+                >
+                  {isLoading ? "Loading..." : statusInfo.actionText}
+                </Button>
+
+                {showTestButton && isSubscribed && (
+                  <Button
+                    onClick={sendTest}
+                    disabled={isLoading}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs"
+                  >
+                    <TestTube className="w-3.5 h-3.5 mr-1" />
+                    Test
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
@@ -236,41 +233,50 @@ export function NotificationPermissionBanner({
 
   // Inline variant
   return (
-    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-      <div className="flex items-center space-x-3">
-        {statusInfo.icon}
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium">{statusInfo.title}</span>
-            <Badge variant={statusInfo.badgeVariant} className="text-xs">
+    <div className="flex items-center justify-between p-2.5 bg-muted/50 rounded-xl border border-border/50">
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+        <div className="w-8 h-8 rounded-full bg-background flex items-center justify-center shrink-0">
+          {statusInfo.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold truncate">
+              {statusInfo.title}
+            </span>
+            <Badge
+              variant={statusInfo.badgeVariant}
+              className="text-[10px] h-4"
+            >
               {statusInfo.badgeText}
             </Badge>
           </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-[10px] text-muted-foreground truncate">
             {statusInfo.description}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-1 shrink-0 ml-2">
         {showTestButton && isSubscribed && (
           <Button
             onClick={sendTest}
             disabled={isLoading}
-            variant="outline"
+            variant="ghost"
             size="sm"
+            className="h-7 w-7 p-0"
           >
-            <TestTube className="w-4 h-4" />
+            <TestTube className="w-3.5 h-3.5" />
           </Button>
         )}
 
         <Button
-          onClick={statusInfo.action}
+          onClick={() => handlePermissionAction(statusInfo.action)}
           disabled={isLoading}
           variant={statusInfo.actionVariant}
           size="sm"
+          className="h-7 px-2.5 text-xs"
         >
-          {isLoading ? '...' : statusInfo.actionText}
+          {isLoading ? "..." : statusInfo.actionText}
         </Button>
       </div>
     </div>

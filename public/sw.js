@@ -2,7 +2,15 @@
 // This handles push notifications when the app is in the background
 
 const CACHE_NAME = 'squadpot-notifications-v1';
-const API_BASE_URL = 'http://localhost:3001/api'; // Will be updated for production
+
+// Dynamically detect API URL based on environment
+let API_BASE_URL;
+if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.0.1') {
+  API_BASE_URL = 'http://localhost:3001/api';
+} else {
+  // Production
+  API_BASE_URL = 'https://squadpot-backend-production.up.railway.app/api';
+}
 
 // Install event - set up the service worker
 self.addEventListener('install', function(event) {

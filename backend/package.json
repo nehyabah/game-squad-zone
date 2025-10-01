@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.19.13",
+    "prisma": "^5.19.1",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.2"

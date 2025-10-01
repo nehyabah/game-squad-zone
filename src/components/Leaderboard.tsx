@@ -85,7 +85,7 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
               </Avatar>
               <div className="min-w-0 flex-1">
                 <div
-                  className={`text-xs sm:text-sm truncate ${
+                  className={`text-xs sm:text-sm font-medium truncate ${
                     entry.isCurrentUser ? "text-primary" : "text-foreground"
                   }`}
                 >
@@ -112,7 +112,7 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
           <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
             <div className="text-right hidden sm:block">
               <div className="text-sm font-medium text-foreground">
-                {(entry.winPercentage / 100).toFixed(2)}
+                {entry.winPercentage}%
               </div>
               <div className="text-xs text-muted-foreground">W%</div>
             </div>
@@ -130,7 +130,7 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
             {/* Mobile win percentage */}
             <div className="text-right sm:hidden">
               <div className="text-xs text-muted-foreground">
-                {(entry.winPercentage / 100).toFixed(2)}
+                {entry.winPercentage}%
               </div>
             </div>
           </div>

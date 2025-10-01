@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { oddsApi, OddsGame } from "@/services/oddsApi";
 import { usePicks } from "@/contexts/PicksContext";
 import { picksApi } from "@/lib/api/picks";
-import { getCurrentWeekIdSync } from "@/lib/utils/weekUtils";
+import { getCurrentWeekIdSync, arePicksOpen } from "@/lib/utils/weekUtils";
 import confetti from "canvas-confetti";
 
 const GameSelection = () => {
@@ -70,14 +70,12 @@ const GameSelection = () => {
   };
 
   const areGamesLocked = () => {
-    // FORCE LOCKED FOR 48 HOURS (until Oct 1, 2025)
-    const now = new Date();
-    const forceLockedUntil = new Date('2025-10-01T15:39:00Z');
-    if (now < forceLockedUntil) {
-      return true; // Force locked
+    // Check if we're outside the picks window (Friday 5 AM - Saturday 12 PM Dublin)
+    if (!arePicksOpen()) {
+      return true; // Picks are closed
     }
 
-    // Check if picks are locked based on database status
+    // Also check if picks are already locked in database
     return existingPicks && existingPicks.status === "locked";
   };
 
@@ -198,7 +196,6 @@ const GameSelection = () => {
             "#fcbf49",
             "#eae2b7",
             "#d62828",
-            "#003049",
           ],
           scalar: 0.9,
           startVelocity: 25,
@@ -273,9 +270,20 @@ const GameSelection = () => {
           <div>
             <p className="font-semibold text-sm">Weekly picks are locked</p>
             <p className="text-xs text-muted-foreground">
-              Picks lock Saturday at noon. Check back Thursday for next week's
-              games!
+              New picks open Friday at 5:00 AM EST. Picks lock Saturday at noon EST.
             </p>
+          </div>
+        </div>
+      )}
+
+      {!gamesLocked && (
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 sm:p-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+            <div className="text-xs sm:text-sm">
+              <span className="font-semibold text-blue-900 dark:text-blue-100">Picks window: </span>
+              <span className="text-blue-700 dark:text-blue-300">Friday 5:00 AM - Saturday 12:00 PM EST</span>
+            </div>
           </div>
         </div>
       )}

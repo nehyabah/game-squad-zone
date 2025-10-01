@@ -7,6 +7,7 @@ import { LogOut, User, Settings, Trophy, Bell, HelpCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import MyStats from "./MyStats";
 import ProfileSettings from "./ProfileSettings";
+import NotificationSettings from "./NotificationSettings";
 import { getDisplayName, getInitials } from "@/lib/utils/user";
 
 interface AccountMenuProps {
@@ -18,6 +19,7 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
   const { user, logout } = useAuth();
   const [showMyStats, setShowMyStats] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
 
   if (!user) return null;
 
@@ -32,6 +34,10 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
 
   const handleProfileSettingsClick = () => {
     setShowProfileSettings(true);
+  };
+
+  const handleNotificationSettingsClick = () => {
+    setShowNotificationSettings(true);
   };
 
   return (
@@ -89,7 +95,11 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-orange-500/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+            <Button
+              onClick={handleNotificationSettingsClick}
+              variant="ghost"
+              className="w-full justify-start h-14 text-left font-normal hover:bg-orange-500/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm"
+            >
               <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-orange-500/20 transition-all duration-200 group-hover:scale-110">
                 <Bell className="w-5 h-5 text-orange-600 dark:text-orange-400" />
               </div>
@@ -136,9 +146,15 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
       />
 
       {/* Profile Settings Component */}
-      <ProfileSettings 
-        open={showProfileSettings} 
+      <ProfileSettings
+        open={showProfileSettings}
         onOpenChange={setShowProfileSettings}
+      />
+
+      {/* Notification Settings Component */}
+      <NotificationSettings
+        open={showNotificationSettings}
+        onOpenChange={setShowNotificationSettings}
       />
     </Sheet>
   );

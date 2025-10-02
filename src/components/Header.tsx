@@ -13,13 +13,15 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   const { user, logout } = useAuth();
 
   return (
-    <header className="bg-background border-b border-border px-3 py-3 sm:px-6 sm:py-4 sticky top-0 z-50">
+    <header className="bg-background border-b border-border px-3 py-3 sm:px-6 sm:py-4 sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-primary rounded-lg sm:rounded-xl flex items-center justify-center shadow-card">
-            <Trophy className="w-4 h-4 sm:w-7 sm:h-7 text-primary-foreground" />
-          </div>
+          <img
+            src="/android/android-launchericon-192-192.png"
+            alt="SquadPot"
+            className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl shadow-card"
+          />
           <div>
             <h1 className="text-base sm:text-2xl font-display font-bold text-foreground">SquadPot</h1>
             <p className="text-[10px] sm:text-sm font-medium text-muted-foreground hidden sm:block">NFL Fantasy Squads</p>

@@ -45,12 +45,18 @@ export function buildApp(): FastifyInstance {
         'http://localhost:8080'
       ];
 
-      // Return the specific origin for credentials support
-      // Allow requests with no origin (like mobile apps or curl) or from allowed origins or in dev mode
-      if (!origin || allowedOrigins.includes(origin) || !isProd) {
-        cb(null, origin || true);
+      // Always return specific origin for credentials support (never use wildcard *)
+      if (!origin) {
+        // No origin header (like server-to-server or curl) - allow but don't set CORS header
+        cb(null, false);
+      } else if (allowedOrigins.includes(origin)) {
+        // From allowed origin - return the specific origin
+        cb(null, origin);
+      } else if (!isProd) {
+        // Development mode - allow any origin but return the specific one
+        cb(null, origin);
       } else {
-        // In production, only allow specific origins for security
+        // Production with unknown origin - reject
         cb(new Error('Not allowed by CORS'));
       }
     },

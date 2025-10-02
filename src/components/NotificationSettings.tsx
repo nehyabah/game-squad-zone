@@ -31,6 +31,13 @@ export function NotificationSettings({
     sendTest,
   } = usePushNotifications();
 
+  const [localChecked, setLocalChecked] = React.useState(isSubscribed);
+
+  // Sync local state with hook state
+  React.useEffect(() => {
+    setLocalChecked(isSubscribed);
+  }, [isSubscribed]);
+
   if (!isSupported) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] px-6 text-center">
@@ -49,10 +56,18 @@ export function NotificationSettings({
   }
 
   const handleToggle = async (checked: boolean) => {
-    if (checked) {
-      await subscribe();
-    } else {
-      await unsubscribe();
+    // Optimistic UI update
+    setLocalChecked(checked);
+
+    try {
+      if (checked) {
+        await subscribe();
+      } else {
+        await unsubscribe();
+      }
+    } catch (error) {
+      // Revert on error
+      setLocalChecked(!checked);
     }
   };
 
@@ -95,10 +110,10 @@ export function NotificationSettings({
               </div>
             </div>
             <Switch
-              checked={isSubscribed}
+              checked={localChecked}
               onCheckedChange={handleToggle}
-              disabled={isLoading || permission === "denied"}
-              className="data-[state=checked]:bg-green-500 disabled:opacity-50"
+              disabled={false}
+              className="data-[state=checked]:bg-green-500"
             />
           </div>
 

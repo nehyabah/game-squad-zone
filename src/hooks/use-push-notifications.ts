@@ -34,35 +34,37 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permission, setPermission] =
     useState<NotificationPermission>("default");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<NotificationStatus | null>(null);
   const [isServiceWorkerReady, setIsServiceWorkerReady] = useState(false);
 
-  // Initialize and check support
+  // Initialize and check support - completely non-blocking
   useEffect(() => {
-    const initializeNotifications = async () => {
-      try {
-        const supported = isPushNotificationSupported();
-        setIsSupported(supported);
-        setPermission(getNotificationPermission());
+    // Check support synchronously
+    try {
+      const supported = isPushNotificationSupported();
+      setIsSupported(supported);
+      setPermission(getNotificationPermission());
+    } catch (error) {
+      console.error("❌ Failed to check notification support:", error);
+      setIsSupported(false);
+    }
 
-        if (supported) {
-          await initializeServiceWorker();
-          await refreshStatus();
+    // Initialize service worker in background (after 1 second delay)
+    const timer = setTimeout(() => {
+      (async () => {
+        try {
+          if (isPushNotificationSupported()) {
+            await initializeServiceWorker();
+            await refreshStatus();
+          }
+        } catch (error) {
+          console.error("❌ Background notification init failed:", error);
         }
-      } catch (error) {
-        console.error("❌ Failed to initialize notifications:", error);
-        toast({
-          title: "Notification Setup Error",
-          description: "Could not initialize push notifications.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      })();
+    }, 1000);
 
-    initializeNotifications();
+    return () => clearTimeout(timer);
   }, []);
 
   // Initialize service worker
@@ -73,15 +75,29 @@ export function usePushNotifications(): UsePushNotificationsReturn {
           throw new Error("Service workers not supported");
         }
 
-        // Register service worker
-        const registration = await navigator.serviceWorker.register("/sw.js", {
+        // Register service worker with timeout
+        const registrationPromise = navigator.serviceWorker.register("/sw.js", {
           scope: "/",
         });
 
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Service worker registration timeout')), 10000)
+        );
+
+        const registration = await Promise.race([
+          registrationPromise,
+          timeoutPromise
+        ]) as ServiceWorkerRegistration;
+
         console.log("📱 Service worker registered:", registration);
 
-        // Wait for service worker to be ready
-        await navigator.serviceWorker.ready;
+        // Wait for service worker to be ready (with timeout)
+        const readyPromise = navigator.serviceWorker.ready;
+        const readyTimeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Service worker ready timeout')), 5000)
+        );
+
+        await Promise.race([readyPromise, readyTimeout]);
         setIsServiceWorkerReady(true);
 
         // Handle messages from service worker
@@ -93,7 +109,8 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         return registration;
       } catch (error) {
         console.error("❌ Service worker registration failed:", error);
-        throw error;
+        // Don't throw - allow app to continue
+        return null;
       }
     };
 
@@ -119,11 +136,22 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   // Get current notification status
   const refreshStatus = useCallback(async () => {
     try {
-      const currentStatus = await notificationAPI.getStatus();
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Status check timeout')), 5000)
+      );
+
+      const currentStatus = await Promise.race([
+        notificationAPI.getStatus(),
+        timeoutPromise
+      ]) as NotificationStatus;
+
       setStatus(currentStatus);
       setIsSubscribed(currentStatus.isSubscribed);
     } catch (error) {
       console.error("❌ Failed to get notification status:", error);
+      // Set defaults on error
+      setIsSubscribed(false);
       // Don't show error toast for status check failures
     }
   }, []);

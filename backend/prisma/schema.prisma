@@ -32,6 +32,8 @@ model User {
   squadMessages      SquadMessage[]
   squadPayments      SquadPayment[]
   walletTransactions WalletTransaction[]
+  pushSubscriptions  PushSubscription[]
+  notificationLogs   NotificationLog[]
 
   @@index([email])
   @@index([username])
@@ -200,6 +202,42 @@ model SquadMessage {
   @@index([createdAt])
 }
 
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  endpoint  String   @unique
+  p256dh    String   // Public key
+  auth      String   // Auth secret
+  userAgent String?  @map("user_agent") // Browser info
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  active    Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+  @@index([userId])
+  @@index([active])
+}
+
+model NotificationLog {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  type      String    // "pick_reminder", "score_update", "window_event"
+  title     String
+  message   String
+  sentAt    DateTime  @default(now()) @map("sent_at")
+  clicked   Boolean   @default(false)
+  clickedAt DateTime? @map("clicked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_logs")
+  @@index([userId])
+  @@index([type])
+  @@index([sentAt])
+}
+
 // Enums converted to strings for compatibility
 // UserStatus: "active" | "suspended" | "deleted"
 // AuthProvider: "okta"
@@ -208,3 +246,4 @@ model SquadMessage {
 // SquadRole: "owner" | "admin" | "member" | "OWNER" | "MODERATOR" | "MEMBER"
 // PaymentStatus: "pending" | "completed" | "failed" | "refunded"
 // PickStatus: "pending" | "won" | "lost" | "pushed"
+// NotificationType: "pick_reminder" | "score_update" | "window_event"

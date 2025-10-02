@@ -29,41 +29,55 @@ export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: true });
   const isProd = process.env.NODE_ENV === "production";
 
-  // CORS
+  // CORS - CRITICAL: Never use wildcard '*' with credentials mode
+  // Use array of allowed origins for production-ready CORS
+  const allowedOrigins = [
+    'https://www.squadpot.dev',
+    'https://squadpot.dev',
+    'https://sqpbackend.vercel.app',
+    'https://game-squad-zone-94o5.vercel.app',
+    'https://game-squad-zone.vercel.app',
+    'https://game-squad-zone-git-main-nehyabahs-projects.vercel.app',
+    'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8080'
+  ];
+
   app.register(fastifyCors, {
     origin: (origin, cb) => {
-      const allowedOrigins = [
-        'https://www.squadpot.dev',
-        'https://squadpot.dev',
-        'https://sqpbackend.vercel.app',
-        'https://game-squad-zone-94o5.vercel.app',
-        'https://game-squad-zone.vercel.app',
-        'https://game-squad-zone-git-main-nehyabahs-projects.vercel.app',
-        'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net',
-        'http://localhost:5173',
-        'http://localhost:3000',
-        'http://localhost:8080'
-      ];
+      // Log CORS check for debugging
+      console.log(`[CORS] Request from origin: ${origin || 'NO-ORIGIN'} | isProd: ${isProd} | NODE_ENV: ${process.env.NODE_ENV}`);
 
-      // Always return specific origin for credentials support (never use wildcard *)
+      // No origin header (server-to-server or same-origin)
       if (!origin) {
-        // No origin header (like server-to-server or curl) - allow but don't set CORS header
-        cb(null, false);
-      } else if (allowedOrigins.includes(origin)) {
-        // From allowed origin - return the specific origin
-        cb(null, origin);
-      } else if (!isProd) {
-        // Development mode - allow any origin but return the specific one
-        cb(null, origin);
-      } else {
-        // Production with unknown origin - reject
-        cb(new Error('Not allowed by CORS'));
+        console.log('[CORS] No origin - allowing request without CORS header');
+        return cb(null, true); // Allow but don't add CORS headers
       }
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        console.log(`[CORS] ✅ Allowed origin: ${origin}`);
+        return cb(null, origin); // Return specific origin (not wildcard)
+      }
+
+      // Development mode - allow any origin
+      if (!isProd) {
+        console.log(`[CORS] 🔧 Dev mode - allowing: ${origin}`);
+        return cb(null, origin);
+      }
+
+      // Production - reject unknown origins
+      console.log(`[CORS] ❌ Rejected in production: ${origin}`);
+      return cb(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
     exposedHeaders: ["Set-Cookie"],
+    preflight: true, // Enable preflight
+    strictPreflight: false, // Don't be overly strict
+    preflightContinue: false, // Don't pass preflight to next handler
   });
 
   // Security headers

@@ -5,11 +5,41 @@ const PORT = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {
   console.log(`Request: ${req.method} ${req.url}`);
-  
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // CORS - CRITICAL: Never use wildcard '*' with credentials mode
+  const allowedOrigins = [
+    'https://www.squadpot.dev',
+    'https://squadpot.dev',
+    'https://sqpbackend.vercel.app',
+    'https://game-squad-zone-94o5.vercel.app',
+    'https://game-squad-zone.vercel.app',
+    'https://game-squad-zone-git-main-nehyabahs-projects.vercel.app',
+    'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8080'
+  ];
+
+  const origin = req.headers.origin;
+  const isProd = process.env.NODE_ENV === 'production';
+
+  console.log(`[FALLBACK-SERVER] Origin: ${origin || 'NO-ORIGIN'} | isProd: ${isProd}`);
+
+  // Set CORS headers - return specific origin, not wildcard
+  if (origin && allowedOrigins.includes(origin)) {
+    console.log(`[FALLBACK-SERVER] ✅ Allowed origin: ${origin}`);
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (origin && !isProd) {
+    console.log(`[FALLBACK-SERVER] 🔧 Dev mode - allowing: ${origin}`);
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (origin) {
+    console.log(`[FALLBACK-SERVER] ❌ Rejected: ${origin}`);
+    // Don't set CORS header - browser will block
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   if (req.method === 'OPTIONS') {
     res.writeHead(200);
@@ -32,8 +62,8 @@ const server = http.createServer((req, res) => {
   
   // Auth0 login endpoint
   if (req.url === '/api/auth/login' && req.method === 'GET') {
-    const domain = 'dev-xfta2nvjhpm5pku5.us.auth0.com';
-    const clientId = 'uBX39CJShJPMpgtLH9drNZkMaPsMVM7V';
+    const domain = 'squadpot.eu.auth0.com';
+    const clientId = 'JCCclRaBKBm1Qr5jYZL7sPdqStRcXyQm';
     const redirectUri = 'https://squadpot-frontend-dvbuhegnfqhkethx.northeurope-01.azurewebsites.net/auth/callback';
     
     const authUrl = 

@@ -217,25 +217,20 @@ export function NotificationSettings({
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
-          side="right"
-          className="w-full sm:max-w-lg p-0 overflow-hidden z-[200]"
+          side="bottom"
+          className="h-[85vh] sm:h-[90vh] rounded-t-2xl border-0 p-0 bg-background z-[200]"
         >
-          <SheetHeader className="px-6 py-4 border-b border-border/50">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-8 h-8 p-0 rounded-full"
-                onClick={() => onOpenChange(false)}
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-              <SheetTitle className="text-lg font-semibold">
-                Settings
-              </SheetTitle>
-            </div>
-          </SheetHeader>
-          <div className="overflow-y-auto h-[calc(100vh-73px)] px-6 py-6">
+          <div className="sticky top-0 z-10 bg-background border-b px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onOpenChange(false)}
+              className="h-8 w-8 rounded-full hover:bg-accent"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="overflow-y-auto h-[calc(100%-53px)] px-4 py-4">
             {content}
           </div>
         </SheetContent>

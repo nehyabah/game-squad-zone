@@ -43,6 +43,21 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     // Check support synchronously
     try {
       const supported = isPushNotificationSupported();
+
+      // DEBUG: Log iOS PWA detection
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                    (window.navigator as any).standalone === true;
+      console.log('📱 Device Info:', {
+        isIOS,
+        isPWA,
+        hasServiceWorker: 'serviceWorker' in navigator,
+        hasPushManager: 'PushManager' in window,
+        hasNotification: 'Notification' in window,
+        supported,
+        userAgent: navigator.userAgent
+      });
+
       setIsSupported(supported);
       setPermission(getNotificationPermission());
     } catch (error) {

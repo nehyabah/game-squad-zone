@@ -38,22 +38,12 @@ export function NotificationSettings({
     setLocalChecked(isSubscribed);
   }, [isSubscribed]);
 
-  if (!isSupported) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] px-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-          <Bell className="w-10 h-10 text-muted-foreground" />
-        </div>
-        <h2 className="text-2xl font-semibold mb-3">
-          Notifications Unavailable
-        </h2>
-        <p className="text-muted-foreground max-w-sm text-sm">
-          Your browser doesn't support push notifications. Please use Safari,
-          Chrome, or Firefox.
-        </p>
-      </div>
-    );
-  }
+  // Check if running as PWA
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                (window.navigator as any).standalone === true;
+
+  // Show PWA install prompt if not supported and not in PWA mode
+  const showPWAPrompt = !isSupported && !isPWA;
 
   const handleToggle = async (checked: boolean) => {
     // Optimistic UI update
@@ -72,21 +62,21 @@ export function NotificationSettings({
   };
 
   const content = (
-    <div className="space-y-6">
-      {/* Hero Section */}
-      <div className="text-center pt-2 pb-6">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-          <Bell className="w-8 h-8 text-white" />
+    <div className="space-y-4">
+      {/* Hero Section - Reduced */}
+      <div className="text-center pt-1 pb-3">
+        <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+          <Bell className="w-6 h-6 text-white" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Notifications</h1>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Stay updated with pick deadlines, scores, and important announcements
+        <h1 className="text-xl font-bold mb-1">Notifications</h1>
+        <p className="text-xs text-muted-foreground max-w-md mx-auto">
+          Stay updated with pick deadlines and scores
         </p>
       </div>
 
       {/* Main Toggle Card */}
       <div className="bg-card rounded-2xl border border-border/50 overflow-hidden">
-        <div className="p-6">
+        <div className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div
@@ -118,12 +108,12 @@ export function NotificationSettings({
           </div>
 
           {isSubscribed && (
-            <div className="mt-6 pt-6 border-t border-border/50">
+            <div className="mt-4 pt-4 border-t border-border/50">
               <Button
                 onClick={sendTest}
                 disabled={isLoading}
                 variant="outline"
-                className="w-full h-11 rounded-xl font-medium"
+                className="w-full h-9 rounded-xl text-sm"
               >
                 Send Test Notification
               </Button>
@@ -133,154 +123,90 @@ export function NotificationSettings({
       </div>
 
       {/* Notification Types */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold px-1">What You'll Receive</h2>
+      <div className="space-y-2">
+        <h2 className="text-base font-semibold px-1">What You'll Receive</h2>
 
-        <div className="bg-card rounded-2xl border border-border/50 divide-y divide-border/50">
-          <div className="p-5 flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-              <span className="text-xl">🏈</span>
+        <div className="bg-card rounded-xl border border-border/50 divide-y divide-border/50">
+          <div className="p-3 flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+              <span className="text-base">🏈</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm mb-1">Picks Open</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Friday at 5 AM Irish Time when picks open for the week
+              <h4 className="font-semibold text-xs mb-0.5">Picks Open</h4>
+              <p className="text-xs text-muted-foreground">
+                Friday 5 AM when picks open
               </p>
             </div>
           </div>
 
-          <div className="p-5 flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-              <span className="text-xl">⏰</span>
+          <div className="p-3 flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
+              <span className="text-base">⏰</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm mb-1">Pick Reminders</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Reminders before Saturday noon deadline if you haven't picked
+              <h4 className="font-semibold text-xs mb-0.5">Pick Reminders</h4>
+              <p className="text-xs text-muted-foreground">
+                Before Saturday noon deadline
               </p>
             </div>
           </div>
 
-          <div className="p-5 flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-              <span className="text-xl">🏆</span>
+          <div className="p-3 flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+              <span className="text-base">🏆</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm mb-1">Score Updates</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                When your picks are scored and results are available
+              <h4 className="font-semibold text-xs mb-0.5">Score Updates</h4>
+              <p className="text-xs text-muted-foreground">
+                When results are available
               </p>
             </div>
           </div>
 
-          <div className="p-5 flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
-              <span className="text-xl">📢</span>
+          <div className="p-3 flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+              <span className="text-base">📢</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-sm mb-1">Announcements</h4>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Important updates about features and schedule changes
+              <h4 className="font-semibold text-xs mb-0.5">Announcements</h4>
+              <p className="text-xs text-muted-foreground">
+                Important updates
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      {status && status.recentNotifications.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-lg font-semibold px-1">Recent Activity</h2>
-
-          <div className="bg-card rounded-2xl border border-border/50 divide-y divide-border/50">
-            {status.recentNotifications
-              .slice(0, 5)
-              .map((notification, index) => (
-                <div key={index} className="p-4 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    {notification.type === "picks_open" && (
-                      <span className="text-sm">🏈</span>
-                    )}
-                    {notification.type === "pick_reminder" && (
-                      <span className="text-sm">⏰</span>
-                    )}
-                    {notification.type === "score_update" && (
-                      <span className="text-sm">🏆</span>
-                    )}
-                    {notification.type === "window_event" && (
-                      <span className="text-sm">ℹ️</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {notification.title}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(notification.sentAt).toLocaleDateString(
-                        "en-US",
-                        {
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        }
-                      )}
-                    </p>
-                  </div>
-                  {notification.clicked && (
-                    <Badge variant="secondary" className="text-xs h-5 shrink-0">
-                      Opened
-                    </Badge>
-                  )}
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
       {/* Help Section */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold px-1">Troubleshooting</h2>
+      <div className="space-y-2">
+        <h2 className="text-base font-semibold px-1">Troubleshooting</h2>
 
-        <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-2xl border border-blue-200/50 dark:border-blue-800/50 p-5">
-          <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-            <span className="text-base">💡</span>
+        <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-xl border border-blue-200/50 dark:border-blue-800/50 p-3">
+          <h4 className="font-semibold text-xs mb-2 flex items-center gap-2">
+            <span className="text-sm">💡</span>
             Not receiving notifications?
           </h4>
-          <ul className="space-y-2 text-xs text-muted-foreground">
+          <ul className="space-y-1 text-xs text-muted-foreground">
             <li className="flex items-start gap-2">
-              <span className="text-blue-500 dark:text-blue-400 mt-0.5 shrink-0">
-                •
-              </span>
-              <span>Check your browser's notification permissions</span>
+              <span className="text-blue-500 dark:text-blue-400 shrink-0">•</span>
+              <span>Check browser notification permissions</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-500 dark:text-blue-400 mt-0.5 shrink-0">
-                •
-              </span>
-              <span>Make sure SquadPot isn't blocked in system settings</span>
+              <span className="text-blue-500 dark:text-blue-400 shrink-0">•</span>
+              <span>On iPhone: Install as PWA from home screen</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-500 dark:text-blue-400 mt-0.5 shrink-0">
-                •
-              </span>
-              <span>On mobile, add SquadPot to your home screen</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-blue-500 dark:text-blue-400 mt-0.5 shrink-0">
-                •
-              </span>
-              <span>Try toggling notifications off and on again</span>
+              <span className="text-blue-500 dark:text-blue-400 shrink-0">•</span>
+              <span>Toggle notifications off and on</span>
             </li>
           </ul>
         </div>
       </div>
 
       {/* Privacy Note */}
-      <div className="bg-muted/50 rounded-xl p-4 text-center">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          We respect your privacy. Notifications are only used to enhance your
-          SquadPot experience. You can disable them at any time.
+      <div className="bg-muted/50 rounded-lg p-2.5 text-center">
+        <p className="text-xs text-muted-foreground">
+          You can disable notifications at any time
         </p>
       </div>
     </div>

@@ -35,7 +35,7 @@ const { promisify } = require('util');
 const execPromise = promisify(exec);
 
 console.log('=====================================');
-console.log('SQUADPOT BACKEND VERSION: 3.1 - WITH AUTO MIGRATIONS');
+console.log('SQUADPOT BACKEND VERSION: 3.2 - WITH PUSH NOTIFICATIONS');
 console.log('Deployment timestamp:', new Date().toISOString());
 console.log('=====================================');
 console.log('Environment check:');

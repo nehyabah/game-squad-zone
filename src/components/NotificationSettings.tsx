@@ -106,19 +106,6 @@ export function NotificationSettings({
               className="data-[state=checked]:bg-green-500"
             />
           </div>
-
-          {isSubscribed && (
-            <div className="mt-4 pt-4 border-t border-border/50">
-              <Button
-                onClick={sendTest}
-                disabled={isLoading}
-                variant="outline"
-                className="w-full h-9 rounded-xl text-sm"
-              >
-                Send Test Notification
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 

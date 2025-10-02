@@ -8,9 +8,10 @@ const RUNTIME_CACHE = 'squadpot-runtime-v2.0.0';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/badge-72.png'
+  '/android/android-launchericon-192-192.png',
+  '/android/android-launchericon-512-512.png',
+  '/android/android-launchericon-72-72.png',
+  '/ios/180.png'
 ];
 
 // Dynamically detect API URL based on environment
@@ -76,8 +77,8 @@ self.addEventListener('push', function(event) {
   // Default notification options
   const options = {
     body: data.message || 'New notification from SquadPot',
-    icon: '/icon-192.png', // Add this icon to public folder
-    badge: '/badge-72.png', // Add this badge to public folder
+    icon: '/android/android-launchericon-192-192.png',
+    badge: '/android/android-launchericon-72-72.png',
     tag: data.type || 'squadpot-notification',
     requireInteraction: true, // Keep notification visible until user interacts
     data: {

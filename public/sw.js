@@ -1,7 +1,17 @@
 // SquadPot Service Worker for Push Notifications
 // This handles push notifications when the app is in the background
 
-const CACHE_NAME = 'squadpot-notifications-v1';
+const CACHE_NAME = 'squadpot-v2.0.0';
+const RUNTIME_CACHE = 'squadpot-runtime-v2.0.0';
+
+// Assets to cache on install
+const PRECACHE_ASSETS = [
+  '/',
+  '/index.html',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/badge-72.png'
+];
 
 // Dynamically detect API URL based on environment
 let API_BASE_URL;
@@ -12,16 +22,36 @@ if (self.location.hostname === 'localhost' || self.location.hostname === '127.0.
   API_BASE_URL = 'https://squadpot-backend-production.up.railway.app/api';
 }
 
-// Install event - set up the service worker
+// Install event - cache assets for offline use
 self.addEventListener('install', function(event) {
   console.log('📱 SquadPot Service Worker installing...');
-  self.skipWaiting(); // Activate immediately
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        console.log('📦 Precaching app shell');
+        return cache.addAll(PRECACHE_ASSETS).catch(err => {
+          console.warn('⚠️ Some assets failed to cache:', err);
+        });
+      })
+      .then(() => self.skipWaiting())
+  );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', function(event) {
   console.log('📱 SquadPot Service Worker activated');
-  event.waitUntil(self.clients.claim()); // Take control immediately
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames
+          .filter(cacheName => cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE)
+          .map(cacheName => {
+            console.log('🗑️ Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+      );
+    }).then(() => self.clients.claim())
+  );
 });
 
 // Push event - handle incoming push notifications

@@ -16,6 +16,7 @@ import Wallet from "@/components/Wallet";
 import WalletPaymentHandler from "@/components/WalletPaymentHandler";
 import Leaderboard from "@/components/Leaderboard";
 import NotificationPermissionBanner from "@/components/NotificationPermissionBanner";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -149,6 +150,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header onAuthClick={() => setShowAuthModal(true)} />
       <NotificationPermissionBanner />
+      <PWAInstallPrompt />
       <WalletPaymentHandler />
 
       {/* Main Content */}

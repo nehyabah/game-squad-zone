@@ -16,15 +16,19 @@ const Header = ({ onAuthClick }: HeaderProps) => {
     <header className="bg-background border-b border-border px-3 py-3 sm:px-6 sm:py-4 sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <img
             src="/android/android-launchericon-192-192.png"
             alt="SquadPot"
-            className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl shadow-card"
+            className="w-10 h-10 sm:w-12 sm:h-12"
           />
-          <div>
-            <h1 className="text-base sm:text-2xl font-display font-bold text-foreground">SquadPot</h1>
-            <p className="text-[10px] sm:text-sm font-medium text-muted-foreground hidden sm:block">NFL Fantasy Squads</p>
+          <div className="flex flex-col justify-center">
+            <h1 className="text-lg sm:text-2xl font-bold text-foreground leading-none" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+              SquadPot
+            </h1>
+            <p className="text-[9px] sm:text-xs font-medium text-muted-foreground tracking-wider uppercase mt-0.5 hidden sm:block">
+              NFL Fantasy
+            </p>
           </div>
         </div>
 

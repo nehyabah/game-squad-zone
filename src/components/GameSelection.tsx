@@ -270,7 +270,8 @@ const GameSelection = () => {
           <div>
             <p className="font-semibold text-sm">Weekly picks are locked</p>
             <p className="text-xs text-muted-foreground">
-              New picks open Friday at 5:00 AM EST. Picks lock Saturday at noon EST.
+              New picks open Friday at 5:00 AM EST. Picks lock Saturday at noon
+              EST.
             </p>
           </div>
         </div>
@@ -281,8 +282,12 @@ const GameSelection = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 shrink-0" />
             <div className="text-xs sm:text-sm">
-              <span className="font-semibold text-blue-900 dark:text-blue-100">Picks window: </span>
-              <span className="text-blue-700 dark:text-blue-300">Friday 5:00 AM - Saturday 12:00 PM EST</span>
+              <span className="font-semibold text-blue-900 dark:text-blue-100">
+                Picks window:{" "}
+              </span>
+              <span className="text-blue-700 dark:text-blue-300">
+                Friday 5:00 AM - Saturday 12:00 PM EST
+              </span>
             </div>
           </div>
         </div>
@@ -413,7 +418,7 @@ const GameSelection = () => {
 
                       {/* VS Separator */}
                       <div className="text-muted-foreground/60 text-xs font-medium">
-                        vs
+                        @
                       </div>
 
                       {/* Home Team */}

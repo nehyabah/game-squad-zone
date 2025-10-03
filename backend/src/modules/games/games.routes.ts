@@ -2,59 +2,115 @@ import { FastifyInstance } from "fastify";
 import { getCurrentWeekIdSync } from "../../utils/weekUtils";
 
 export default async function gameRoutes(app: FastifyInstance) {
-  // GET /api/games - Get games filtered by week
+  // GET /api/games - Get games filtered by week (excludes Friday games)
   app.get("/games", async (req, reply) => {
     try {
       const { weekId } = req.query as { weekId?: string };
       const targetWeekId = weekId || getCurrentWeekIdSync();
-      
-      console.log(`🎯 Games API: Requested weekId="${weekId}", targetWeekId="${targetWeekId}"`);
-      
+
+      console.log(
+        `Games API: Requested weekId="${weekId}", targetWeekId="${targetWeekId}"`
+      );
+
       const games = await app.prisma.game.findMany({
         where: { weekId: targetWeekId },
-        orderBy: { startAtUtc: 'asc' },
+        orderBy: { startAtUtc: "asc" },
         include: {
           lines: {
-            where: { source: 'odds-api-wednesday' }, // Only Wednesday cached spreads
-            orderBy: { fetchedAtUtc: 'desc' },
-            take: 1
-          }
-        }
+            where: {
+              OR: [
+                { source: "odds-api-friday" },
+                { source: "odds-api-wednesday" },
+                { source: "odds-api" },
+              ],
+            },
+            orderBy: { fetchedAtUtc: "desc" },
+            take: 1,
+          },
+        },
       });
 
+      // Filter out Friday games (in Dublin timezone)
+      console.log("\n=== FRIDAY FILTER DEBUG ===");
+      console.log(`Total games fetched: ${games.length}`);
+
+      const filteredGames = games.filter((game) => {
+        // Ensure startAtUtc is a Date object
+        const gameDate =
+          game.startAtUtc instanceof Date
+            ? game.startAtUtc
+            : new Date(game.startAtUtc);
+
+        // Create a date formatter for Dublin timezone
+        const dublinFormatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Europe/Dublin",
+          weekday: "long",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        const formattedDate = dublinFormatter.format(gameDate);
+        const dayOfWeek = new Intl.DateTimeFormat("en-US", {
+          timeZone: "Europe/Dublin",
+          weekday: "long",
+        }).format(gameDate);
+
+        console.log(`${game.awayTeam} @ ${game.homeTeam}:`);
+        console.log(`  UTC: ${gameDate.toISOString()}`);
+        console.log(`  Dublin: ${formattedDate}`);
+        console.log(`  Day: ${dayOfWeek}`);
+
+        if (dayOfWeek === "Friday") {
+          console.log(`  ✗ EXCLUDING (Friday game)`);
+          return false;
+        }
+
+        console.log(`  ✓ KEEPING`);
+        return true;
+      });
+
+      console.log(`\nFiltered games count: ${filteredGames.length}`);
+      console.log("=== END FRIDAY FILTER ===\n");
+
       // Transform to match frontend expectations
-      const transformedGames = games.map(game => {
+      const transformedGames = filteredGames.map((game) => {
         const line = game.lines[0];
         return {
           id: game.id,
           homeTeam: {
             name: game.homeTeam,
             logo: getTeamLogo(game.homeTeam),
-            code: getTeamCode(game.homeTeam)
+            code: getTeamCode(game.homeTeam),
           },
           awayTeam: {
             name: game.awayTeam,
             logo: getTeamLogo(game.awayTeam),
-            code: getTeamCode(game.awayTeam)
+            code: getTeamCode(game.awayTeam),
           },
           spread: line?.spread || 0,
-          time: game.startAtUtc.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            timeZoneName: 'short'
+          time: game.startAtUtc.toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            timeZoneName: "short",
           }),
           commenceTime: game.startAtUtc.toISOString(),
-          week: parseInt(game.weekId.replace('2025-W', ''))
+          week: parseInt(game.weekId.replace("2025-W", "")),
         };
       });
 
+      console.log(
+        `Returning ${transformedGames.length} games (excluded Friday games)`
+      );
       return transformedGames;
     } catch (error) {
-      console.error('Error fetching games:', error);
-      return reply.status(500).send({ error: 'Failed to fetch games' });
+      console.error("Error fetching games:", error);
+      return reply.status(500).send({ error: "Failed to fetch games" });
     }
   });
 }
@@ -70,7 +126,8 @@ function getTeamLogo(teamName: string): string {
     "Tampa Bay Buccaneers": "https://a.espncdn.com/i/teamlogos/nfl/500/tb.png",
     "Jacksonville Jaguars": "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png",
     "Carolina Panthers": "https://a.espncdn.com/i/teamlogos/nfl/500/car.png",
-    "Washington Commanders": "https://a.espncdn.com/i/teamlogos/nfl/500/was.png",
+    "Washington Commanders":
+      "https://a.espncdn.com/i/teamlogos/nfl/500/was.png",
     "New York Giants": "https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png",
     "New Orleans Saints": "https://a.espncdn.com/i/teamlogos/nfl/500/no.png",
     "Arizona Cardinals": "https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",
@@ -93,16 +150,19 @@ function getTeamLogo(teamName: string): string {
     "Minnesota Vikings": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
     "Los Angeles Rams": "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
     "San Francisco 49ers": "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png",
-    "Seattle Seahawks": "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png"
+    "Seattle Seahawks": "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png",
   };
-  
-  return teamMap[teamName] || "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png";
+
+  return (
+    teamMap[teamName] ||
+    "https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png"
+  );
 }
 
 function getTeamCode(teamName: string): string {
   const codeMap: Record<string, string> = {
     "Philadelphia Eagles": "PHI",
-    "Dallas Cowboys": "DAL", 
+    "Dallas Cowboys": "DAL",
     "Los Angeles Chargers": "LAC",
     "Kansas City Chiefs": "KC",
     "Atlanta Falcons": "ATL",
@@ -132,8 +192,12 @@ function getTeamCode(teamName: string): string {
     "Minnesota Vikings": "MIN",
     "Los Angeles Rams": "LAR",
     "San Francisco 49ers": "SF",
-    "Seattle Seahawks": "SEA"
+    "Seattle Seahawks": "SEA",
   };
-  
-  return codeMap[teamName] || teamName.split(" ").pop()?.substring(0, 3).toUpperCase() || "TBD";
+
+  return (
+    codeMap[teamName] ||
+    teamName.split(" ").pop()?.substring(0, 3).toUpperCase() ||
+    "TBD"
+  );
 }

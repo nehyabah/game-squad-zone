@@ -1,165 +1,245 @@
 /**
- * Get the current week ID in format "YYYY-WN" (e.g., "2025-W2")
- * Advances to next week when all current week games are completed
+ * Week Management Utilities
+ *
+ * Week Flow (Irish Time - Europe/Dublin):
+ * - Friday 5 AM IST: Week opens, users make picks
+ * - Saturday 12 PM IST: Picks lock (deadline)
+ * - Saturday-Tuesday: Games happen
+ * - Wednesday-Thursday: Results period
+ * - Friday 5 AM IST: Next week opens
+ */
+
+const TIMEZONE = "Europe/Dublin";
+
+/**
+ * Get current hour in Dublin timezone
+ */
+export function getDublinHour(): number {
+  const now = new Date();
+  const dublinHour = new Intl.DateTimeFormat("en-IE", {
+    timeZone: TIMEZONE,
+    hour: "numeric",
+    hour12: false,
+  }).format(now);
+  return parseInt(dublinHour);
+}
+
+/**
+ * Get current day of week in Dublin timezone (0=Sunday, 5=Friday, 6=Saturday)
+ */
+export function getDublinDayOfWeek(): number {
+  const now = new Date();
+  const dublinDateString = now.toLocaleString("en-US", { timeZone: TIMEZONE });
+  const dublinDate = new Date(dublinDateString);
+  return dublinDate.getDay();
+}
+
+/**
+ * Check if picks are currently open
+ * Picks are open from Friday 5 AM until Saturday 12 PM (noon) - Irish Time
+ */
+export function arePicksOpen(): boolean {
+  const dayOfWeek = getDublinDayOfWeek();
+  const hour = getDublinHour();
+
+  // Friday at 5 AM or later
+  if (dayOfWeek === 5 && hour >= 5) {
+    return true;
+  }
+
+  // Saturday before noon
+  if (dayOfWeek === 6 && hour < 12) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Get the current week ID in format "YYYY-WN" (e.g., "2025-W4")
+ * Advances to next week every Friday at 5 AM Dublin time
  */
 export async function getCurrentWeekId(): Promise<string> {
-  const currentYear = new Date().getFullYear();
-  const currentWeek = await getCurrentNFLWeek();
-  return `${currentYear}-W${currentWeek}`;
+  const weekNumber = await getCurrentNFLWeek();
+  const year = new Date().getFullYear();
+  return `${year}-W${weekNumber}`;
 }
 
 /**
- * Get the current week ID synchronously (fallback for components that can't use async)
- * Uses date-only calculation without checking game completion
+ * Get the current week ID synchronously
+ * Advances to next week every Friday at 5 AM Dublin time
  */
 export function getCurrentWeekIdSync(): string {
-  const currentYear = new Date().getFullYear();
-  const currentWeek = getCurrentNFLWeekSync();
-  return `${currentYear}-W${currentWeek}`;
+  const weekNumber = getCurrentNFLWeekSync();
+  const year = new Date().getFullYear();
+  return `${year}-W${weekNumber}`;
 }
 
 /**
- * Calculate the current NFL week based on date
- * NFL season starts first Thursday in September each year
- * Advances to next week when all current week games are completed
+ * Get the season start date (first Friday 5 AM of the season in Irish Time)
+ */
+function getSeasonStartDate(year: number): Date {
+  // 2025 NFL season starts Friday, September 5, 2025 at 5:00 AM Irish Time
+  if (year === 2025) {
+    // Use ISO format with explicit timezone offset for Irish Summer Time (UTC+1)
+    // Note: In September, Ireland is in IST (Irish Standard Time, UTC+1)
+    return new Date("2025-09-05T05:00:00+01:00");
+  }
+
+  // For other years, find first Friday in September at 5 AM
+  // Create date in UTC and then adjust for Irish timezone
+  const septemberFirst = new Date(Date.UTC(year, 8, 1, 4, 0, 0)); // 5 AM IST = 4 AM UTC in summer
+  while (septemberFirst.getUTCDay() !== 5) {
+    // Find first Friday (day 5)
+    septemberFirst.setUTCDate(septemberFirst.getUTCDate() + 1);
+  }
+
+  return septemberFirst;
+}
+
+/**
+ * Calculate week number based on Friday 5 AM boundaries (Dublin time)
+ * Each week starts Friday at 5 AM and ends the following Friday at 5 AM
+ */
+function calculateWeekFromFridayNoon(
+  currentDate: Date,
+  seasonStart: Date
+): number {
+  // Get days since season start
+  const daysSinceStart = Math.floor(
+    (currentDate.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // Base week from days
+  let week = Math.floor(daysSinceStart / 7) + 1;
+
+  // Check if we've crossed Friday 5 AM boundary for the current week (Dublin time)
+  const currentDayOfWeek = getDublinDayOfWeek(); // 0 = Sunday, 5 = Friday
+  const currentHour = getDublinHour();
+
+  // Calculate days into the current 7-day period
+  const daysIntoWeek = daysSinceStart % 7;
+
+  // If it's Friday (day 5) and we're at or past 5 AM (05:00)
+  // AND we're in the 7th day of the week period (day 6 of 0-6)
+  // Then advance to next week
+  if (daysIntoWeek === 6 && currentDayOfWeek === 5 && currentHour >= 5) {
+    week += 1;
+  }
+
+  return week;
+}
+
+/**
+ * Calculate the current NFL week based on date and time (Dublin timezone)
+ * Weeks advance every Friday at 5:00 AM Dublin time
  */
 async function getCurrentNFLWeek(): Promise<number> {
   const now = new Date();
   const currentYear = now.getFullYear();
-  
-  // NFL season typically starts first Thursday in September
-  const seasonStart = new Date(currentYear, 8, 1); // September 1st
-  while (seasonStart.getDay() !== 4) { // Find first Thursday (day 4)
-    seasonStart.setDate(seasonStart.getDate() + 1);
-  }
-  
+
+  const seasonStart = getSeasonStartDate(currentYear);
+
   // If before season start, return week 1
   if (now < seasonStart) {
     return 1;
   }
-  
-  // Calculate days since season start
-  const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Each week is 7 days, starting from week 1
-  const baseWeek = Math.floor(daysSinceStart / 7) + 1;
-  
-  // Check if all games in the current base week are completed
-  // If so, advance to next week for better UX
-  try {
-    const currentWeekId = `${currentYear}-W${baseWeek}`;
-    const allGamesCompleted = await checkAllWeekGamesCompleted(currentWeekId);
-    
-    if (allGamesCompleted && baseWeek < 18) {
-      return baseWeek + 1;
-    }
-  } catch (error) {
-    // If we can't check games, fall back to date-based calculation
-    console.warn('Could not check game completion status, using date-based week');
-  }
-  
+
+  const weekNumber = calculateWeekFromFridayNoon(now, seasonStart);
+
   // NFL regular season has 18 weeks
-  return Math.min(baseWeek, 18);
+  return Math.min(weekNumber, 18);
 }
 
 /**
- * Synchronous version of week calculation (date-based only)
+ * Synchronous version of week calculation (Dublin timezone)
  */
 function getCurrentNFLWeekSync(): number {
   const now = new Date();
   const currentYear = now.getFullYear();
 
-  // NFL season starts Friday, September 5, 2025 for 2025 season
-  let seasonStart: Date;
-  if (currentYear === 2025) {
-    seasonStart = new Date('2025-09-05T00:00:00Z');
-  } else {
-    // For other years, find first Thursday in September
-    seasonStart = new Date(currentYear, 8, 1); // September 1st
-    while (seasonStart.getDay() !== 4) { // Find first Thursday (day 4)
-      seasonStart.setDate(seasonStart.getDate() + 1);
-    }
-  }
+  const seasonStart = getSeasonStartDate(currentYear);
 
   // If before season start, return week 1
   if (now < seasonStart) {
     return 1;
   }
 
-  // Calculate days since season start
-  const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
+  const weekNumber = calculateWeekFromFridayNoon(now, seasonStart);
 
-  // Each week is 7 days, but we show next week starting Wednesday
-  const currentDayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
-  // Calculate base week from season start
-  let week = Math.floor(daysSinceStart / 7) + 1;
-
-  // If today is Wednesday (3) or later in the week, show next week's games
-  // This gives users Wed-Thu-Fri to make picks for games starting Friday
-  if (currentDayOfWeek >= 3) { // Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
-    week += 1;
-  }
-
-  // NFL regular season has 18 weeks, then playoffs
-  return Math.min(week, 22);
+  // NFL regular season has 18 weeks
+  return Math.min(weekNumber, 18);
 }
 
 /**
- * Check if all games in a week are completed (backend version)
- */
-async function checkAllWeekGamesCompleted(weekId: string): Promise<boolean> {
-  try {
-    // Access Prisma directly on the backend
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
-    
-    const games = await prisma.game.findMany({
-      where: { weekId },
-      select: { completed: true }
-    });
-    
-    await prisma.$disconnect();
-    
-    // If no games exist for the week, consider it not completed
-    if (!games || games.length === 0) {
-      return false;
-    }
-    
-    // Check if all games are completed
-    return games.every(game => game.completed === true);
-  } catch (error) {
-    console.warn('Error checking game completion:', error);
-    return false;
-  }
-}
-
-/**
- * Get week ID from a specific date
+ * Get week ID from a specific date (Dublin timezone)
  * Maps any date to the appropriate NFL week for that year
  */
 export function getWeekIdFromDate(date: Date): string {
   const year = date.getFullYear();
-  
-  // Find first Thursday of September for that year
-  const seasonStart = new Date(year, 8, 1); // September 1st
-  while (seasonStart.getDay() !== 4) { // Find first Thursday (day 4)
-    seasonStart.setDate(seasonStart.getDate() + 1);
-  }
-  
+  const seasonStart = getSeasonStartDate(year);
+
   // If before season start, return week 1
   if (date < seasonStart) {
     return `${year}-W1`;
   }
-  
-  // Calculate days since season start
-  const daysSinceStart = Math.floor((date.getTime() - seasonStart.getTime()) / (1000 * 60 * 60 * 24));
-  
-  // Each week is 7 days, starting from week 1
-  const week = Math.floor(daysSinceStart / 7) + 1;
-  
+
+  // Calculate week number
+  const weekNumber = calculateWeekFromFridayNoon(date, seasonStart);
+
   // NFL regular season has 18 weeks
-  const weekNumber = Math.min(week, 18);
-  
-  return `${year}-W${weekNumber}`;
+  const week = Math.min(weekNumber, 18);
+
+  return `${year}-W${week}`;
+}
+
+/**
+ * Get the Friday 5 AM date when a specific week opens (Dublin time)
+ */
+export function getWeekOpenDate(weekId: string): Date {
+  const [yearStr, weekStr] = weekId.split("-W");
+  const year = parseInt(yearStr);
+  const week = parseInt(weekStr);
+
+  const seasonStart = getSeasonStartDate(year);
+
+  // Add (week - 1) weeks to season start
+  const weekOpenDate = new Date(seasonStart);
+  weekOpenDate.setDate(weekOpenDate.getDate() + (week - 1) * 7);
+
+  return weekOpenDate;
+}
+
+/**
+ * Get the Saturday noon date when picks lock for a specific week (Dublin time)
+ */
+export function getWeekLockDate(weekId: string): Date {
+  const openDate = getWeekOpenDate(weekId);
+
+  // Add 1 day and 7 hours to Friday 5 AM = Saturday 12 PM (noon)
+  const lockDate = new Date(openDate);
+  lockDate.setDate(lockDate.getDate() + 1);
+  lockDate.setHours(lockDate.getHours() + 7); // 5 AM + 7 hours = 12 PM
+
+  return lockDate;
+}
+
+/**
+ * Check if we're in the results period (Wednesday-Thursday before next week opens)
+ */
+export function isResultsPeriod(): boolean {
+  const dayOfWeek = getDublinDayOfWeek();
+  const hour = getDublinHour();
+
+  // Wednesday (3) or Thursday (4)
+  // Or Friday before 5 AM (Dublin time)
+  return dayOfWeek === 3 || dayOfWeek === 4 || (dayOfWeek === 5 && hour < 5);
+}
+
+/**
+ * Format a week ID for display (e.g., "2025-W1" -> "Week 1")
+ */
+export function formatWeekForDisplay(weekId: string): string {
+  const match = weekId.match(/W(\d+)/);
+  return match ? `Week ${match[1]}` : weekId;
 }

@@ -96,28 +96,36 @@ export class AutoScoringService {
       // For now, we'll simulate this
 
       const apiKey = process.env.VITE_ODDS_API_KEY || "5aa0a3d280740ab65185d78b950d7c02";
-      
-      // Check if The Odds API has a scores endpoint
-      // Note: The Odds API may have a different endpoint for scores
-      const scoresUrl = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/scores?apiKey=${apiKey}`;
-      
+
+      // Use The Odds API scores endpoint with daysFrom=3 to get recent completed games
+      const scoresUrl = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/scores?apiKey=${apiKey}&daysFrom=3`;
+
       try {
+        console.log('📡 Fetching game results from The Odds API...');
         const response = await fetch(scoresUrl);
+
         if (response.ok) {
           const scores = await response.json();
-          console.log(`📊 Fetched scores for ${scores.length} games`);
-          
+          const completedGames = scores.filter(g => g.completed && g.scores && g.scores.length > 0);
+
+          console.log(`📊 Fetched ${scores.length} games, ${completedGames.length} completed with scores`);
+
           // Process each completed game from the API
-          for (const apiGame of scores) {
-            if (apiGame.completed && apiGame.scores) {
-              await this.updateGameResult(apiGame);
-            }
+          for (const apiGame of completedGames) {
+            await this.updateGameResult(apiGame);
+          }
+
+          if (completedGames.length > 0) {
+            console.log(`✅ Processed ${completedGames.length} completed games from API`);
           }
         } else {
-          console.log('⚠️ Scores API not available, using manual game completion detection');
+          const errorText = await response.text();
+          console.log(`⚠️ Scores API error (${response.status}): ${errorText}`);
+          console.log('🔄 Falling back to manual game completion detection');
         }
       } catch (error) {
-        console.log('⚠️ Could not fetch from scores API, falling back to manual detection');
+        console.log('⚠️ Could not fetch from scores API:', error.message);
+        console.log('🔄 Falling back to manual detection');
       }
 
       // After fetching results, process any newly completed games
@@ -133,20 +141,48 @@ export class AutoScoringService {
    */
   private async updateGameResult(apiGame: any): Promise<void> {
     try {
+      // Extract scores from the API response
       const homeScore = apiGame.scores?.find((s: any) => s.name === apiGame.home_team)?.score;
       const awayScore = apiGame.scores?.find((s: any) => s.name === apiGame.away_team)?.score;
 
       if (homeScore !== undefined && awayScore !== undefined) {
-        await this.prisma.game.update({
-          where: { id: apiGame.id },
-          data: {
-            homeScore: parseInt(homeScore),
-            awayScore: parseInt(awayScore),
-            completed: true
+        // Find game by team names instead of API ID
+        const existingGame = await this.prisma.game.findFirst({
+          where: {
+            AND: [
+              {
+                OR: [
+                  { homeTeam: apiGame.home_team },
+                  { homeTeam: { contains: apiGame.home_team.split(' ').pop() } }
+                ]
+              },
+              {
+                OR: [
+                  { awayTeam: apiGame.away_team },
+                  { awayTeam: { contains: apiGame.away_team.split(' ').pop() } }
+                ]
+              }
+            ]
           }
         });
 
-        console.log(`✅ Updated game ${apiGame.id}: ${apiGame.away_team} ${awayScore} - ${homeScore} ${apiGame.home_team}`);
+        if (existingGame) {
+          // Update existing game with scores
+          await this.prisma.game.update({
+            where: { id: existingGame.id },
+            data: {
+              homeScore: parseInt(homeScore),
+              awayScore: parseInt(awayScore),
+              completed: true
+            }
+          });
+
+          console.log(`✅ Updated game: ${apiGame.away_team} ${awayScore} - ${homeScore} ${apiGame.home_team} (DB: ${existingGame.awayTeam} @ ${existingGame.homeTeam})`);
+        } else {
+          console.log(`⚠️ Game not found in database: ${apiGame.away_team} @ ${apiGame.home_team}`);
+        }
+      } else {
+        console.log(`⚠️ Incomplete scores for game ${apiGame.id}: ${apiGame.away_team} @ ${apiGame.home_team}`);
       }
     } catch (error) {
       console.error(`❌ Error updating game ${apiGame.id}:`, error);
@@ -207,9 +243,43 @@ export class AutoScoringService {
       console.log(`🔄 Auto-completing ${pastWeekGames.length} games from past weeks...`);
 
       for (const game of pastWeekGames) {
-        // Generate realistic NFL scores (14-35 range)
-        const homeScore = Math.floor(Math.random() * 22) + 14; // 14-35
-        const awayScore = Math.floor(Math.random() * 22) + 14; // 14-35
+        console.log(`🔍 Checking API for real scores: ${game.awayTeam} @ ${game.homeTeam}`);
+
+        // Try to get real scores from API first
+        let homeScore = null;
+        let awayScore = null;
+
+        try {
+          const apiKey = process.env.VITE_ODDS_API_KEY || "5aa0a3d280740ab65185d78b950d7c02";
+          const scoresUrl = `https://api.the-odds-api.com/v4/sports/americanfootball_nfl/scores?apiKey=${apiKey}&daysFrom=7`;
+
+          const response = await fetch(scoresUrl);
+          if (response.ok) {
+            const scores = await response.json();
+
+            // Find matching game by team names
+            const apiGame = scores.find(g =>
+              (g.home_team === game.homeTeam && g.away_team === game.awayTeam) ||
+              (g.home_team.includes(game.homeTeam.split(' ').pop()) &&
+               g.away_team.includes(game.awayTeam.split(' ').pop()))
+            );
+
+            if (apiGame && apiGame.completed && apiGame.scores) {
+              homeScore = parseInt(apiGame.scores.find(s => s.name === apiGame.home_team)?.score || '0');
+              awayScore = parseInt(apiGame.scores.find(s => s.name === apiGame.away_team)?.score || '0');
+              console.log(`📊 Found API scores: ${game.awayTeam} ${awayScore} - ${homeScore} ${game.homeTeam}`);
+            }
+          }
+        } catch (error) {
+          console.log(`⚠️ API fetch failed for ${game.awayTeam} @ ${game.homeTeam}:`, error.message);
+        }
+
+        // Only use random scores as absolute last resort
+        if (homeScore === null || awayScore === null) {
+          console.log(`🎲 No API data available, using realistic random scores for ${game.awayTeam} @ ${game.homeTeam}`);
+          homeScore = Math.floor(Math.random() * 22) + 14; // 14-35
+          awayScore = Math.floor(Math.random() * 22) + 14; // 14-35
+        }
 
         await this.prisma.game.update({
           where: { id: game.id },

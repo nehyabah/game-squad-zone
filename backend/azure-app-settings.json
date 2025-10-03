@@ -19,15 +19,15 @@
     },
     {
       "name": "AUTH0_DOMAIN",
-      "value": "dev-xfta2nvjhpm5pku5.us.auth0.com"
+      "value": "squadpot.eu.auth0.com"
     },
     {
       "name": "AUTH0_CLIENT_ID",
-      "value": "uBX39CJShJPMpgtLH9drNZkMaPsMVM7V"
+      "value": "JCCclRaBKBm1Qr5jYZL7sPdqStRcXyQm"
     },
     {
       "name": "AUTH0_CLIENT_SECRET",
-      "value": "YOUR_AUTH0_CLIENT_SECRET"
+      "value": "cP8TAoCyTdsvU1YTGutQwgA0TceNsmRihxojtl_stL1w254CNCUEE_UsaZ7t3S0v"
     },
     {
       "name": "AUTH0_AUDIENCE",

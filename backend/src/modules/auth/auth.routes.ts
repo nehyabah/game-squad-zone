@@ -30,13 +30,13 @@ export default async function authRoutes(app: FastifyInstance) {
     if (isLocalhost) {
       // Extract the port from the origin/referer
       const localhostMatch = (origin || referer).match(/localhost:(\d+)/);
-      const port = localhostMatch ? localhostMatch[1] : "8080";
+      const port = localhostMatch ? localhostMatch[1] : "8084";
       redirectUri = `http://localhost:${port}/auth/callback`;
       console.log(
         `Detected localhost request, using redirect URI: ${redirectUri}`
       );
     } else if (!redirectUri || redirectUri.includes("localhost:3001")) {
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8084";
       redirectUri = `${frontendUrl}/auth/callback`;
     }
 
@@ -199,7 +199,7 @@ export default async function authRoutes(app: FastifyInstance) {
     if (!redirectUri) {
       redirectUri = process.env.OKTA_REDIRECT_URI;
       if (!redirectUri || redirectUri.includes("localhost:3001")) {
-        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8084";
         redirectUri = `${frontendUrl}/auth/callback`;
       }
     }
@@ -314,7 +314,7 @@ export default async function authRoutes(app: FastifyInstance) {
 
     // Use environment-specific redirect URI
     let redirectUri =
-      process.env.NODE_ENV === "production"
+      process.env.NODE_ENV === "prouction"
         ? process.env.OKTA_REDIRECT_URI_PROD
         : process.env.OKTA_REDIRECT_URI_DEV;
 
@@ -336,7 +336,7 @@ export default async function authRoutes(app: FastifyInstance) {
     if (!redirectUri) {
       redirectUri = process.env.OKTA_REDIRECT_URI;
       if (!redirectUri || redirectUri.includes("localhost:3001")) {
-        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8084";
         redirectUri = `${frontendUrl}/auth/callback`;
       }
     }
@@ -383,7 +383,7 @@ export default async function authRoutes(app: FastifyInstance) {
       }
 
       // Always redirect to frontend - never show JSON to users
-      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8080";
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8084";
 
       // If we have AuthService, try to create a session
       if (svc && tokens.id_token) {

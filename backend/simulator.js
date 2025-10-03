@@ -161,8 +161,8 @@ const server = http.createServer(async (req, res) => {
     // Auth endpoints
     if (pathname === '/api/auth/login' && req.method === 'GET') {
       // Return Auth0 login URL
-      const domain = 'dev-xfta2nvjhpm5pku5.us.auth0.com';
-      const clientId = 'uBX39CJShJPMpgtLH9drNZkMaPsMVM7V';
+      const domain = 'squadpot.eu.auth0.com';
+      const clientId = 'JCCclRaBKBm1Qr5jYZL7sPdqStRcXyQm';
       const redirectUri = 'http://localhost:8080/auth/callback';
       
       const authUrl = 

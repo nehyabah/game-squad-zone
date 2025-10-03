@@ -21,7 +21,6 @@ const GameSelection = () => {
     start: "",
     end: "",
   });
-  /* eslint-disable  @typescript-eslint/no-explicit-any */
   const [existingPicks, setExistingPicks] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const maxGames = 3;
@@ -33,20 +32,16 @@ const GameSelection = () => {
   const loadGamesAndPicks = async () => {
     setIsLoading(true);
     try {
-      // Get week info for display
       const weekData = oddsApi.getWeekDateRangeForDisplay();
       setWeekInfo(weekData);
 
-      // Get games for current week only (Friday to Tuesday)
       const gameData = await oddsApi.getUpcomingGames(true);
       setGames(gameData);
 
-      // Load existing picks for current week
       const weekId = getCurrentWeekIdSync();
       const picks = await picksApi.getWeekPicks(weekId);
       setExistingPicks(picks);
 
-      // If picks exist, populate the selected picks and set edit mode
       if (picks && picks.picks) {
         const pickMap = new Map<string, "home" | "away">();
         picks.picks.forEach((pick) => {
@@ -70,17 +65,13 @@ const GameSelection = () => {
   };
 
   const areGamesLocked = () => {
-    // Check if we're outside the picks window (Friday 5 AM - Saturday 12 PM Dublin)
     if (!arePicksOpen()) {
-      return true; // Picks are closed
+      return true;
     }
-
-    // Also check if picks are already locked in database
     return existingPicks && existingPicks.status === "locked";
   };
 
   const handleSpreadPick = (gameId: string, team: "home" | "away") => {
-    // Check if all games are locked for the week
     if (areGamesLocked()) {
       toast({
         title: "Picks locked",
@@ -122,18 +113,45 @@ const GameSelection = () => {
     setIsSubmitting(true);
 
     try {
-      // Convert selected picks to API format
+      // Convert selected picks to API format WITH the actual spread the user clicked
       const picks = Array.from(selectedPicks.entries()).map(
-        ([gameId, selection]) => ({
-          gameId,
-          selection,
-        })
+        ([gameId, selection]) => {
+          const game = games.find((g) => g.id === gameId);
+          if (!game) {
+            throw new Error(`Game ${gameId} not found`);
+          }
+
+          // Determine what spread value the user actually SAW and CLICKED
+          // The game.spread is from the home team's perspective
+          // If user picked home: they clicked the home team's spread
+          // If user picked away: they clicked the away team's spread (opposite sign)
+          const clickedSpread =
+            selection === "home" ? game.spread : -game.spread;
+
+          console.log("Submitting pick:", {
+            gameId,
+            selection,
+            gameSpread: game.spread,
+            clickedSpread,
+            homeTeam: game.homeTeam.name,
+            awayTeam: game.awayTeam.name,
+            selectedTeam:
+              selection === "home" ? game.homeTeam.name : game.awayTeam.name,
+          });
+
+          return {
+            gameId,
+            selection,
+            spreadAtPick: clickedSpread, // Send exactly what the user clicked
+          };
+        }
       );
 
       const weekId = getCurrentWeekIdSync();
 
+      console.log("Full picks payload:", { weekId, picks });
+
       if (isEditMode && existingPicks) {
-        // Delete existing picks first, then submit new ones
         await picksApi.deletePicks(weekId);
       }
 
@@ -142,12 +160,9 @@ const GameSelection = () => {
         picks,
       });
 
-      // Don't clear selected picks - keep them visible
-      // setSelectedPicks(new Map());
       setIsEditMode(true);
 
       // Confetti celebration
-      // First burst
       confetti({
         particleCount: 120,
         spread: 150,
@@ -174,7 +189,6 @@ const GameSelection = () => {
         startVelocity: 30,
       });
 
-      // Second burst with slight delay
       setTimeout(() => {
         confetti({
           particleCount: 100,
@@ -201,13 +215,13 @@ const GameSelection = () => {
           startVelocity: 25,
         });
       }, 200);
+
       const actionText = isEditMode ? "updated" : "submitted";
       toast({
         title: `🎉 Picks ${actionText}!`,
         description: `Your picks have been ${actionText} for this week. View them in My Picks!`,
         duration: 4000,
       });
-      /* eslint-disable  @typescript-eslint/no-explicit-any */
     } catch (error: any) {
       console.error("Error submitting picks:", error);
       toast({
@@ -366,24 +380,17 @@ const GameSelection = () => {
                 }}
               >
                 <CardContent className="p-3 sm:p-4 relative overflow-hidden">
-                  {/* Weekly lock indicator - shown on all games when locked */}
                   {isLocked && (
                     <div className="absolute top-2 right-2 flex items-center gap-1 bg-destructive/20 backdrop-blur-sm px-2 py-1 rounded-full">
                       <Lock className="w-3 h-3 text-destructive" />
-                      {/* <span className="text-xs text-destructive font-medium">
-                        LOCKED
-                      </span> */}
                     </div>
                   )}
-                  {/* Selected pick indicator - always show if user has made a pick */}
                   {hasSelectedPick && !isLocked && (
                     <div className="absolute top-2 right-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
                   )}
-                  {/* Show selected picks even when locked */}
                   {hasSelectedPick && isLocked && (
                     <div className="absolute top-2 left-2 w-3 h-3 bg-primary rounded-full border-2 border-background shadow-sm" />
                   )}
-                  {/* Mouse spotlight effect */}
                   <div
                     className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-full blur-xl bg-primary/10 w-32 h-32 -translate-x-1/2 -translate-y-1/2"
                     style={{
@@ -391,11 +398,8 @@ const GameSelection = () => {
                       top: "var(--mouse-y, 50%)",
                     }}
                   />
-                  {/* Main content */}
                   <div className="relative flex flex-col items-center gap-2">
-                    {/* Teams Layout - Logo Centered */}
                     <div className="flex items-center justify-center gap-4 sm:gap-8 w-full">
-                      {/* Away Team */}
                       <div className="flex flex-col items-center gap-1">
                         <img
                           src={game.awayTeam.logo}
@@ -416,12 +420,10 @@ const GameSelection = () => {
                         </div>
                       </div>
 
-                      {/* VS Separator */}
                       <div className="text-muted-foreground/60 text-xs font-medium">
-                        @
+                        vs
                       </div>
 
-                      {/* Home Team */}
                       <div className="flex flex-col items-center gap-1">
                         <img
                           src={game.homeTeam.logo}
@@ -443,12 +445,10 @@ const GameSelection = () => {
                       </div>
                     </div>
 
-                    {/* Game Time */}
                     <div className="text-center text-xs text-muted-foreground mb-2">
                       {game.time}
                     </div>
 
-                    {/* Spread Selection Buttons */}
                     <div className="flex items-center gap-2 mt-1">
                       {game.spread < 0 ? (
                         <>

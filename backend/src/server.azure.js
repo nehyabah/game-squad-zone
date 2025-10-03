@@ -3,7 +3,7 @@ const { buildApp } = require("./app.js");
 
 const start = async () => {
   const app = buildApp();
-  const port = process.env.PORT || 8080;
+  const port = process.env.PORT || 8084;
 
   try {
     await app.listen({

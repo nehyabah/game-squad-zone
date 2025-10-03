@@ -35,8 +35,8 @@ RUN echo '#!/bin/sh' > start.sh && \
     echo 'echo "PORT: ${PORT:-3001}"' >> start.sh && \
     echo 'echo "NODE_ENV: ${NODE_ENV:-production}"' >> start.sh && \
     echo 'echo "========================================="' >> start.sh && \
-    echo 'echo "Running database migrations..."' >> start.sh && \
-    echo 'npx prisma migrate deploy || echo "Migration warnings"' >> start.sh && \
+    echo 'echo "Skipping migrations (database already initialized)"' >> start.sh && \
+    echo '# npx prisma migrate deploy || echo "Migration warnings"' >> start.sh && \
     echo 'echo "Starting Fastify server..."' >> start.sh && \
     echo 'exec node dist/main.server.js' >> start.sh && \
     chmod +x start.sh

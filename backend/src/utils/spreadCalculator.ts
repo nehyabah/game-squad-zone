@@ -19,7 +19,7 @@ export interface SpreadCalculationResult {
  *
  * @param homeScore - Final home team score
  * @param awayScore - Final away team score
- * @param spreadAtPick - Spread from home team perspective when pick was made
+ * @param spreadAtPick - Spread from USER'S perspective (what they clicked and saw)
  * @param userChoice - User's pick: 'home' or 'away'
  * @returns SpreadCalculationResult with all calculation details
  */
@@ -27,64 +27,82 @@ export function calculateSpreadResult(
   homeScore: number,
   awayScore: number,
   spreadAtPick: number,
-  userChoice: 'home' | 'away'
+  userChoice: "home" | "away"
 ): SpreadCalculationResult {
-
   // Input validation
   if (homeScore == null || awayScore == null || spreadAtPick == null) {
-    throw new Error('Missing required parameters for spread calculation');
+    throw new Error("Missing required parameters for spread calculation");
   }
 
-  if (!['home', 'away'].includes(userChoice)) {
-    throw new Error(`Invalid user choice: ${userChoice}. Must be 'home' or 'away'`);
+  if (!["home", "away"].includes(userChoice)) {
+    throw new Error(
+      `Invalid user choice: ${userChoice}. Must be 'home' or 'away'`
+    );
   }
 
   // Step 1: Calculate actual game margin (positive = home won, negative = away won)
   const actualMargin = homeScore - awayScore;
 
-  // Step 2: Apply spread as handicap to home team
-  // If spread is -6.5, home team needs to win by MORE than 6.5
-  // If spread is +3.5, home team can lose by UP TO 3.5 and still "cover"
-  const adjustedHomeScore = homeScore + spreadAtPick;
-  const adjustedMargin = adjustedHomeScore - awayScore;
+  // Step 2: Calculate if user's pick won
+  // Get user's team score and opponent score
+  const userTeamScore = userChoice === "home" ? homeScore : awayScore;
+  const opponentScore = userChoice === "home" ? awayScore : homeScore;
 
-  // Step 3: Determine who covered the spread
-  let homeCovers: boolean;
-  let awayCovers: boolean;
+  // Apply the spread the user took to their team's score
+  // If user picked MIN -2.5, we add -2.5 to MIN's score
+  // If user picked PIT +2.5, we add +2.5 to PIT's score
+  const adjustedUserScore = userTeamScore + spreadAtPick;
+  const adjustedMargin = adjustedUserScore - opponentScore;
+
+  // Step 3: Determine outcome
+  let userWon: boolean;
   let isPush: boolean;
 
   if (adjustedMargin > 0) {
-    homeCovers = true;
-    awayCovers = false;
+    userWon = true;
     isPush = false;
   } else if (adjustedMargin < 0) {
-    homeCovers = false;
-    awayCovers = true;
+    userWon = false;
     isPush = false;
   } else {
     // Exact tie after spread adjustment (very rare with .5 spreads)
-    homeCovers = false;
-    awayCovers = false;
+    userWon = false;
     isPush = true;
   }
 
-  // Step 4: Check if user's pick won
-  let userWon: boolean;
-  let points: number;
+  // Step 4: Calculate home/away covers for legacy compatibility
+  // Convert user's spread back to home team perspective
+  const homeSpread = userChoice === "away" ? -spreadAtPick : spreadAtPick;
+  const adjustedHomeScore = homeScore + homeSpread;
+  const homeAdjustedMargin = adjustedHomeScore - awayScore;
 
-  if (isPush) {
-    userWon = false; // Pushes are treated as no-win in most systems
-    points = 0;
+  let homeCovers: boolean;
+  let awayCovers: boolean;
+
+  if (homeAdjustedMargin > 0) {
+    homeCovers = true;
+    awayCovers = false;
+  } else if (homeAdjustedMargin < 0) {
+    homeCovers = false;
+    awayCovers = true;
   } else {
-    userWon = (userChoice === 'home' && homeCovers) ||
-              (userChoice === 'away' && awayCovers);
-    points = userWon ? 10 : 0; // Standard points per win
+    homeCovers = false;
+    awayCovers = false;
   }
 
-  // Step 5: Generate human-readable explanation
+  // Step 5: Calculate points
+  const points = userWon ? 10 : 0;
+
+  // Step 6: Generate human-readable explanation
   const explanation = generateExplanation(
-    homeScore, awayScore, spreadAtPick, userChoice,
-    actualMargin, adjustedMargin, homeCovers, awayCovers, isPush
+    homeScore,
+    awayScore,
+    spreadAtPick,
+    userChoice,
+    actualMargin,
+    adjustedMargin,
+    userWon,
+    isPush
   );
 
   return {
@@ -95,7 +113,7 @@ export function calculateSpreadResult(
     actualMargin,
     adjustedMargin,
     explanation,
-    points
+    points,
   };
 }
 
@@ -106,17 +124,17 @@ function generateExplanation(
   homeScore: number,
   awayScore: number,
   spreadAtPick: number,
-  userChoice: 'home' | 'away',
+  userChoice: "home" | "away",
   actualMargin: number,
   adjustedMargin: number,
-  homeCovers: boolean,
-  awayCovers: boolean,
+  userWon: boolean,
   isPush: boolean
 ): string {
-
-  const homeWonGame = actualMargin > 0;
   const marginAbs = Math.abs(actualMargin);
   const spreadAbs = Math.abs(spreadAtPick);
+  const userTeam = userChoice === "home" ? "Home" : "Away";
+  const userTeamScore = userChoice === "home" ? homeScore : awayScore;
+  const opponentScore = userChoice === "home" ? awayScore : homeScore;
 
   // Game result description
   let gameResult: string;
@@ -128,78 +146,108 @@ function generateExplanation(
     gameResult = `Game tied ${homeScore}-${awayScore}`;
   }
 
-  // Spread requirement description
-  let spreadReq: string;
+  // User's pick description
+  const spreadStr = spreadAtPick > 0 ? `+${spreadAtPick}` : `${spreadAtPick}`;
+  let pickDescription: string;
+
   if (spreadAtPick < 0) {
-    spreadReq = `Home needed to win by more than ${spreadAbs}`;
+    // User took favorite
+    pickDescription = `You picked ${userTeam} ${spreadStr} (needed to win by more than ${spreadAbs})`;
   } else if (spreadAtPick > 0) {
-    spreadReq = `Home could lose by up to ${spreadAbs} and still cover`;
+    // User took underdog
+    pickDescription = `You picked ${userTeam} ${spreadStr} (could lose by up to ${spreadAbs})`;
   } else {
-    spreadReq = `No spread (pick 'em game)`;
+    // Pick 'em
+    pickDescription = `You picked ${userTeam} (pick 'em, no spread)`;
   }
 
-  // Cover result
-  let coverResult: string;
+  // Result with adjusted score
+  let resultDescription: string;
+  const adjustedScore = userTeamScore + spreadAtPick;
+
   if (isPush) {
-    coverResult = `Push (exact tie on spread)`;
-  } else if (homeCovers) {
-    coverResult = `Home covered the spread`;
+    resultDescription = `With spread: ${adjustedScore.toFixed(
+      1
+    )}-${opponentScore} (PUSH - exact tie)`;
   } else {
-    coverResult = `Away covered the spread`;
+    const winLoss = userWon ? "WIN" : "LOSS";
+    resultDescription = `With spread: ${adjustedScore.toFixed(
+      1
+    )}-${opponentScore} (${winLoss})`;
   }
 
-  // User pick result
-  const userPicked = userChoice === 'home' ? 'Home' : 'Away';
-  const userResult = isPush ? 'Push (no win)' :
-                    (homeCovers && userChoice === 'home') || (awayCovers && userChoice === 'away') ?
-                    'WIN' : 'LOSS';
-
-  return `${gameResult}. ${spreadReq}. ${coverResult}. You picked: ${userPicked}. Result: ${userResult}`;
+  return `${gameResult}. ${pickDescription}. ${resultDescription}`;
 }
 
 /**
  * Test the spread calculation function with known examples
  */
 export function testSpreadCalculation(): void {
-  console.log('🧪 Testing Spread Calculation Function\n');
+  console.log("🧪 Testing Spread Calculation Function\n");
 
   const testCases = [
     {
-      name: 'Jets vs Bucs Example (from database)',
-      homeScore: 27, // Jets (home)
-      awayScore: 29, // Bucs (away)
-      spreadAtPick: -6.5, // Jets favored by 6.5
-      userChoice: 'home' as const,
-      expectedUserWon: false // Jets lost by 2, needed to win by 6.5+
-    },
-    {
-      name: 'Home covers easily',
+      name: "User picks favorite, favorite covers",
       homeScore: 28,
       awayScore: 14,
-      spreadAtPick: -7.5,
-      userChoice: 'home' as const,
-      expectedUserWon: true // Home won by 14, needed 7.5+
+      spreadAtPick: -7.5, // User picked home team at -7.5
+      userChoice: "home" as const,
+      expectedUserWon: true, // Home won by 14, needed 7.5+
     },
     {
-      name: 'Underdog covers by losing less',
+      name: "User picks favorite, favorite does not cover",
+      homeScore: 27, // Jets (home)
+      awayScore: 29, // Bucs (away)
+      spreadAtPick: -6.5, // User picked Jets -6.5
+      userChoice: "home" as const,
+      expectedUserWon: false, // Jets lost by 2, needed to win by 6.5+
+    },
+    {
+      name: "User picks underdog, underdog covers by losing less",
       homeScore: 21,
       awayScore: 17,
-      spreadAtPick: -7.5, // Home favored by 7.5
-      userChoice: 'away' as const,
-      expectedUserWon: true // Home won by 4, less than 7.5 spread
+      spreadAtPick: +7.5, // User picked away team at +7.5
+      userChoice: "away" as const,
+      expectedUserWon: true, // Away lost by 4, less than 7.5 spread
     },
     {
-      name: 'Underdog wins outright',
+      name: "User picks underdog, underdog wins outright",
       homeScore: 14,
       awayScore: 21,
-      spreadAtPick: -3.5,
-      userChoice: 'away' as const,
-      expectedUserWon: true // Away won outright
-    }
+      spreadAtPick: +3.5, // User picked away team at +3.5
+      userChoice: "away" as const,
+      expectedUserWon: true, // Away won outright
+    },
+    {
+      name: "User picks away favorite, covers",
+      homeScore: 17,
+      awayScore: 31,
+      spreadAtPick: -6.5, // User picked away team at -6.5
+      userChoice: "away" as const,
+      expectedUserWon: true, // Away won by 14, needed 6.5+
+    },
+    {
+      name: "User picks home underdog, does not cover",
+      homeScore: 20,
+      awayScore: 28,
+      spreadAtPick: +3.5, // User picked home team at +3.5
+      userChoice: "home" as const,
+      expectedUserWon: false, // Home lost by 8, more than 3.5
+    },
+    {
+      name: "Push scenario (rare with .5 spreads)",
+      homeScore: 24,
+      awayScore: 17,
+      spreadAtPick: -7.0, // User picked home at -7.0 (no .5)
+      userChoice: "home" as const,
+      expectedUserWon: false, // Won by exactly 7, push
+    },
   ];
 
   testCases.forEach((test, index) => {
     console.log(`Test ${index + 1}: ${test.name}`);
+    console.log(`  Home: ${test.homeScore}, Away: ${test.awayScore}`);
+    console.log(`  User picked: ${test.userChoice} at ${test.spreadAtPick}`);
 
     try {
       const result = calculateSpreadResult(
@@ -209,15 +257,22 @@ export function testSpreadCalculation(): void {
         test.userChoice
       );
 
-      console.log(`  Result: ${result.userWon ? 'WIN' : 'LOSS'} (${result.points} pts)`);
-      console.log(`  Expected: ${test.expectedUserWon ? 'WIN' : 'LOSS'}`);
-      console.log(`  ✅ ${result.userWon === test.expectedUserWon ? 'CORRECT' : '❌ WRONG'}`);
-      console.log(`  Explanation: ${result.explanation}`);
+      const resultStr = result.isPush
+        ? "PUSH"
+        : result.userWon
+        ? "WIN"
+        : "LOSS";
+      const expectedStr = test.expectedUserWon ? "WIN" : "LOSS";
+      const passed = result.userWon === test.expectedUserWon;
 
+      console.log(`  Result: ${resultStr} (${result.points} pts)`);
+      console.log(`  Expected: ${expectedStr}`);
+      console.log(`  ${passed ? "✅ CORRECT" : "❌ WRONG"}`);
+      console.log(`  ${result.explanation}`);
     } catch (error) {
       console.log(`  ❌ Error: ${error}`);
     }
 
-    console.log('');
+    console.log("");
   });
 }

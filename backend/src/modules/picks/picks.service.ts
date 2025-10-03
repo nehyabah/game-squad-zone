@@ -1,34 +1,34 @@
-import type { SubmitPicksDto } from './picks.dto';
-import { PickRepo, type PickSetRecord } from './picks.repo';
-import { GameRepo } from '../games/games.repo';
-import { GameLineRepo } from '../games/game-lines.repo';
-import { AppError } from '../../core/errors';
-import { PickLockingService } from '../../services/pick-locking.service';
+import type { SubmitPicksDto } from "./picks.dto";
+import { PickRepo, type PickSetRecord } from "./picks.repo";
+import { GameRepo } from "../games/games.repo";
+import { GameLineRepo } from "../games/game-lines.repo";
+import { AppError } from "../../core/errors";
+import { PickLockingService } from "../../services/pick-locking.service";
 
 /**
  * Picks module business logic.
  */
 export class GameWeekMismatchError extends AppError {
   constructor() {
-    super('All picks must be from the same week');
+    super("All picks must be from the same week");
   }
 }
 
 export class PicksLockedError extends AppError {
   constructor() {
-    super('Cannot submit picks - deadline has passed (Saturday 12 PM)');
+    super("Cannot submit picks - deadline has passed (Saturday 12 PM)");
   }
 }
 
 export class PicksAlreadyLockedError extends AppError {
   constructor() {
-    super('Picks for this week have already been locked');
+    super("Picks for this week have already been locked");
   }
 }
 
 export class InvalidPickCountError extends AppError {
   constructor() {
-    super('Must submit exactly 3 picks');
+    super("Must submit exactly 3 picks");
   }
 }
 
@@ -40,7 +40,7 @@ export class PickService {
     private readonly pickRepo: PickRepo,
     private readonly gameRepo: GameRepo,
     private readonly gameLineRepo: GameLineRepo,
-    prisma: any, // PrismaClient instance
+    prisma: any // PrismaClient instance
   ) {
     this.pickLockingService = new PickLockingService(prisma);
   }
@@ -48,7 +48,7 @@ export class PickService {
   async submitWeeklyPicks(
     data: SubmitPicksDto,
     userId: string,
-    idempotencyKey?: string,
+    idempotencyKey?: string
   ): Promise<PickSetRecord> {
     // Check idempotency
     if (idempotencyKey) {
@@ -62,7 +62,8 @@ export class PickService {
     }
 
     // Check if picks are locked (Saturday 12 PM deadline)
-    const arePicksLocked = await this.pickLockingService.arePicksLockedForCurrentWeek();
+    const arePicksLocked =
+      await this.pickLockingService.arePicksLockedForCurrentWeek();
     if (arePicksLocked) {
       throw new PicksLockedError();
     }
@@ -81,7 +82,7 @@ export class PickService {
     // Check for existing PickSet (one per user per week, no squadId)
     let pickSet = await this.pickRepo.findByUserWeek(userId, data.weekId);
 
-    if (pickSet?.status === 'locked') {
+    if (pickSet?.status === "locked") {
       throw new PicksAlreadyLockedError();
     }
 
@@ -90,7 +91,7 @@ export class PickService {
       pickSet = await this.pickRepo.createPickSet({
         userId,
         weekId: data.weekId,
-        status: 'submitted',
+        status: "submitted",
         tiebreakerScore: data.tiebreakerScore,
       });
     } else {
@@ -102,19 +103,36 @@ export class PickService {
       }
     }
 
-    // Upsert picks with spread snapshot
+    // Upsert picks with spread snapshot from frontend
     for (const pick of data.picks) {
       const line = await this.gameLineRepo.getLatest(pick.gameId);
-      
+
       if (!line) {
         throw new AppError(`No line found for game ${pick.gameId}`);
       }
-      
+
+      // Use the spread sent from frontend (what user actually clicked)
+      // If not provided, fall back to calculating it from line.spread
+      const spreadToStore =
+        pick.spreadAtPick !== undefined
+          ? pick.spreadAtPick
+          : pick.selection === "away"
+          ? -line.spread
+          : line.spread;
+
+      console.log("Saving pick:", {
+        gameId: pick.gameId,
+        selection: pick.selection,
+        lineSpread: line.spread,
+        frontendSpread: pick.spreadAtPick,
+        storingSpread: spreadToStore,
+      });
+
       await this.pickRepo.upsertPick({
         pickSetId: pickSet.id,
         gameId: pick.gameId,
         choice: pick.selection,
-        spreadAtPick: line.spread,
+        spreadAtPick: spreadToStore,
         lineSource: line.source,
       });
     }
@@ -129,7 +147,10 @@ export class PickService {
     return pickSet;
   }
 
-  async getUserPicks(userId: string, weekId: string): Promise<PickSetRecord | null> {
+  async getUserPicks(
+    userId: string,
+    weekId: string
+  ): Promise<PickSetRecord | null> {
     return this.pickRepo.findByUserWeek(userId, weekId);
   }
 
@@ -139,17 +160,17 @@ export class PickService {
 
   async deleteUserPicks(userId: string, weekId: string): Promise<boolean> {
     const pickSet = await this.pickRepo.findByUserWeek(userId, weekId);
-    
+
     if (!pickSet) {
       return false; // No picks found to delete
     }
 
     // Delete all picks associated with this pick set
     await this.pickRepo.deletePicks(pickSet.id);
-    
+
     // Delete the pick set itself
     await this.pickRepo.deletePickSet(pickSet.id);
-    
+
     return true;
   }
 }

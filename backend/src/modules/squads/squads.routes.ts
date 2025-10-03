@@ -1,177 +1,206 @@
 // src/modules/squads/squads.routes.ts
 import { FastifyInstance } from "fastify";
 import { SquadService } from "./squads.service";
-import { createSquadSchema, joinSquadSchema, updateSquadSchema, updateMemberRoleSchema } from "./squads.schema";
+import {
+  createSquadSchema,
+  joinSquadSchema,
+  updateSquadSchema,
+  updateMemberRoleSchema,
+} from "./squads.schema";
 
 export default async function squadsRoutes(app: FastifyInstance) {
   const svc = new SquadService(app, app.prisma);
 
   // Chat routes - inline for now to fix registration issue
   // GET /squads/:squadId/messages - Get squad chat messages
-  app.get("/squads/:squadId/messages", { preHandler: [app.auth] }, async (req, reply) => {
-    try {
-      const { squadId } = req.params as { squadId: string };
-      const userId = req.currentUser!.id;
+  app.get(
+    "/squads/:squadId/messages",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const { squadId } = req.params as { squadId: string };
+        const userId = req.currentUser!.id;
 
-      // Check if user is a member of this squad
-      const membership = await app.prisma.squadMember.findUnique({
-        where: {
-          squadId_userId: {
-            squadId,
-            userId,
-          },
-        },
-      });
-
-      if (!membership) {
-        return reply.status(403).send({ error: "You are not a member of this squad" });
-      }
-
-      // Get messages from the squad
-      const messages = await app.prisma.squadMessage.findMany({
-        where: { squadId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              firstName: true,
-              lastName: true,
-              avatarUrl: true,
+        // Check if user is a member of this squad
+        const membership = await app.prisma.squadMember.findUnique({
+          where: {
+            squadId_userId: {
+              squadId,
+              userId,
             },
           },
-        },
-        orderBy: { createdAt: "asc" },
-        take: 100, // Limit to last 100 messages
-      });
+        });
 
-      // Format messages for frontend
-      const formattedMessages = messages.map((msg) => ({
-        id: msg.id,
-        message: msg.message,
-        createdAt: msg.createdAt,
-        user: msg.user,
-        isCurrentUser: msg.userId === userId,
-      }));
+        if (!membership) {
+          return reply
+            .status(403)
+            .send({ error: "You are not a member of this squad" });
+        }
 
-      return formattedMessages;
-    } catch (error) {
-      console.error("Error fetching squad messages:", error);
-      return reply.status(500).send({ error: "Failed to fetch messages" });
+        // Get messages from the squad
+        const messages = await app.prisma.squadMessage.findMany({
+          where: { squadId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+          take: 100, // Limit to last 100 messages
+        });
+
+        // Format messages for frontend
+        const formattedMessages = messages.map((msg) => ({
+          id: msg.id,
+          message: msg.message,
+          createdAt: msg.createdAt,
+          user: msg.user,
+          isCurrentUser: msg.userId === userId,
+        }));
+
+        return formattedMessages;
+      } catch (error) {
+        console.error("Error fetching squad messages:", error);
+        return reply.status(500).send({ error: "Failed to fetch messages" });
+      }
     }
-  });
+  );
 
   // POST /squads/:squadId/messages - Send a message to squad chat
-  app.post("/squads/:squadId/messages", { preHandler: [app.auth] }, async (req, reply) => {
-    try {
-      const { squadId } = req.params as { squadId: string };
-      const { message } = req.body as { message: string };
-      const userId = req.currentUser!.id;
+  app.post(
+    "/squads/:squadId/messages",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const { squadId } = req.params as { squadId: string };
+        const { message } = req.body as { message: string };
+        const userId = req.currentUser!.id;
 
-      if (!message || message.trim().length === 0) {
-        return reply.status(400).send({ error: "Message cannot be empty" });
-      }
+        if (!message || message.trim().length === 0) {
+          return reply.status(400).send({ error: "Message cannot be empty" });
+        }
 
-      if (message.length > 1000) {
-        return reply.status(400).send({ error: "Message too long (max 1000 characters)" });
-      }
+        if (message.length > 1000) {
+          return reply
+            .status(400)
+            .send({ error: "Message too long (max 1000 characters)" });
+        }
 
-      // Check if user is a member of this squad
-      const membership = await app.prisma.squadMember.findUnique({
-        where: {
-          squadId_userId: {
-            squadId,
-            userId,
-          },
-        },
-      });
-
-      if (!membership) {
-        return reply.status(403).send({ error: "You are not a member of this squad" });
-      }
-
-      // Create the message
-      const newMessage = await app.prisma.squadMessage.create({
-        data: {
-          squadId,
-          userId,
-          message: message.trim(),
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              firstName: true,
-              lastName: true,
-              avatarUrl: true,
+        // Check if user is a member of this squad
+        const membership = await app.prisma.squadMember.findUnique({
+          where: {
+            squadId_userId: {
+              squadId,
+              userId,
             },
           },
-        },
-      });
+        });
 
-      // Format message for frontend
-      const formattedMessage = {
-        id: newMessage.id,
-        message: newMessage.message,
-        createdAt: newMessage.createdAt,
-        user: newMessage.user,
-        isCurrentUser: true,
-      };
+        if (!membership) {
+          return reply
+            .status(403)
+            .send({ error: "You are not a member of this squad" });
+        }
 
-      return formattedMessage;
-    } catch (error) {
-      console.error("Error sending squad message:", error);
-      return reply.status(500).send({ error: "Failed to send message" });
+        // Create the message
+        const newMessage = await app.prisma.squadMessage.create({
+          data: {
+            squadId,
+            userId,
+            message: message.trim(),
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        });
+
+        // Format message for frontend
+        const formattedMessage = {
+          id: newMessage.id,
+          message: newMessage.message,
+          createdAt: newMessage.createdAt,
+          user: newMessage.user,
+          isCurrentUser: true,
+        };
+
+        return formattedMessage;
+      } catch (error) {
+        console.error("Error sending squad message:", error);
+        return reply.status(500).send({ error: "Failed to send message" });
+      }
     }
-  });
+  );
 
   // PUT /squads/:squadId/read - Mark messages as read in a squad
-  app.put("/squads/:squadId/read", { preHandler: [app.auth] }, async (req, reply) => {
-    try {
-      const { squadId } = req.params as { squadId: string };
-      const userId = req.currentUser!.id;
+  app.put(
+    "/squads/:squadId/read",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const { squadId } = req.params as { squadId: string };
+        const userId = req.currentUser!.id;
 
-      // Check if user is a member of this squad
-      const membership = await app.prisma.squadMember.findUnique({
-        where: {
-          squadId_userId: {
-            squadId,
-            userId,
+        // Check if user is a member of this squad
+        const membership = await app.prisma.squadMember.findUnique({
+          where: {
+            squadId_userId: {
+              squadId,
+              userId,
+            },
           },
-        },
-      });
+        });
 
-      if (!membership) {
-        return reply.status(403).send({ error: "You are not a member of this squad" });
+        if (!membership) {
+          return reply
+            .status(403)
+            .send({ error: "You are not a member of this squad" });
+        }
+
+        // Update the lastReadAt timestamp
+        await app.prisma.squadMember.update({
+          where: {
+            squadId_userId: {
+              squadId,
+              userId,
+            },
+          },
+          data: {
+            lastReadAt: new Date(),
+          },
+        });
+
+        return { success: true };
+      } catch (error) {
+        console.error("Error marking messages as read:", error);
+        return reply
+          .status(500)
+          .send({ error: "Failed to mark messages as read" });
       }
-
-      // Update the lastReadAt timestamp
-      await app.prisma.squadMember.update({
-        where: {
-          squadId_userId: {
-            squadId,
-            userId,
-          },
-        },
-        data: {
-          lastReadAt: new Date(),
-        },
-      });
-
-      return { success: true };
-    } catch (error) {
-      console.error("Error marking messages as read:", error);
-      return reply.status(500).send({ error: "Failed to mark messages as read" });
     }
-  });
+  );
 
   app.get("/squads/test", async (req, reply) => {
-    return { message: "Squads API is working!", timestamp: new Date().toISOString() };
+    return {
+      message: "Squads API is working!",
+      timestamp: new Date().toISOString(),
+    };
   });
-
 
   // Create squad
   app.post(
@@ -198,7 +227,7 @@ export default async function squadsRoutes(app: FastifyInstance) {
       try {
         // Validate with Zod
         const validatedData = createSquadSchema.parse(req.body);
-        
+
         const userId = req.currentUser!.id;
         const squad = await svc.create(validatedData, userId);
         return reply.status(201).send(squad);
@@ -293,23 +322,27 @@ export default async function squadsRoutes(app: FastifyInstance) {
     },
     async (req, reply) => {
       try {
+        /* eslint-disable @typescript-eslint/no-explicit-any */
         const body = req.body as any;
-        
+
         const validatedData = joinSquadSchema.parse(req.body);
         const userId = req.currentUser!.id;
         const squad = await svc.joinSquad(userId, validatedData.joinCode);
         return squad;
       } catch (error) {
         console.log("Join squad error:", error);
-        
+
         // If already a member, return 409 Conflict with helpful message
-        if (error instanceof Error && error.message.includes("already part of")) {
+        if (
+          error instanceof Error &&
+          error.message.includes("already part of")
+        ) {
           return reply.status(409).send({
             error: error.message,
-            code: "ALREADY_MEMBER"
+            code: "ALREADY_MEMBER",
           });
         }
-        
+
         return reply.status(400).send({
           error:
             error instanceof Error ? error.message : "Failed to join squad",

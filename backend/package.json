@@ -4,7 +4,6 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "predev": "node auto-backup-on-start.js",
     "dev": "ts-node src/main.server.ts",
     "dev:watch": "ts-node-dev --respawn --transpile-only src/main.server.ts",
     "worker": "ts-node src/main.worker.ts",

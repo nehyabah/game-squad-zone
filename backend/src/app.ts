@@ -18,6 +18,7 @@ import walletRoutes from "./modules/wallet/wallet.routes";
 import profileRoutes from "./modules/profile/profile.routes";
 import registerPickRoutes from "./modules/picks/picks.routes";
 import leaderboardRoutes from "./modules/leaderboards/leaderboards.routes";
+import statsRoutes from "./modules/stats/stats.routes";
 import gameRoutes from "./modules/games/games.routes";
 import { basicNotificationRoutes } from "./routes/basic-notifications";
 import { syncGamesOnStartup } from "./startup/sync-games";
@@ -307,6 +308,9 @@ export function buildApp(): FastifyInstance {
 
   // Leaderboard routes
   app.register(leaderboardRoutes, { prefix: "/api" });
+
+  // Statistics routes
+  app.register(statsRoutes, { prefix: "/api" });
 
   // Game routes
   app.register(gameRoutes, { prefix: "/api" });

@@ -274,11 +274,14 @@ export class AutoScoringService {
           console.log(`⚠️ API fetch failed for ${game.awayTeam} @ ${game.homeTeam}:`, error.message);
         }
 
-        // Only use random scores as absolute last resort
+        // If API scores not found, leave game incomplete for manual intervention
         if (homeScore === null || awayScore === null) {
-          console.log(`🎲 No API data available, using realistic random scores for ${game.awayTeam} @ ${game.homeTeam}`);
-          homeScore = Math.floor(Math.random() * 22) + 14; // 14-35
-          awayScore = Math.floor(Math.random() * 22) + 14; // 14-35
+          console.error(`❌ ERROR: No API scores available for ${game.awayTeam} @ ${game.homeTeam}`);
+          console.error(`   Game ID: ${game.id}`);
+          console.error(`   Week: ${game.weekId}`);
+          console.error(`   Started: ${game.startAtUtc.toISOString()}`);
+          console.error(`   ⚠️ MANUAL INTERVENTION REQUIRED - Game left incomplete`);
+          continue; // Skip this game, don't mark as completed
         }
 
         await this.prisma.game.update({

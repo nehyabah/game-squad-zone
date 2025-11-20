@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Test - SquadPot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔔 Push Notification Test Suite</h1>
+    <p>Test the complete push notification system for SquadPot</p>
+
+    <!-- Test 1: Browser Support -->
+    <div class="test-card">
+        <h3>1. Browser Support Check</h3>
+        <div id="support-status"></div>
+        <button onclick="checkSupport()">Check Browser Support</button>
+    </div>
+
+    <!-- Test 2: Service Worker -->
+    <div class="test-card">
+        <h3>2. Service Worker Registration</h3>
+        <div id="sw-status"></div>
+        <button onclick="testServiceWorker()">Register Service Worker</button>
+    </div>
+
+    <!-- Test 3: Permission Request -->
+    <div class="test-card">
+        <h3>3. Notification Permission</h3>
+        <div id="permission-status"></div>
+        <button onclick="requestPermission()">Request Permission</button>
+    </div>
+
+    <!-- Test 4: Push Subscription -->
+    <div class="test-card">
+        <h3>4. Push Subscription</h3>
+        <div id="subscription-status"></div>
+        <button onclick="testSubscription()">Test Subscription</button>
+    </div>
+
+    <!-- Test 5: Test Notification -->
+    <div class="test-card">
+        <h3>5. Send Test Notification</h3>
+        <div id="notification-status"></div>
+        <button onclick="sendTestNotification()">Send Test Notification</button>
+    </div>
+
+    <!-- Test 6: Banner Reset -->
+    <div class="test-card">
+        <h3>6. Reset Banner State</h3>
+        <div id="reset-status"></div>
+        <p style="font-size: 12px; color: #666; margin: 10px 0;">
+            This will reset the banner dismissal state so you can test the "one-time" behavior again.
+        </p>
+        <button onclick="resetBannerState()">Reset Banner State</button>
+        <button onclick="checkBannerState()">Check Current State</button>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="test-card">
+        <h3>📋 Activity Log</h3>
+        <button onclick="clearLog()">Clear Log</button>
+        <div id="activity-log" class="log"></div>
+    </div>
+
+    <script>
+        let serviceWorkerRegistration = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('activity-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += entry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.className = `status ${type}`;
+            element.textContent = message;
+        }
+
+        function clearLog() {
+            document.getElementById('activity-log').textContent = '';
+        }
+
+        function checkSupport() {
+            log('🔍 Checking browser support...');
+
+            const hasServiceWorker = 'serviceWorker' in navigator;
+            const hasPushManager = 'PushManager' in window;
+            const hasNotifications = 'Notification' in window;
+
+            if (hasServiceWorker && hasPushManager && hasNotifications) {
+                setStatus('support-status', '✅ Browser supports push notifications', 'success');
+                log('✅ All APIs supported: ServiceWorker, PushManager, Notifications');
+            } else {
+                setStatus('support-status', '❌ Browser missing required APIs', 'error');
+                log(`❌ Missing APIs: SW=${hasServiceWorker}, Push=${hasPushManager}, Notifications=${hasNotifications}`);
+            }
+        }
+
+        async function testServiceWorker() {
+            log('🔧 Registering service worker...');
+
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js', {
+                    scope: '/'
+                });
+
+                serviceWorkerRegistration = registration;
+
+                await navigator.serviceWorker.ready;
+                setStatus('sw-status', '✅ Service worker registered and ready', 'success');
+                log('✅ Service worker registered successfully');
+                log(`📍 Scope: ${registration.scope}`);
+
+            } catch (error) {
+                setStatus('sw-status', `❌ Service worker failed: ${error.message}`, 'error');
+                log(`❌ Service worker registration failed: ${error.message}`);
+            }
+        }
+
+        async function requestPermission() {
+            log('🔔 Requesting notification permission...');
+
+            if (!('Notification' in window)) {
+                setStatus('permission-status', '❌ Notifications not supported', 'error');
+                return;
+            }
+
+            const currentPermission = Notification.permission;
+            log(`📊 Current permission: ${currentPermission}`);
+
+            if (currentPermission === 'granted') {
+                setStatus('permission-status', '✅ Permission already granted', 'success');
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+
+                if (permission === 'granted') {
+                    setStatus('permission-status', '✅ Permission granted by user', 'success');
+                    log('✅ User granted notification permission');
+                } else if (permission === 'denied') {
+                    setStatus('permission-status', '❌ Permission denied by user', 'error');
+                    log('❌ User denied notification permission');
+                } else {
+                    setStatus('permission-status', '⚠️ Permission dismissed by user', 'warning');
+                    log('⚠️ User dismissed permission dialog');
+                }
+            } catch (error) {
+                setStatus('permission-status', `❌ Permission request failed: ${error.message}`, 'error');
+                log(`❌ Permission request error: ${error.message}`);
+            }
+        }
+
+        async function testSubscription() {
+            log('📝 Testing push subscription...');
+
+            if (!serviceWorkerRegistration) {
+                setStatus('subscription-status', '❌ Service worker not registered', 'error');
+                log('❌ Need to register service worker first');
+                return;
+            }
+
+            if (Notification.permission !== 'granted') {
+                setStatus('subscription-status', '❌ Permission not granted', 'error');
+                log('❌ Need notification permission first');
+                return;
+            }
+
+            try {
+                // Test VAPID key (using our mock key)
+                const mockVapidKey = 'BMqSvZjkdJbXLpa5qOQ_V0KPMRRm_KT7YUCAJPq0-9HsROTlIZdWWRSx5p8WR5Q_-YHj0wjNrKE3lE_rXv6f6VY';
+
+                function urlBase64ToUint8Array(base64String) {
+                    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+                    const base64 = (base64String + padding)
+                        .replace(/\\-/g, '+')
+                        .replace(/_/g, '/');
+                    const rawData = window.atob(base64);
+                    const outputArray = new Uint8Array(rawData.length);
+                    for (let i = 0; i < rawData.length; ++i) {
+                        outputArray[i] = rawData.charCodeAt(i);
+                    }
+                    return outputArray;
+                }
+
+                const subscription = await serviceWorkerRegistration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(mockVapidKey)
+                });
+
+                setStatus('subscription-status', '✅ Push subscription created', 'success');
+                log('✅ Successfully created push subscription');
+                log(`📍 Endpoint: ${subscription.endpoint.substring(0, 50)}...`);
+
+                // Test if we can convert to our API format
+                const apiSubscription = {
+                    endpoint: subscription.endpoint,
+                    keys: {
+                        p256dh: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('p256dh')))),
+                        auth: btoa(String.fromCharCode(...new Uint8Array(subscription.getKey('auth'))))
+                    }
+                };
+
+                log('📦 Subscription data formatted for API');
+
+            } catch (error) {
+                setStatus('subscription-status', `❌ Subscription failed: ${error.message}`, 'error');
+                log(`❌ Push subscription failed: ${error.message}`);
+            }
+        }
+
+        async function sendTestNotification() {
+            log('🚀 Sending test notification...');
+
+            if (Notification.permission !== 'granted') {
+                setStatus('notification-status', '❌ Permission not granted', 'error');
+                log('❌ Need notification permission first');
+                return;
+            }
+
+            try {
+                // Create a direct browser notification for testing
+                const notification = new Notification('🎉 Test Notification from SquadPot', {
+                    body: 'This is a test notification to verify your browser settings work correctly.',
+                    icon: '/icon-192x192.png',
+                    badge: '/icon-192x192.png',
+                    tag: 'squadpot-test',
+                    data: {
+                        type: 'test',
+                        timestamp: Date.now()
+                    }
+                });
+
+                notification.onclick = function() {
+                    log('👆 User clicked on test notification');
+                    notification.close();
+                };
+
+                notification.onshow = function() {
+                    log('👁️ Test notification displayed');
+                };
+
+                notification.onerror = function(error) {
+                    log(`❌ Test notification error: ${error}`);
+                };
+
+                setStatus('notification-status', '✅ Test notification sent', 'success');
+                log('✅ Browser notification sent successfully');
+
+                // Auto-close after 5 seconds
+                setTimeout(() => {
+                    notification.close();
+                    log('⏰ Test notification auto-closed');
+                }, 5000);
+
+            } catch (error) {
+                setStatus('notification-status', `❌ Notification failed: ${error.message}`, 'error');
+                log(`❌ Test notification failed: ${error.message}`);
+            }
+        }
+
+        function resetBannerState() {
+            log('🔄 Resetting banner dismissal state...');
+
+            // Clear all notification-related localStorage
+            localStorage.removeItem('notification-banner-dismissed');
+            localStorage.removeItem('notification-interacted');
+
+            setStatus('reset-status', '✅ Banner state reset successfully', 'success');
+            log('✅ Removed: notification-banner-dismissed');
+            log('✅ Removed: notification-interacted');
+            log('💡 Refresh the main app page to see the banner again');
+        }
+
+        function checkBannerState() {
+            log('🔍 Checking current banner state...');
+
+            const bannerDismissed = localStorage.getItem('notification-banner-dismissed');
+            const notificationInteracted = localStorage.getItem('notification-interacted');
+
+            const statusInfo = [];
+            if (bannerDismissed === 'true') {
+                statusInfo.push('Banner dismissed');
+            }
+            if (notificationInteracted === 'true') {
+                statusInfo.push('User interacted');
+            }
+
+            if (statusInfo.length === 0) {
+                setStatus('reset-status', 'ℹ️ Banner should be visible', 'info');
+                log('ℹ️ No dismissal flags set - banner should be visible');
+            } else {
+                setStatus('reset-status', `⚠️ Banner hidden: ${statusInfo.join(', ')}`, 'warning');
+                log(`⚠️ Banner hidden due to: ${statusInfo.join(', ')}`);
+            }
+        }
+
+        // Auto-run support check on page load
+        window.addEventListener('load', () => {
+            log('🚀 Notification test page loaded');
+            checkSupport();
+        });
+    </script>
+</body>
+</html>

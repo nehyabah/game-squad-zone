@@ -71,6 +71,35 @@ export interface JoinSquadData {
   joinCode: string;
 }
 
+export interface CreateJoinRequestData {
+  joinCode: string;
+  message?: string;
+}
+
+export interface SquadJoinRequest {
+  id: string;
+  squadId: string;
+  userId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  message?: string;
+  requestedAt: string;
+  respondedAt?: string;
+  respondedBy?: string;
+  user: {
+    id: string;
+    username: string;
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    avatarUrl?: string;
+    email?: string;
+  };
+  squad?: {
+    id: string;
+    name: string;
+  };
+}
+
 class SquadsAPI {
   private async request<T>(
     endpoint: string,
@@ -190,6 +219,44 @@ class SquadsAPI {
     return this.request<{ success: boolean }>(`/api/squads/${squadId}/read`, {
       method: 'PUT',
     });
+  }
+
+  // Join request methods
+  async createJoinRequest(data: CreateJoinRequestData): Promise<SquadJoinRequest> {
+    return this.request<SquadJoinRequest>('/api/squads/join-request', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPendingJoinRequests(squadId: string): Promise<SquadJoinRequest[]> {
+    return this.request<SquadJoinRequest[]>(`/api/squads/${squadId}/join-requests`);
+  }
+
+  async approveJoinRequest(squadId: string, requestId: string): Promise<Squad> {
+    return this.request<Squad>(`/api/squads/${squadId}/join-requests/${requestId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  async rejectJoinRequest(squadId: string, requestId: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`/api/squads/${squadId}/join-requests/${requestId}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  }
+
+  async getJoinRequestStatus(squadId: string): Promise<SquadJoinRequest | null> {
+    try {
+      return await this.request<SquadJoinRequest>(`/api/squads/${squadId}/join-request-status`);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getMyJoinRequests(): Promise<SquadJoinRequest[]> {
+    return this.request<SquadJoinRequest[]>('/api/squads/my-join-requests');
   }
 }
 

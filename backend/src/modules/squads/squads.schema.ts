@@ -67,14 +67,32 @@ export const updateMemberRoleSchema = z.object({
   role: z.enum(['admin', 'member']).describe("Role must be either 'admin' or 'member'"),
 });
 
+export const createJoinRequestSchema = z.object({
+  joinCode: z.string()
+    .min(6, "Join code must be at least 6 characters")
+    .max(12, "Join code must be at most 12 characters")
+    .regex(/^[A-Z0-9]+$/, "Join code can only contain uppercase letters and numbers"),
+  message: z.string()
+    .max(500, "Message must be 500 characters or less")
+    .optional(),
+});
+
+export const respondToJoinRequestSchema = z.object({
+  action: z.enum(['approve', 'reject']).describe("Action must be either 'approve' or 'reject'"),
+});
+
 export const squadSchemas = {
   createSquadSchema,
   joinSquadSchema,
   updateSquadSchema,
   updateMemberRoleSchema,
+  createJoinRequestSchema,
+  respondToJoinRequestSchema,
 };
 
 export type CreateSquadSchema = typeof createSquadSchema;
 export type JoinSquadSchema = typeof joinSquadSchema;
 export type UpdateSquadSchema = typeof updateSquadSchema;
 export type UpdateMemberRoleSchema = typeof updateMemberRoleSchema;
+export type CreateJoinRequestSchema = typeof createJoinRequestSchema;
+export type RespondToJoinRequestSchema = typeof respondToJoinRequestSchema;

@@ -12,7 +12,7 @@ export interface PushSubscription {
 export interface NotificationPayload {
   title: string;
   message: string;
-  type: "pick_reminder" | "score_update" | "window_event" | "picks_open";
+  type: "pick_reminder" | "score_update" | "window_event" | "picks_open" | "join_request" | "join_approved" | "join_rejected";
   data?: any;
 }
 
@@ -358,6 +358,98 @@ export class PushNotificationService {
       console.log(`✅ Cleaned up ${result.count} inactive subscriptions`);
     } catch (error) {
       console.error("❌ Error cleaning up subscriptions:", error);
+    }
+  }
+
+  /**
+   * Send join request notification to squad admins/owners
+   */
+  async sendJoinRequestNotification(
+    squadId: string,
+    requesterId: string,
+    requesterName: string,
+    squadName: string
+  ): Promise<void> {
+    try {
+      console.log(`🔔 Sending join request notification for squad ${squadId}`);
+
+      // Get all admins and owners of the squad
+      const adminMembers = await this.prisma.squadMember.findMany({
+        where: {
+          squadId,
+          role: { in: ["owner", "admin"] },
+        },
+        select: { userId: true },
+      });
+
+      if (adminMembers.length === 0) {
+        console.log(`⚠️ No admins/owners found for squad ${squadId}`);
+        return;
+      }
+
+      // Send notification to each admin
+      const promises = adminMembers.map((member) =>
+        this.sendToUser(member.userId, {
+          title: "New Join Request",
+          message: `${requesterName} wants to join "${squadName}"`,
+          type: "join_request",
+          data: { squadId, requesterId, squadName },
+        })
+      );
+
+      await Promise.allSettled(promises);
+      console.log(
+        `✅ Join request notification sent to ${adminMembers.length} admins`
+      );
+    } catch (error) {
+      console.error("❌ Error sending join request notification:", error);
+    }
+  }
+
+  /**
+   * Send join request approved notification to user
+   */
+  async sendJoinApprovedNotification(
+    userId: string,
+    squadName: string,
+    squadId: string
+  ): Promise<void> {
+    try {
+      console.log(
+        `✅ Sending join approved notification to user ${userId}`
+      );
+
+      await this.sendToUser(userId, {
+        title: "Join Request Approved!",
+        message: `You've been accepted to join "${squadName}"`,
+        type: "join_approved",
+        data: { squadId, squadName },
+      });
+    } catch (error) {
+      console.error("❌ Error sending join approved notification:", error);
+    }
+  }
+
+  /**
+   * Send join request rejected notification to user
+   */
+  async sendJoinRejectedNotification(
+    userId: string,
+    squadName: string
+  ): Promise<void> {
+    try {
+      console.log(
+        `❌ Sending join rejected notification to user ${userId}`
+      );
+
+      await this.sendToUser(userId, {
+        title: "Join Request Declined",
+        message: `Your request to join "${squadName}" was declined`,
+        type: "join_rejected",
+        data: { squadName },
+      });
+    } catch (error) {
+      console.error("❌ Error sending join rejected notification:", error);
     }
   }
 

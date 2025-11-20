@@ -9,32 +9,34 @@ datasource db {
 }
 
 model User {
-  id                 String              @id @default(uuid())
-  oktaId             String              @unique
-  email              String              @unique
-  username           String              @unique
-  firstName          String?
-  lastName           String?
-  avatarUrl          String?
-  authProvider       String              @default("okta")
-  emailVerified      Boolean             @default(true)
-  status             String              @default("active")
-  walletBalance      Float               @default(0.0)
-  walletCurrency     String              @default("eur")
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  lastLoginAt        DateTime?
-  displayName        String?
-  phoneNumber        String?
-  pickSets           PickSet[]
-  sessions           Session[]
-  ownedSquads        Squad[]             @relation("SquadOwner")
-  squadMembers       SquadMember[]
-  squadMessages      SquadMessage[]
-  squadPayments      SquadPayment[]
-  walletTransactions WalletTransaction[]
-  pushSubscriptions  PushSubscription[]
-  notificationLogs   NotificationLog[]
+  id                      String              @id @default(uuid())
+  oktaId                  String              @unique
+  email                   String              @unique
+  username                String              @unique
+  firstName               String?
+  lastName                String?
+  avatarUrl               String?
+  authProvider            String              @default("okta")
+  emailVerified           Boolean             @default(true)
+  status                  String              @default("active")
+  walletBalance           Float               @default(0.0)
+  walletCurrency          String              @default("eur")
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  lastLoginAt             DateTime?
+  displayName             String?
+  phoneNumber             String?
+  pickSets                PickSet[]
+  sessions                Session[]
+  ownedSquads             Squad[]             @relation("SquadOwner")
+  squadMembers            SquadMember[]
+  squadMessages           SquadMessage[]
+  squadPayments           SquadPayment[]
+  walletTransactions      WalletTransaction[]
+  pushSubscriptions       PushSubscription[]
+  notificationLogs        NotificationLog[]
+  squadJoinRequests       SquadJoinRequest[]
+  respondedJoinRequests   SquadJoinRequest[]  @relation("JoinRequestResponder")
 
   @@index([email])
   @@index([username])
@@ -118,25 +120,26 @@ model Pick {
 }
 
 model Squad {
-  id              String         @id @default(uuid())
+  id              String             @id @default(uuid())
   name            String
   description     String?
   imageUrl        String?
-  joinCode        String         @unique
+  joinCode        String             @unique
   ownerId         String
-  maxMembers      Int            @default(10)
-  potEnabled      Boolean        @default(false)
+  maxMembers      Int                @default(10)
+  potEnabled      Boolean            @default(false)
   potAmount       Float?
-  potCurrency     String         @default("eur")
+  potCurrency     String             @default("eur")
   potDeadline     DateTime?
   stripePriceId   String?
   stripeProductId String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  owner           User           @relation("SquadOwner", fields: [ownerId], references: [id])
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  owner           User               @relation("SquadOwner", fields: [ownerId], references: [id])
   members         SquadMember[]
   messages        SquadMessage[]
   payments        SquadPayment[]
+  joinRequests    SquadJoinRequest[]
 }
 
 model SquadMember {
@@ -145,10 +148,32 @@ model SquadMember {
   userId     String
   role       String    @default("member") // Use string instead of enum
   lastReadAt DateTime?
+  joinedAt   DateTime  @default(now())
   user       User      @relation(fields: [userId], references: [id])
   squad      Squad     @relation(fields: [squadId], references: [id], onDelete: Cascade)
 
   @@unique([squadId, userId])
+}
+
+model SquadJoinRequest {
+  id          String    @id @default(uuid())
+  squadId     String
+  userId      String
+  status      String    @default("pending") // "pending" | "approved" | "rejected"
+  message     String?   // Optional message from user
+  requestedAt DateTime  @default(now())
+  respondedAt DateTime?
+  respondedBy String?   // userId of admin who approved/rejected
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id])
+  squad       Squad     @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  responder   User?     @relation("JoinRequestResponder", fields: [respondedBy], references: [id])
+
+  @@unique([squadId, userId])
+  @@index([squadId])
+  @@index([userId])
+  @@index([status])
 }
 
 model SquadPayment {
@@ -247,4 +272,5 @@ model NotificationLog {
 // SquadRole: "owner" | "admin" | "member" | "OWNER" | "MODERATOR" | "MEMBER"
 // PaymentStatus: "pending" | "completed" | "failed" | "refunded"
 // PickStatus: "pending" | "won" | "lost" | "pushed"
-// NotificationType: "pick_reminder" | "score_update" | "window_event"
+// NotificationType: "pick_reminder" | "score_update" | "window_event" | "join_request" | "join_approved" | "join_rejected"
+// JoinRequestStatus: "pending" | "approved" | "rejected"

@@ -4,6 +4,7 @@ import type { FastifyInstance } from "fastify";
 import type { CreateSquadInput, JoinSquadInput } from "./squads.dto";
 import { randomBytes } from "crypto";
 import Stripe from "stripe";
+import { PushNotificationService } from "../../services/push-notification.service";
 
 interface SquadCreateData {
   name: string;
@@ -51,6 +52,7 @@ export class SquadNotFoundError extends Error {
 
 export class SquadService {
   private stripe: Stripe | null = null;
+  private notificationService: PushNotificationService;
 
   constructor(private app: FastifyInstance, private prisma: PrismaClient) {
     if (process.env.STRIPE_SECRET_KEY) {
@@ -58,6 +60,7 @@ export class SquadService {
         apiVersion: "2023-10-16",
       });
     }
+    this.notificationService = new PushNotificationService(prisma);
   }
 
   // Generate unique join code
@@ -890,5 +893,359 @@ export class SquadService {
       percentPaid,
       payments: squad.payments,
     };
+  }
+
+  // Create join request
+  async createJoinRequest(userId: string, joinCode: string, message?: string) {
+    const squad = await this.prisma.squad.findUnique({
+      where: { joinCode },
+      include: {
+        members: true,
+      },
+    });
+
+    if (!squad) {
+      throw new Error("Invalid join code");
+    }
+
+    // Check if already a member
+    const existingMember = squad.members.find((m) => m.userId === userId);
+    if (existingMember) {
+      throw new Error(
+        `You're already part of the "${squad.name}" squad!`
+      );
+    }
+
+    // Check if squad is at maximum capacity
+    if (squad.members.length >= squad.maxMembers) {
+      throw new Error(
+        `Squad is full! (${squad.maxMembers}/${squad.maxMembers} members)`
+      );
+    }
+
+    // Check for existing pending request
+    const existingRequest = await this.prisma.squadJoinRequest.findUnique({
+      where: {
+        squadId_userId: {
+          squadId: squad.id,
+          userId,
+        },
+      },
+    });
+
+    if (existingRequest && existingRequest.status === "pending") {
+      throw new Error("You already have a pending join request for this squad");
+    }
+
+    // Create or update join request
+    const joinRequest = await this.prisma.squadJoinRequest.upsert({
+      where: {
+        squadId_userId: {
+          squadId: squad.id,
+          userId,
+        },
+      },
+      create: {
+        squadId: squad.id,
+        userId,
+        message,
+        status: "pending",
+      },
+      update: {
+        message,
+        status: "pending",
+        requestedAt: new Date(),
+        respondedAt: null,
+        respondedBy: null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+          },
+        },
+        squad: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    // Send notification to squad admins/owners
+    const requesterName = joinRequest.user.displayName || joinRequest.user.username;
+    await this.notificationService.sendJoinRequestNotification(
+      squad.id,
+      userId,
+      requesterName,
+      squad.name
+    );
+
+    return joinRequest;
+  }
+
+  // Get pending join requests for a squad (admin/owner only)
+  async getPendingJoinRequests(userId: string, squadId: string) {
+    // Check if user is admin or owner
+    const member = await this.prisma.squadMember.findUnique({
+      where: {
+        squadId_userId: {
+          squadId,
+          userId,
+        },
+      },
+    });
+
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      throw new Error("Only squad owners and admins can view join requests");
+    }
+
+    const requests = await this.prisma.squadJoinRequest.findMany({
+      where: {
+        squadId,
+        status: "pending",
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        requestedAt: "desc",
+      },
+    });
+
+    return requests;
+  }
+
+  // Approve join request (admin/owner only)
+  async approveJoinRequest(
+    responderId: string,
+    squadId: string,
+    requestId: string
+  ) {
+    // Check if user is admin or owner
+    const member = await this.prisma.squadMember.findUnique({
+      where: {
+        squadId_userId: {
+          squadId,
+          userId: responderId,
+        },
+      },
+    });
+
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      throw new Error("Only squad owners and admins can approve join requests");
+    }
+
+    const request = await this.prisma.squadJoinRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        squad: {
+          include: {
+            members: true,
+          },
+        },
+        user: true,
+      },
+    });
+
+    if (!request) {
+      throw new Error("Join request not found");
+    }
+
+    if (request.squadId !== squadId) {
+      throw new Error("Join request does not belong to this squad");
+    }
+
+    if (request.status !== "pending") {
+      throw new Error("Join request has already been processed");
+    }
+
+    // Check if user account is active
+    if (request.user.status !== "active") {
+      throw new Error("Cannot approve request - user account is not active");
+    }
+
+    // Check if squad is at maximum capacity
+    if (request.squad.members.length >= request.squad.maxMembers) {
+      throw new Error(
+        `Squad is full! (${request.squad.maxMembers}/${request.squad.maxMembers} members)`
+      );
+    }
+
+    // Use transaction to ensure atomicity
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Update join request
+      await tx.squadJoinRequest.update({
+        where: { id: requestId },
+        data: {
+          status: "approved",
+          respondedAt: new Date(),
+          respondedBy: responderId,
+        },
+      });
+
+      // Add user as member
+      await tx.squadMember.create({
+        data: {
+          squadId,
+          userId: request.userId,
+          role: "member",
+        },
+      });
+
+      // Get updated squad with new member
+      return tx.squad.findUnique({
+        where: { id: squadId },
+        include: {
+          members: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  firstName: true,
+                  lastName: true,
+                  avatarUrl: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    // Send notification to the user who requested to join
+    await this.notificationService.sendJoinApprovedNotification(
+      request.userId,
+      request.squad.name,
+      squadId
+    );
+
+    return result;
+  }
+
+  // Reject join request (admin/owner only)
+  async rejectJoinRequest(
+    responderId: string,
+    squadId: string,
+    requestId: string
+  ) {
+    // Check if user is admin or owner
+    const member = await this.prisma.squadMember.findUnique({
+      where: {
+        squadId_userId: {
+          squadId,
+          userId: responderId,
+        },
+      },
+    });
+
+    if (!member || (member.role !== "owner" && member.role !== "admin")) {
+      throw new Error("Only squad owners and admins can reject join requests");
+    }
+
+    const request = await this.prisma.squadJoinRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        squad: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!request) {
+      throw new Error("Join request not found");
+    }
+
+    if (request.squadId !== squadId) {
+      throw new Error("Join request does not belong to this squad");
+    }
+
+    if (request.status !== "pending") {
+      throw new Error("Join request has already been processed");
+    }
+
+    // Update join request
+    await this.prisma.squadJoinRequest.update({
+      where: { id: requestId },
+      data: {
+        status: "rejected",
+        respondedAt: new Date(),
+        respondedBy: responderId,
+      },
+    });
+
+    // Send notification to the user who requested to join
+    await this.notificationService.sendJoinRejectedNotification(
+      request.userId,
+      request.squad.name
+    );
+
+    return { message: "Join request rejected" };
+  }
+
+  // Get user's join request status for a squad
+  async getUserJoinRequestStatus(userId: string, squadId: string) {
+    const request = await this.prisma.squadJoinRequest.findUnique({
+      where: {
+        squadId_userId: {
+          squadId,
+          userId,
+        },
+      },
+      include: {
+        squad: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return request;
+  }
+
+  // Get all of user's join requests across all squads
+  async getUserJoinRequests(userId: string) {
+    const requests = await this.prisma.squadJoinRequest.findMany({
+      where: {
+        userId,
+        status: 'pending', // Only show pending requests
+      },
+      include: {
+        squad: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+          },
+        },
+      },
+      orderBy: {
+        requestedAt: 'desc',
+      },
+    });
+
+    return requests;
   }
 }

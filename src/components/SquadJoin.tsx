@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Users, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
-import { useSquads } from "@/hooks/use-squads";
+import { Textarea } from "@/components/ui/textarea";
+import { Users, Loader2, Send } from "lucide-react";
+import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import { squadsAPI } from "@/lib/api/squads";
 
 interface SquadJoinProps {
   onSquadJoined?: (squad: any) => void;
@@ -13,37 +15,38 @@ interface SquadJoinProps {
 
 const SquadJoin = ({ onSquadJoined }: SquadJoinProps) => {
   const [joinCode, setJoinCode] = useState("");
-  const { joinSquad, loading } = useSquads();
+  const [message, setMessage] = useState("");
+
+  const joinRequestMutation = useMutation({
+    mutationFn: (data: { joinCode: string; message?: string }) =>
+      squadsAPI.createJoinRequest(data),
+    onSuccess: (joinRequest) => {
+      toast.success("Join request sent!", {
+        description: `Your request to join "${joinRequest.squad?.name}" has been sent to the admins`,
+      });
+      setJoinCode("");
+      setMessage("");
+      onSquadJoined?.(joinRequest);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to send join request");
+    },
+  });
 
   const handleJoinSquad = async () => {
-    console.log("handleJoinSquad called, joinCode state:", joinCode);
-    console.log("joinCode length:", joinCode.length);
-    console.log("joinCode trimmed:", joinCode.trim());
-    console.log("joinCode trimmed length:", joinCode.trim().length);
-    
     if (!joinCode.trim()) {
-      toast({
-        title: "Join code required",
+      toast.error("Join code required", {
         description: "Please enter a join code",
-        variant: "destructive"
       });
       return;
     }
 
     const finalJoinCode = joinCode.trim().toUpperCase();
-    console.log("Final join code to send:", finalJoinCode);
-    
-    const squad = await joinSquad({
-      joinCode: finalJoinCode
-    });
 
-    if (squad) {
-      // Notify parent component
-      onSquadJoined?.(squad);
-      
-      // Reset form
-      setJoinCode("");
-    }
+    joinRequestMutation.mutate({
+      joinCode: finalJoinCode,
+      message: message.trim() || undefined,
+    });
   };
 
   return (
@@ -52,7 +55,7 @@ const SquadJoin = ({ onSquadJoined }: SquadJoinProps) => {
         <CardHeader className="text-center pb-1 sm:pb-2">
           <CardTitle className="text-lg sm:text-2xl font-display text-foreground flex items-center justify-center gap-2">
             <Users className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-            Join Squad
+            Request to Join Squad
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -66,7 +69,7 @@ const SquadJoin = ({ onSquadJoined }: SquadJoinProps) => {
               className="transition-smooth focus:shadow-glow border-border/50 focus:border-primary font-mono text-center tracking-wider uppercase"
               maxLength={12}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleJoinSquad();
                 }
@@ -74,22 +77,39 @@ const SquadJoin = ({ onSquadJoined }: SquadJoinProps) => {
             />
           </div>
 
-          <div className="text-center text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 sm:p-3">
-            <p>Enter the join code provided by the squad owner to join their squad</p>
+          <div className="space-y-2">
+            <Label htmlFor="message" className="font-medium text-sm">
+              Message (Optional)
+            </Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Introduce yourself to the squad admins..."
+              className="transition-smooth focus:shadow-glow border-border/50 focus:border-primary min-h-[80px] resize-none"
+              maxLength={500}
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {message.length}/500
+            </p>
           </div>
 
-          <Button 
-            variant="squad" 
+          <div className="text-center text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 sm:p-3">
+            <p>Your request will be sent to squad admins for approval</p>
+          </div>
+
+          <Button
+            variant="squad"
             onClick={handleJoinSquad}
-            disabled={loading || !joinCode.trim()}
+            disabled={joinRequestMutation.isPending || !joinCode.trim()}
             className="w-full h-9 text-sm"
           >
-            {loading ? (
+            {joinRequestMutation.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
-              <Users className="w-4 h-4 mr-2" />
+              <Send className="w-4 h-4 mr-2" />
             )}
-            {loading ? "Joining..." : "Join Squad"}
+            {joinRequestMutation.isPending ? "Sending Request..." : "Send Join Request"}
           </Button>
         </CardContent>
       </Card>

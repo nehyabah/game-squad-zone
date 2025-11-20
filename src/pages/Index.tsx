@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Wallet as WalletIcon, UserPlus, Loader2 } from "lucide-react";
 import { getDisplayName } from "@/lib/utils/user";
+import { squadsAPI } from "@/lib/api/squads";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("fixtures");
@@ -85,28 +86,28 @@ const Index = () => {
   // Handle confirmed squad joining
   const handleConfirmJoin = async () => {
     if (!pendingJoinCode) return;
-    
+
     setJoiningSquad(true);
-    
+
     try {
-      const squad = await joinSquad({ joinCode: pendingJoinCode });
-      
-      if (squad) {
+      const joinRequest = await squadsAPI.createJoinRequest({
+        joinCode: pendingJoinCode
+      });
+
+      if (joinRequest) {
         toast({
-          title: "Welcome to the squad! 🎉",
-          description: `You've successfully joined "${squad.name}". Check out the Squads tab to start chatting!`,
+          title: "Join request sent! 📨",
+          description: `Your request to join "${joinRequest.squad?.name}" has been sent to the admins. You'll be notified when it's approved.`,
           duration: 5000,
         });
-        
-        // Switch to squads tab to show the newly joined squad
-        setActiveTab("create");
+
         setShowJoinModal(false);
         setPendingJoinCode(null);
       }
     } catch (error: any) {
-      console.error('Failed to join squad:', error);
+      console.error('Failed to send join request:', error);
       toast({
-        title: "Couldn't join squad",
+        title: "Couldn't send join request",
         description: error.message || "The join code may be invalid or expired.",
         variant: "destructive",
         duration: 5000,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { chatApi, type ChatMessage, type SendMessageData } from '@/lib/api/chat';
 
-export function useSquadChat(squadId: string | null, refreshInterval = 3000) {
+export function useSquadChat(squadId: string | null, refreshInterval = 15000) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

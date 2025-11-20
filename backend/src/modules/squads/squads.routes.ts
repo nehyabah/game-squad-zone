@@ -6,6 +6,8 @@ import {
   joinSquadSchema,
   updateSquadSchema,
   updateMemberRoleSchema,
+  createJoinRequestSchema,
+  respondToJoinRequestSchema,
 } from "./squads.schema";
 
 export default async function squadsRoutes(app: FastifyInstance) {
@@ -254,6 +256,26 @@ export default async function squadsRoutes(app: FastifyInstance) {
     }
   });
 
+  // Get all of user's pending join requests (must come before /squads/:id)
+  app.get(
+    "/squads/my-join-requests",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const userId = req.currentUser!.id;
+        const requests = await svc.getUserJoinRequests(userId);
+        return requests;
+      } catch (error) {
+        return reply.status(500).send({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch join requests",
+        });
+      }
+    }
+  );
+
   // Get specific squad
   app.get("/squads/:id", { preHandler: [app.auth] }, async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -305,51 +327,52 @@ export default async function squadsRoutes(app: FastifyInstance) {
     }
   );
 
+  // DISABLED: Direct join endpoint - Now requires admin approval via join-request endpoint
   // Join squad with code
-  app.post(
-    "/squads/join",
-    {
-      preHandler: [app.auth],
-      schema: {
-        body: {
-          type: "object",
-          required: ["joinCode"],
-          properties: {
-            joinCode: { type: "string", minLength: 6, maxLength: 12 },
-          },
-        },
-      },
-    },
-    async (req, reply) => {
-      try {
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-        const body = req.body as any;
+  // app.post(
+  //   "/squads/join",
+  //   {
+  //     preHandler: [app.auth],
+  //     schema: {
+  //       body: {
+  //         type: "object",
+  //         required: ["joinCode"],
+  //         properties: {
+  //           joinCode: { type: "string", minLength: 6, maxLength: 12 },
+  //         },
+  //       },
+  //     },
+  //   },
+  //   async (req, reply) => {
+  //     try {
+  //       /* eslint-disable @typescript-eslint/no-explicit-any */
+  //       const body = req.body as any;
 
-        const validatedData = joinSquadSchema.parse(req.body);
-        const userId = req.currentUser!.id;
-        const squad = await svc.joinSquad(userId, validatedData.joinCode);
-        return squad;
-      } catch (error) {
-        console.log("Join squad error:", error);
+  //       const validatedData = joinSquadSchema.parse(req.body);
+  //       const userId = req.currentUser!.id;
+  //       const squad = await svc.joinSquad(userId, validatedData.joinCode);
+  //       return squad;
+  //     } catch (error) {
+  //       console.log("Join squad error:", error);
 
-        // If already a member, return 409 Conflict with helpful message
-        if (
-          error instanceof Error &&
-          error.message.includes("already part of")
-        ) {
-          return reply.status(409).send({
-            error: error.message,
-            code: "ALREADY_MEMBER",
-          });
-        }
+  //       // If already a member, return 409 Conflict with helpful message
+  //       if (
+  //         error instanceof Error &&
+  //         error.message.includes("already part of")
+  //       ) {
+  //         return reply.status(409).send({
+  //           error: error.message,
+  //           code: "ALREADY_MEMBER",
+  //         });
+  //       }
 
-        return reply.status(400).send({
-          error:
-            error instanceof Error ? error.message : "Failed to join squad",
-        });
-      }
-    }
-  );
+  //       return reply.status(400).send({
+  //         error:
+  //           error instanceof Error ? error.message : "Failed to join squad",
+  //       });
+  //     }
+  //   }
+  // );
 
   // Leave squad
   app.delete(
@@ -481,6 +504,146 @@ export default async function squadsRoutes(app: FastifyInstance) {
             error instanceof Error
               ? error.message
               : "Failed to create payment session",
+        });
+      }
+    }
+  );
+
+  // Create join request
+  app.post(
+    "/squads/join-request",
+    {
+      preHandler: [app.auth],
+      schema: {
+        body: {
+          type: "object",
+          required: ["joinCode"],
+          properties: {
+            joinCode: { type: "string", minLength: 6, maxLength: 12 },
+            message: { type: "string", maxLength: 500 },
+          },
+        },
+      },
+    },
+    async (req, reply) => {
+      try {
+        const validatedData = createJoinRequestSchema.parse(req.body);
+        const userId = req.currentUser!.id;
+        const joinRequest = await svc.createJoinRequest(
+          userId,
+          validatedData.joinCode,
+          validatedData.message
+        );
+        return reply.status(201).send(joinRequest);
+      } catch (error) {
+        return reply.status(400).send({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to create join request",
+        });
+      }
+    }
+  );
+
+  // Get pending join requests for a squad (admin/owner only)
+  app.get(
+    "/squads/:id/join-requests",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const { id } = req.params as { id: string };
+        const userId = req.currentUser!.id;
+        console.log('[ROUTE] Getting join requests for squad:', id, 'by user:', userId);
+        const requests = await svc.getPendingJoinRequests(userId, id);
+        console.log('[ROUTE] Service returned requests:', JSON.stringify(requests, null, 2));
+        console.log('[ROUTE] Request count:', requests?.length || 0);
+        console.log('[ROUTE] Type check - Is array?:', Array.isArray(requests));
+        console.log('[ROUTE] About to return:', requests);
+
+        // Try explicit serialization test
+        try {
+          const test = JSON.stringify(requests);
+          console.log('[ROUTE] JSON stringify successful, length:', test.length);
+        } catch (e) {
+          console.error('[ROUTE] JSON stringify failed:', e);
+        }
+
+        return requests;
+      } catch (error) {
+        console.error('[ROUTE] Error getting join requests:', error);
+        return reply.status(403).send({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch join requests",
+        });
+      }
+    }
+  );
+
+  // Approve join request (admin/owner only)
+  app.post(
+    "/squads/:id/join-requests/:requestId/approve",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const { id, requestId } = req.params as {
+          id: string;
+          requestId: string;
+        };
+        const userId = req.currentUser!.id;
+        const result = await svc.approveJoinRequest(userId, id, requestId);
+        return result;
+      } catch (error) {
+        return reply.status(400).send({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to approve join request",
+        });
+      }
+    }
+  );
+
+  // Reject join request (admin/owner only)
+  app.post(
+    "/squads/:id/join-requests/:requestId/reject",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const { id, requestId } = req.params as {
+          id: string;
+          requestId: string;
+        };
+        const userId = req.currentUser!.id;
+        const result = await svc.rejectJoinRequest(userId, id, requestId);
+        return result;
+      } catch (error) {
+        return reply.status(400).send({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Failed to reject join request",
+        });
+      }
+    }
+  );
+
+  // Get user's join request status for a squad
+  app.get(
+    "/squads/:id/join-request-status",
+    { preHandler: [app.auth] },
+    async (req, reply) => {
+      try {
+        const { id } = req.params as { id: string };
+        const userId = req.currentUser!.id;
+        const status = await svc.getUserJoinRequestStatus(userId, id);
+        return status;
+      } catch (error) {
+        return reply.status(404).send({
+          error:
+            error instanceof Error ? error.message : "Failed to fetch status",
         });
       }
     }

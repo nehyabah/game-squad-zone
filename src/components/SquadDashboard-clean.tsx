@@ -76,7 +76,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
     sendMessage, 
     refetch: refetchMessages,
     isPolling
-  } = useSquadChat(squadId, 3000);
+  } = useSquadChat(squadId, 15000); // Poll every 15 seconds
 
   // Enable both chat and leaderboard features
   const features: SquadFeatures = {
@@ -327,8 +327,8 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               {/* Leaderboard Content */}
               <div className="flex-1 overflow-y-auto">
                 {memberRanking.map((member, index) => (
-                  <div 
-                    key={getDisplayName(member)}
+                  <div
+                    key={member.userId}
                     className={`flex items-center justify-between p-2 border-b border-border/30 hover:bg-muted/30 transition-colors ${
                       member.isCurrentUser ? 'bg-primary/5 border-l-2 border-l-primary' : ''
                     } ${index === 0 ? 'bg-gradient-to-r from-yellow-50/50 to-transparent' : ''} ${

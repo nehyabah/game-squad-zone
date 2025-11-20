@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSquads } from "@/hooks/use-squads";
+import { squadsAPI } from "@/lib/api/squads";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,10 +28,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import SquadDashboard from "./SquadDashboard";
+import { MyJoinRequests } from "./MyJoinRequests";
 import type { Squad } from "@/lib/api/squads";
 
 const SquadManager = () => {
-  const { squads, loading, createSquad, joinSquad, refetch, error } =
+  const { squads, loading, createSquad, refetch, error } =
     useSquads();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
@@ -165,15 +167,19 @@ const SquadManager = () => {
 
   const handleJoinSquad = async () => {
     try {
-      const result = await joinSquad({ joinCode });
-      if (result) {
-        triggerConfetti();
-        toast.success(`🎉 Successfully joined "${result.name}"!`);
-        setJoinCode("");
-        setShowJoinDialog(false);
-      }
+      const finalJoinCode = joinCode.trim().toUpperCase();
+      const joinRequest = await squadsAPI.createJoinRequest({
+        joinCode: finalJoinCode
+      });
+
+      toast.success("Join request sent!", {
+        description: `Your request to join "${joinRequest.squad?.name}" has been sent to the admins for approval`,
+      });
+      setJoinCode("");
+      setShowJoinDialog(false);
+      refetch(); // Refresh to show any updated squads
     } catch (error) {
-      toast.error("Invalid join code. Please check and try again.");
+      toast.error((error as Error).message || "Failed to send join request. Please check the join code and try again.");
     }
   };
 
@@ -462,9 +468,9 @@ const SquadManager = () => {
               <div className="p-6 space-y-6">
                 <div className="text-center space-y-4">
                   <div className="space-y-2">
-                    <h3 className="text-lg font-semibold">Join Squad</h3>
+                    <h3 className="text-lg font-semibold">Request to Join Squad</h3>
                     <p className="text-sm text-muted-foreground">
-                      Enter your squad's join code
+                      Enter the join code - admins will review your request
                     </p>
                   </div>
                   <Input
@@ -492,7 +498,7 @@ const SquadManager = () => {
                     className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 transition-all duration-200"
                     disabled={!joinCode.trim()}
                   >
-                    Join Squad
+                    Send Request
                   </Button>
                 </div>
               </div>
@@ -500,6 +506,9 @@ const SquadManager = () => {
           </Dialog>
         </div>
       </div>
+
+      {/* Pending Join Requests */}
+      <MyJoinRequests />
 
       <div className="space-y-2">
         {squads.map((squad) => (

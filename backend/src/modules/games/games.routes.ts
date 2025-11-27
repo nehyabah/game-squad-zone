@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { getCurrentWeekIdSync } from "../../utils/weekUtils";
 
 export default async function gameRoutes(app: FastifyInstance) {
-  // GET /api/games - Get games filtered by week (excludes Friday games)
+  // GET /api/games - Get games filtered by week (excludes Thursday and Friday games)
   app.get("/games", async (req, reply) => {
     try {
       const { weekId } = req.query as { weekId?: string };
@@ -30,8 +30,8 @@ export default async function gameRoutes(app: FastifyInstance) {
         },
       });
 
-      // Filter out Friday games (in Dublin timezone)
-      console.log("\n=== FRIDAY FILTER DEBUG ===");
+      // Filter out Thursday and Friday games (in Dublin timezone)
+      console.log("\n=== THURSDAY/FRIDAY FILTER DEBUG ===");
       console.log(`Total games fetched: ${games.length}`);
 
       const filteredGames = games.filter((game) => {
@@ -63,6 +63,11 @@ export default async function gameRoutes(app: FastifyInstance) {
         console.log(`  Dublin: ${formattedDate}`);
         console.log(`  Day: ${dayOfWeek}`);
 
+        if (dayOfWeek === "Thursday") {
+          console.log(`  ✗ EXCLUDING (Thursday game)`);
+          return false;
+        }
+
         if (dayOfWeek === "Friday") {
           console.log(`  ✗ EXCLUDING (Friday game)`);
           return false;
@@ -73,7 +78,7 @@ export default async function gameRoutes(app: FastifyInstance) {
       });
 
       console.log(`\nFiltered games count: ${filteredGames.length}`);
-      console.log("=== END FRIDAY FILTER ===\n");
+      console.log("=== END THURSDAY/FRIDAY FILTER ===\n");
 
       // Transform to match frontend expectations
       const transformedGames = filteredGames.map((game) => {
@@ -105,7 +110,7 @@ export default async function gameRoutes(app: FastifyInstance) {
       });
 
       console.log(
-        `Returning ${transformedGames.length} games (excluded Friday games)`
+        `Returning ${transformedGames.length} games (excluded Thursday and Friday games)`
       );
       return transformedGames;
     } catch (error) {

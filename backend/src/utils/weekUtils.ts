@@ -61,7 +61,7 @@ export function arePicksOpen(): boolean {
  */
 export async function getCurrentWeekId(): Promise<string> {
   const weekNumber = await getCurrentNFLWeek();
-  const year = new Date().getFullYear();
+  const year = 2025; // Temporarily hardcoded to 2025 for current season
   return `${year}-W${weekNumber}`;
 }
 
@@ -71,7 +71,7 @@ export async function getCurrentWeekId(): Promise<string> {
  */
 export function getCurrentWeekIdSync(): string {
   const weekNumber = getCurrentNFLWeekSync();
-  const year = new Date().getFullYear();
+  const year = 2025; // Temporarily hardcoded to 2025 for current season
   return `${year}-W${weekNumber}`;
 }
 

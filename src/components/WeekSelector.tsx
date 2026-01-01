@@ -33,8 +33,8 @@ const WeekSelector = ({
 
   const generateWeeks = useMemo((): WeekInfo[] => {
     const weeks: WeekInfo[] = [];
-    const currentYear = new Date().getFullYear();
-    
+    const currentYear = 2025; // Temporarily hardcoded to 2025 for current season
+
     // Generate weeks 1-18 for the current season
     for (let i = 1; i <= 18; i++) {
       const weekId = `${currentYear}-W${i}`;
@@ -45,7 +45,7 @@ const WeekSelector = ({
         hasPicks: false, // Will be updated when we have data
       });
     }
-    
+
     return weeks;
   }, [currentWeekId]);
 

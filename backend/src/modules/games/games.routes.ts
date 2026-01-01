@@ -5,15 +5,18 @@ export default async function gameRoutes(app: FastifyInstance) {
   // GET /api/games - Get games filtered by week (excludes Thursday and Friday games)
   app.get("/games", async (req, reply) => {
     try {
-      const { weekId } = req.query as { weekId?: string };
+      const { weekId, sport } = req.query as { weekId?: string; sport?: string };
       const targetWeekId = weekId || getCurrentWeekIdSync();
 
       console.log(
-        `Games API: Requested weekId="${weekId}", targetWeekId="${targetWeekId}"`
+        `Games API: Requested weekId="${weekId}", targetWeekId="${targetWeekId}", sport="${sport || 'nfl'}"`
       );
 
       const games = await app.prisma.game.findMany({
-        where: { weekId: targetWeekId },
+        where: {
+          weekId: targetWeekId,
+          sport: sport || 'nfl' // Filter by sport, default to NFL
+        },
         orderBy: { startAtUtc: "asc" },
         include: {
           lines: {
@@ -105,7 +108,7 @@ export default async function gameRoutes(app: FastifyInstance) {
             timeZoneName: "short",
           }),
           commenceTime: game.startAtUtc.toISOString(),
-          week: parseInt(game.weekId.replace("2025-W", "")),
+          week: parseInt(game.weekId.split("-W")[1] || "0"),
         };
       });
 

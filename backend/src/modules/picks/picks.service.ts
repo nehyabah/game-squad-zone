@@ -149,17 +149,18 @@ export class PickService {
 
   async getUserPicks(
     userId: string,
-    weekId: string
+    weekId: string,
+    sport?: string
   ): Promise<PickSetRecord | null> {
-    return this.pickRepo.findByUserWeek(userId, weekId);
+    return this.pickRepo.findByUserWeek(userId, weekId, sport);
   }
 
-  async getUserPickHistory(userId: string): Promise<PickSetRecord[]> {
-    return this.pickRepo.findAllByUser(userId);
+  async getUserPickHistory(userId: string, sport?: string): Promise<PickSetRecord[]> {
+    return this.pickRepo.findAllByUser(userId, sport);
   }
 
-  async deleteUserPicks(userId: string, weekId: string): Promise<boolean> {
-    const pickSet = await this.pickRepo.findByUserWeek(userId, weekId);
+  async deleteUserPicks(userId: string, weekId: string, sport?: string): Promise<boolean> {
+    const pickSet = await this.pickRepo.findByUserWeek(userId, weekId, sport);
 
     if (!pickSet) {
       return false; // No picks found to delete

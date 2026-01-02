@@ -30,9 +30,13 @@ export interface PickRecord {
 export class PickRepo {
   constructor(private readonly prisma: PrismaClient) {}
 
-  findByUserWeek(userId: string, weekId: string) {
+  findByUserWeek(userId: string, weekId: string, sport?: string) {
     return this.prisma.pickSet.findFirst({
-      where: { userId, weekId },
+      where: {
+        userId,
+        weekId,
+        ...(sport && { sport })
+      },
       include: {
         picks: {
           select: {
@@ -70,9 +74,13 @@ export class PickRepo {
     weekId: string;
     status: 'draft' | 'submitted' | 'locked';
     tiebreakerScore?: number;
+    sport?: string;
   }) {
     return this.prisma.pickSet.create({
-      data,
+      data: {
+        ...data,
+        sport: data.sport || 'nfl'
+      },
     }) as unknown as Promise<PickSetRecord>;
   }
 
@@ -116,9 +124,12 @@ export class PickRepo {
     }) as unknown as Promise<PickRecord[]>;
   }
 
-  async findAllByUser(userId: string): Promise<PickSetRecord[]> {
+  async findAllByUser(userId: string, sport?: string): Promise<PickSetRecord[]> {
     return this.prisma.pickSet.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(sport && { sport })
+      },
       include: {
         picks: {
           select: {

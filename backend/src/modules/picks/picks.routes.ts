@@ -45,6 +45,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
           required: ["weekId"],
           properties: {
             weekId: { type: "string" },
+            sport: { type: "string" },
           },
         },
       },
@@ -53,7 +54,8 @@ export default async function registerPickRoutes(app: FastifyInstance) {
     /* eslint-disable  @typescript-eslint/no-explicit-any */
     async (req: any, reply: FastifyReply) => {
       const userId = req.currentUser!.id;
-      const picks = await service.getUserPicks(userId, req.query.weekId);
+      const { weekId, sport } = req.query;
+      const picks = await service.getUserPicks(userId, weekId, sport);
       if (!picks) {
         return reply.code(404).send({
           type: "https://errors.game-squad-zone/picks-not-found",
@@ -68,10 +70,21 @@ export default async function registerPickRoutes(app: FastifyInstance) {
   // Add GET endpoint to retrieve all user's picks history
   app.get(
     "/picks/history",
-    { preHandler: [app.auth] },
-    async (req: FastifyRequest, reply: FastifyReply) => {
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          properties: {
+            sport: { type: "string" },
+          },
+        },
+      },
+      preHandler: [app.auth]
+    },
+    async (req: any, reply: FastifyReply) => {
       const userId = req.currentUser!.id;
-      const history = await service.getUserPickHistory(userId);
+      const { sport } = req.query;
+      const history = await service.getUserPickHistory(userId, sport);
       return reply.send(history);
     }
   );
@@ -93,6 +106,7 @@ export default async function registerPickRoutes(app: FastifyInstance) {
           required: ["weekId"],
           properties: {
             weekId: { type: "string" },
+            sport: { type: "string" },
           },
         },
       },
@@ -100,9 +114,11 @@ export default async function registerPickRoutes(app: FastifyInstance) {
     },
     /* eslint-disable  @typescript-eslint/no-explicit-any */
     async (req: any, reply: FastifyReply) => {
+      const { weekId, sport } = req.query;
       const picks = await service.getUserPicks(
         req.params.userId,
-        req.query.weekId
+        weekId,
+        sport
       );
       if (!picks) {
         return reply.code(404).send({
@@ -127,12 +143,19 @@ export default async function registerPickRoutes(app: FastifyInstance) {
             userId: { type: "string" },
           },
         },
+        querystring: {
+          type: "object",
+          properties: {
+            sport: { type: "string" },
+          },
+        },
       },
       preHandler: [app.auth],
     },
     /* eslint-disable  @typescript-eslint/no-explicit-any */
     async (req: any, reply: FastifyReply) => {
-      const history = await service.getUserPickHistory(req.params.userId);
+      const { sport } = req.query;
+      const history = await service.getUserPickHistory(req.params.userId, sport);
       return reply.send(history);
     }
   );

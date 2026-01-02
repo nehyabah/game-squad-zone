@@ -163,6 +163,19 @@ function getCurrentNFLWeekSync(): number {
  * Maps any date to the appropriate NFL week for that year
  */
 export function getWeekIdFromDate(date: Date): string {
+  // For 2025 season: Hardcode to handle games in Jan 2026 as part of 2025 season
+  const currentSeasonYear = 2025;
+  const currentSeasonStart = getSeasonStartDate(currentSeasonYear);
+  const nextSeasonStart = getSeasonStartDate(currentSeasonYear + 1);
+
+  // If date falls within current season (Sept 2025 - Aug 2026), use current season year
+  if (date >= currentSeasonStart && date < nextSeasonStart) {
+    const weekNumber = calculateWeekFromFridayMorning(date, currentSeasonStart);
+    const week = Math.min(weekNumber, 18);
+    return `${currentSeasonYear}-W${week}`;
+  }
+
+  // Otherwise, use the date's year and calculate normally
   const year = date.getFullYear();
   const seasonStart = getSeasonStartDate(year);
 

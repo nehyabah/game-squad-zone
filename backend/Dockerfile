@@ -38,7 +38,7 @@ RUN echo '#!/bin/sh' > start.sh && \
     echo 'echo "Skipping migrations (database already initialized)"' >> start.sh && \
     echo '# npx prisma migrate deploy || echo "Migration warnings"' >> start.sh && \
     echo 'echo "Starting Fastify server..."' >> start.sh && \
-    echo 'exec node dist/main.server.js' >> start.sh && \
+    echo 'exec node dist/src/main.server.js' >> start.sh && \
     chmod +x start.sh
 
 # Expose port

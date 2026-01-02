@@ -123,7 +123,7 @@ function calculateWeekFromFridayMorning(
  */
 async function getCurrentNFLWeek(): Promise<number> {
   const now = new Date();
-  const currentYear = now.getFullYear();
+  const currentYear = 2025; // Temporarily hardcoded to 2025 for current season
 
   const seasonStart = getSeasonStartDate(currentYear);
 
@@ -143,7 +143,7 @@ async function getCurrentNFLWeek(): Promise<number> {
  */
 function getCurrentNFLWeekSync(): number {
   const now = new Date();
-  const currentYear = now.getFullYear();
+  const currentYear = 2025; // Temporarily hardcoded to 2025 for current season
 
   const seasonStart = getSeasonStartDate(currentYear);
 

@@ -212,16 +212,15 @@ class OddsApiService {
     return spread;
   }
 
-  async getUpcomingGames(onlyCurrentWeek: boolean = true, sport: string = 'nfl'): Promise<OddsGame[]> {
+  async getUpcomingGames(onlyCurrentWeek: boolean = true): Promise<OddsGame[]> {
     // Use cached spreads from backend API instead of live odds to ensure consistency
     try {
       const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      // Import getCurrentWeekIdSync from weekUtils to ensure consistency
-      const { getCurrentWeekIdSync } = await import('@/lib/utils/weekUtils');
-      const weekId = getCurrentWeekIdSync();
+      const currentWeek = this.getCurrentNFLWeek();
+      const weekId = `2025-W${currentWeek}`;
 
-      const url = `${API_BASE}/api/games?weekId=${weekId}&sport=${sport}`;
-      console.log(`📡 Fetching cached games from backend API for ${weekId} (${sport})...`);
+      const url = `${API_BASE}/api/games?weekId=${weekId}`;
+      console.log(`📡 Fetching cached games from backend API for ${weekId}...`);
 
       const response = await fetch(url);
 

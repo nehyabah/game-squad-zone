@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Target, Calendar, Trash2, Edit, Loader2, CheckCircle2, XCircle, Minus } from "lucide-react";
 import { usePicks } from "@/contexts/PicksContext";
+import { useSport } from "@/hooks/use-sport";
 import { oddsApi, OddsGame } from "@/services/oddsApi";
 import { picksApi, PickSet } from "@/lib/api/picks";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +24,7 @@ interface SavedPick {
 
 const MyPicks = ({ onEditPicks }: MyPicksProps) => {
   const { clearPicks } = usePicks();
+  const { selectedSport } = useSport();
   const { toast } = useToast();
   const [games, setGames] = useState<OddsGame[]>([]);
   const [savedPicks, setSavedPicks] = useState<PickSet | null>(null);
@@ -73,17 +75,17 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
   useEffect(() => {
     loadData();
     loadPickHistory();
-  }, []);
+  }, [selectedSport]);
 
   useEffect(() => {
     loadWeekData(selectedWeek);
-  }, [selectedWeek]);
+  }, [selectedWeek, selectedSport]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
       // Load games for current week (for editing)
-      const gameData = await oddsApi.getUpcomingGames();
+      const gameData = await oddsApi.getUpcomingGames(true, selectedSport);
       setGames(gameData);
     } catch (error) {
       console.error('MyPicks: Error loading data:', error);
@@ -94,7 +96,7 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
 
   const loadPickHistory = async () => {
     try {
-      const history = await picksApi.getPickHistory();
+      const history = await picksApi.getPickHistory(selectedSport);
       setPickHistory(history);
     } catch (error) {
       console.error('MyPicks: Error loading pick history:', error);
@@ -106,7 +108,7 @@ const MyPicks = ({ onEditPicks }: MyPicksProps) => {
   const loadWeekData = async (weekId: string) => {
     setIsLoading(true);
     try {
-      const picks = await picksApi.getWeekPicks(weekId);
+      const picks = await picksApi.getWeekPicks(weekId, selectedSport);
       setSavedPicks(picks);
     } catch (error) {
       console.error('MyPicks: Error loading week data:', error);

@@ -124,6 +124,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   // Check if user is admin or owner (needed for useQuery below)
   const currentUserMember = squad?.members?.find(m => m.userId === user?.id);
   const isAdminOrOwner = currentUserMember?.role === 'owner' || currentUserMember?.role === 'admin';
+  const isSixNations = squad?.sport === 'six-nations';
 
   // Fetch pending join requests count for notification badge
   const { data: pendingRequests = [] } = useQuery({
@@ -897,7 +898,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                             No picks
                           </span>
                         ) : (
-                          `${member.wins}W-${member.losses}L-${member.pushes}D`
+                          `${member.wins}W-${member.losses}L-${member.pushes}${isSixNations ? 'P' : 'D'}`
                         )}
                       </div>
                     </div>
@@ -906,12 +907,14 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                     <div className="text-xs font-bold">
                       {member.wins === 0 && member.losses === 0 ? (
                         <span className="text-muted-foreground/50">—</span>
+                      ) : isSixNations ? (
+                        member.points
                       ) : (
                         `${(member.winPercentage / 100).toFixed(2)}`
                       )}
                     </div>
                     <div className="text-[9px] text-muted-foreground font-medium">
-                      W%
+                      {isSixNations ? 'pts' : 'W%'}
                     </div>
                   </div>
                 </div>
@@ -1051,7 +1054,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                     —
                                   </span>
                                 ) : (
-                                  `${member.wins}W ${member.losses}L ${member.pushes}D`
+                                  `${member.wins}W ${member.losses}L ${member.pushes}${isSixNations ? 'P' : 'D'}`
                                 )}
                               </div>
                             </div>
@@ -1065,12 +1068,14 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                 <span className="text-muted-foreground/60">
                                   —
                                 </span>
+                              ) : isSixNations ? (
+                                member.points
                               ) : (
                                 `${(member.winPercentage / 100).toFixed(2)}`
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              W%
+                              {isSixNations ? 'Points' : 'W%'}
                             </div>
                           </div>
                         </div>
@@ -1437,6 +1442,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
         onClose={() => setSelectedMember(null)}
         userId={selectedMember?.userId || ""}
         displayName={selectedMember?.displayName || ""}
+        sport={squad?.sport}
       />
 
       <Dialog open={showLeaveModal} onOpenChange={setShowLeaveModal}>

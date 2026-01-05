@@ -1,6 +1,8 @@
 // API client for squads
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
+export type Sport = 'nfl' | 'six-nations';
+
 export interface Squad {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ export interface Squad {
   potAmount?: number;
   potCurrency: string;
   potDeadline?: string;
+  sport: Sport;
   createdAt: string;
   updatedAt: string;
   members: SquadMember[];
@@ -65,6 +68,7 @@ export interface CreateSquadData {
   potEnabled?: boolean;
   potAmount?: number;
   potDeadline?: string;
+  sport?: Sport;
 }
 
 export interface JoinSquadData {
@@ -153,8 +157,9 @@ class SquadsAPI {
     }
   }
 
-  async getUserSquads(): Promise<Squad[]> {
-    return this.request<Squad[]>('/api/squads');
+  async getUserSquads(sport?: Sport): Promise<Squad[]> {
+    const params = sport ? `?sport=${sport}` : '';
+    return this.request<Squad[]>(`/api/squads${params}`);
   }
 
   async getSquad(squadId: string): Promise<Squad> {
@@ -255,8 +260,9 @@ class SquadsAPI {
     }
   }
 
-  async getMyJoinRequests(): Promise<SquadJoinRequest[]> {
-    return this.request<SquadJoinRequest[]>('/api/squads/my-join-requests');
+  async getMyJoinRequests(sport?: Sport): Promise<SquadJoinRequest[]> {
+    const params = sport ? `?sport=${sport}` : '';
+    return this.request<SquadJoinRequest[]>(`/api/squads/my-join-requests${params}`);
   }
 }
 

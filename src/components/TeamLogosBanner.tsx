@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSport } from '@/hooks/use-sport';
 
 const nflTeams = [
   { name: 'Cardinals', code: 'ARI', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/ari.png' },
@@ -35,32 +36,55 @@ const nflTeams = [
   { name: 'Commanders', code: 'WAS', logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png' }
 ];
 
+const sixNationsTeams = [
+  { name: 'Ireland', code: 'IRE', logo: 'https://flagcdn.com/w320/ie.png' },
+  { name: 'England', code: 'ENG', logo: 'https://flagcdn.com/w320/gb-eng.png' },
+  { name: 'Wales', code: 'WAL', logo: 'https://flagcdn.com/w320/gb-wls.png' },
+  { name: 'Scotland', code: 'SCO', logo: 'https://flagcdn.com/w320/gb-sct.png' },
+  { name: 'France', code: 'FRA', logo: 'https://flagcdn.com/w320/fr.png' },
+  { name: 'Italy', code: 'ITA', logo: 'https://flagcdn.com/w320/it.png' }
+];
+
 const TeamLogosBanner = () => {
-  // Duplicate the array to create seamless loop
-  const duplicatedTeams = [...nflTeams, ...nflTeams];
+  const { selectedSport } = useSport();
+
+  // Choose teams based on selected sport
+  const teams = selectedSport === 'six-nations' ? sixNationsTeams : nflTeams;
+
+  // Duplicate the array to create seamless loop (repeat more times for Six Nations since fewer teams)
+  const repeatCount = selectedSport === 'six-nations' ? 6 : 2;
+  const duplicatedTeams = Array(repeatCount).fill(teams).flat();
 
   return (
-    <div className="w-full overflow-hidden py-3 sm:py-4 relative">
+    <div className="w-full overflow-hidden py-6 sm:py-8 relative">
       {/* Gradient overlays for fade effect */}
-      <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-background to-transparent z-10"></div>
-      <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-background to-transparent z-10"></div>
-      
+      <div className="absolute left-0 top-0 bottom-0 w-24 sm:w-32 bg-gradient-to-r from-background to-transparent z-10"></div>
+      <div className="absolute right-0 top-0 bottom-0 w-24 sm:w-32 bg-gradient-to-l from-background to-transparent z-10"></div>
+
       {/* Scrolling logos container */}
       <div className="flex animate-scroll-left">
-        <div className="flex space-x-6 sm:space-x-8 animate-none">
+        <div className="flex gap-10 sm:gap-16 animate-none items-center">
           {duplicatedTeams.map((team, index) => (
             <div
               key={`${team.code}-${index}`}
-              className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 hover:scale-110 transition-transform duration-300"
+              className="flex-shrink-0 group"
             >
-              <img
-                src={team.logo}
-                alt={`${team.name} logo`}
-                className="w-full h-full object-contain"
-                onError={(e) => {
-                  e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
-                }}
-              />
+              <div className={`relative transition-all duration-300 group-hover:scale-110 ${
+                selectedSport === 'six-nations'
+                  ? 'w-16 h-12 sm:w-20 sm:h-16 rounded-md overflow-hidden shadow-md'
+                  : 'w-14 h-14 sm:w-16 sm:h-16'
+              }`}>
+                <img
+                  src={team.logo}
+                  alt={`${team.name} ${selectedSport === 'six-nations' ? 'flag' : 'logo'}`}
+                  className={`w-full h-full transition-opacity duration-300 group-hover:opacity-80 ${
+                    selectedSport === 'six-nations' ? 'object-cover' : 'object-contain'
+                  }`}
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://a.espncdn.com/i/teamlogos/nfl/500/default-team.png';
+                  }}
+                />
+              </div>
             </div>
           ))}
         </div>

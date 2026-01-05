@@ -2,18 +2,20 @@ import { useState, useEffect } from 'react';
 import { squadsAPI, type Squad, type CreateSquadData, type JoinSquadData } from '@/lib/api/squads';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useSport } from '@/hooks/use-sport';
 
 export function useSquads() {
   const [squads, setSquads] = useState<Squad[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { selectedSport } = useSport();
 
   const fetchSquads = async () => {
     setLoading(true);
     setError(null);
     try {
-      const userSquads = await squadsAPI.getUserSquads();
+      const userSquads = await squadsAPI.getUserSquads(selectedSport);
       setSquads(userSquads);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to fetch squads';
@@ -32,7 +34,8 @@ export function useSquads() {
     setLoading(true);
     setError(null);
     try {
-      const newSquad = await squadsAPI.createSquad(data);
+      const squadData = { ...data, sport: selectedSport };
+      const newSquad = await squadsAPI.createSquad(squadData);
       setSquads(prev => [...prev, newSquad]);
       toast({
         title: 'Success',
@@ -143,7 +146,7 @@ export function useSquads() {
     if (user) {
       fetchSquads();
     }
-  }, [user]);
+  }, [user, selectedSport]);
 
   return {
     squads,

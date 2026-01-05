@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -10,7 +10,9 @@ import {
   useWeeklyLeaderboard,
 } from "@/hooks/use-leaderboard";
 import { useAuth } from "@/hooks/use-auth";
+import { useSport } from "@/hooks/use-sport";
 import { getCurrentWeekIdSync } from "@/lib/utils/weekUtils";
+import { leaderboardAPI, SixNationsLeaderboardEntry } from "@/lib/api/six-nations";
 
 interface LeaderboardDisplayEntry {
   rank: number;
@@ -43,7 +45,7 @@ const getRankIcon = (rank: number) => {
   }
 };
 
-const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
+const LeaderboardTable = ({ data, isSixNations = false }: { data: LeaderboardDisplayEntry[]; isSixNations?: boolean }) => (
   <div className="bg-card border border-border rounded-lg shadow-sm">
     <div className="p-3 border-b border-border">
       <h3 className="font-semibold text-sm text-foreground">Rankings</h3>
@@ -99,10 +101,10 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
                 <div className="text-xs text-muted-foreground">
                   <span className="sm:hidden">
                     {entry.wins}W-{entry.losses}L
-                    {entry.pushes > 0 ? `-${entry.pushes}D` : ""}
+                    {entry.pushes > 0 ? `-${entry.pushes}${isSixNations ? 'P' : 'D'}` : ""}
                   </span>
                   <span className="hidden sm:inline">
-                    {entry.wins}W {entry.losses}L {entry.pushes}D
+                    {entry.wins}W {entry.losses}L {entry.pushes > 0 ? `${entry.pushes}${isSixNations ? 'P' : 'D'}` : ''}
                   </span>
                 </div>
               </div>
@@ -110,12 +112,15 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-4 flex-shrink-0">
-            <div className="text-right hidden sm:block">
-              <div className="text-sm font-medium text-foreground">
-                {entry.winPercentage}%
+            {/* Show W% only for NFL */}
+            {!isSixNations && (
+              <div className="text-right hidden sm:block">
+                <div className="text-sm font-medium text-foreground">
+                  {entry.winPercentage}%
+                </div>
+                <div className="text-xs text-muted-foreground">W%</div>
               </div>
-              <div className="text-xs text-muted-foreground">W%</div>
-            </div>
+            )}
 
             <div className="text-right">
               <div className="font-bold text-primary text-sm sm:text-base">
@@ -127,12 +132,14 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
               <div className="text-xs text-muted-foreground sm:hidden">pts</div>
             </div>
 
-            {/* Mobile win percentage */}
-            <div className="text-right sm:hidden">
-              <div className="text-xs text-muted-foreground">
-                {entry.winPercentage}%
+            {/* Mobile win percentage - only for NFL */}
+            {!isSixNations && (
+              <div className="text-right sm:hidden">
+                <div className="text-xs text-muted-foreground">
+                  {entry.winPercentage}%
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       ))}
@@ -143,11 +150,43 @@ const LeaderboardTable = ({ data }: { data: LeaderboardDisplayEntry[] }) => (
 const Leaderboard = () => {
   const [activeTab, setActiveTab] = useState("week");
   const { user } = useAuth();
+  const { selectedSport } = useSport();
+
+  // Six Nations leaderboard state
+  const [sixNationsData, setSixNationsData] = useState<SixNationsLeaderboardEntry[]>([]);
+  const [sixNationsLoading, setSixNationsLoading] = useState(false);
+  const [sixNationsError, setSixNationsError] = useState<string | null>(null);
 
   // Get current week ID dynamically
   const currentWeekId = getCurrentWeekIdSync();
   const seasonLeaderboard = useSeasonLeaderboard();
   const weeklyLeaderboard = useWeeklyLeaderboard(currentWeekId);
+
+  // Load Six Nations leaderboard
+  useEffect(() => {
+    if (selectedSport === "six-nations") {
+      loadSixNationsLeaderboard();
+    }
+  }, [selectedSport]);
+
+  const loadSixNationsLeaderboard = async () => {
+    setSixNationsLoading(true);
+    setSixNationsError(null);
+    try {
+      const data = await leaderboardAPI.get();
+      console.log('🏆 Six Nations Leaderboard Data:', data);
+      console.log('📊 Number of entries:', data.length);
+      if (data.length > 0) {
+        console.log('🎮 First entry:', data[0]);
+      }
+      setSixNationsData(data);
+    } catch (error) {
+      console.error("Error loading Six Nations leaderboard:", error);
+      setSixNationsError("Failed to load leaderboard");
+    } finally {
+      setSixNationsLoading(false);
+    }
+  };
 
   // Transform API data to display format and mark current user
   /* eslint-disable  @typescript-eslint/no-explicit-any */
@@ -160,9 +199,114 @@ const Leaderboard = () => {
     }));
   };
 
+  // Transform Six Nations data to display format
+  const transformSixNationsData = (
+    apiData: SixNationsLeaderboardEntry[]
+  ): LeaderboardDisplayEntry[] => {
+    console.log('🔄 Transforming Six Nations data:', apiData.length, 'entries');
+    return apiData.map((entry) => {
+      console.log('📝 Transforming entry:', {
+        username: entry.user.username,
+        totalAnswers: entry.totalAnswers,
+        correctAnswers: entry.correctAnswers,
+        incorrectAnswers: entry.incorrectAnswers,
+        totalPoints: entry.totalPoints
+      });
+      // Calculate weighted score: average points per answer (more meaningful than W%)
+      // This rewards both accuracy AND picking harder questions correctly
+      const avgPointsPerAnswer = entry.totalAnswers > 0
+        ? Math.round((entry.totalPoints / entry.totalAnswers) * 10) / 10
+        : 0;
+
+      // For display consistency, convert to a "score out of 100" style number
+      // Assuming max points per question is around 5, scale accordingly
+      // This gives a weighted score that reflects both quantity and quality
+      const weightedScore = Math.round(avgPointsPerAnswer * 10);
+
+      // Calculate pending answers (not yet scored)
+      const pendingAnswers = entry.totalAnswers - entry.correctAnswers - entry.incorrectAnswers;
+
+      return {
+        rank: entry.rank,
+        username: entry.user.username,
+        displayName: entry.user.displayName,
+        firstName: entry.user.firstName,
+        lastName: entry.user.lastName,
+        wins: entry.correctAnswers,
+        losses: entry.incorrectAnswers,
+        pushes: pendingAnswers, // Use pending answers as "pushes" to show something is waiting
+        winPercentage: weightedScore, // Display weighted score instead of W%
+        points: entry.totalPoints,
+        isCurrentUser: user ? entry.user.id === user.id : false,
+      };
+    });
+  };
+
   const weeklyData = transformLeaderboardData(weeklyLeaderboard.data);
   const seasonData = transformLeaderboardData(seasonLeaderboard.data);
+  const sixNationsDisplayData = transformSixNationsData(sixNationsData);
 
+  // Show Six Nations leaderboard if viewing Six Nations
+  if (selectedSport === "six-nations") {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+            Six Nations Leaderboard
+          </h2>
+          <p className="text-muted-foreground">
+            Overall tournament standings
+          </p>
+        </div>
+
+        {sixNationsLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="w-8 h-8 animate-spin" />
+            <span className="ml-2">Loading leaderboard...</span>
+          </div>
+        ) : sixNationsError ? (
+          <div className="text-center p-8 text-red-600">
+            <p>Error: {sixNationsError}</p>
+            <button
+              onClick={loadSixNationsLeaderboard}
+              className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80"
+            >
+              Retry
+            </button>
+          </div>
+        ) : sixNationsDisplayData.length === 0 ? (
+          <Card className="bg-muted/30 border-border">
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">
+                No scores yet. Be the first to submit your picks!
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <LeaderboardTable data={sixNationsDisplayData} isSixNations={true} />
+        )}
+
+        {/* Points System Info */}
+        <Card className="bg-muted/30 border-border">
+          <CardContent className="p-4">
+            <div className="text-center text-sm text-muted-foreground">
+              <p>
+                <strong>Scoring:</strong> Points are awarded based on question difficulty
+                • Total points = Sum of all correct answers
+              </p>
+              <p className="mt-2">
+                <strong>Record:</strong> W = Correct • L = Incorrect • P = Pending
+                <br />
+                <strong>Ranking:</strong> Higher points = better (rewards difficulty)
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // NFL leaderboard
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">

@@ -10,6 +10,7 @@ export interface User {
   lastName?: string;
   avatarUrl?: string;
   status: string;
+  isAdmin?: boolean;
   createdAt: string;
   lastLoginAt?: string;
 }

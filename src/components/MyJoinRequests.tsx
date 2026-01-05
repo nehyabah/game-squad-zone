@@ -5,14 +5,16 @@ import { Clock, Users } from "lucide-react";
 import { squadsAPI, type SquadJoinRequest } from "@/lib/api/squads";
 import { toast } from "sonner";
 import { useEffect, useRef } from "react";
+import { useSport } from "@/hooks/use-sport";
 
 export function MyJoinRequests() {
   const queryClient = useQueryClient();
   const previousRequestsRef = useRef<SquadJoinRequest[]>([]);
+  const { selectedSport } = useSport();
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ["myJoinRequests"],
-    queryFn: () => squadsAPI.getMyJoinRequests(),
+    queryKey: ["myJoinRequests", selectedSport],
+    queryFn: () => squadsAPI.getMyJoinRequests(selectedSport),
     refetchInterval: 10000, // Refetch every 10 seconds for faster detection
     refetchOnWindowFocus: true,
   });

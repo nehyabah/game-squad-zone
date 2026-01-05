@@ -6,12 +6,14 @@ import { Clock, Sparkles, Loader2, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { oddsApi, OddsGame } from "@/services/oddsApi";
 import { usePicks } from "@/contexts/PicksContext";
+import { useSport } from "@/hooks/use-sport";
 import { picksApi } from "@/lib/api/picks";
 import { getCurrentWeekIdSync, arePicksOpen } from "@/lib/utils/weekUtils";
 import confetti from "canvas-confetti";
 
 const GameSelection = () => {
   const { selectedPicks, setSelectedPicks } = usePicks();
+  const { selectedSport } = useSport();
   const { toast } = useToast();
   const [games, setGames] = useState<OddsGame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +29,7 @@ const GameSelection = () => {
 
   useEffect(() => {
     loadGamesAndPicks();
-  }, []);
+  }, [selectedSport]); // Reload when sport changes
 
   const loadGamesAndPicks = async () => {
     setIsLoading(true);
@@ -35,7 +37,7 @@ const GameSelection = () => {
       const weekData = oddsApi.getWeekDateRangeForDisplay();
       setWeekInfo(weekData);
 
-      const gameData = await oddsApi.getUpcomingGames(true);
+      const gameData = await oddsApi.getUpcomingGames(true, selectedSport);
       setGames(gameData);
 
       const weekId = getCurrentWeekIdSync();

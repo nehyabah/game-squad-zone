@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth.tsx";
 import { SportProvider } from "@/hooks/use-sport.tsx";
 import AuthGuard from "@/components/AuthGuard";
 import Index from "./pages/Index";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import SuccessPage from "./pages/success";
 import AuthSuccessPage from "./pages/auth-success";
@@ -24,6 +25,9 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/nfl" element={<Index sport="nfl" />} />
+              <Route path="/six-nations" element={<Index sport="six-nations" />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/auth/success" element={<AuthSuccessPage />} />
               <Route path="/success" element={<SuccessPage />} />

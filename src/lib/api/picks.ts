@@ -55,9 +55,10 @@ export const picksApi = {
   },
 
   // Get picks for a specific week
-  getWeekPicks: async (weekId: string): Promise<PickSet | null> => {
+  getWeekPicks: async (weekId: string, sport?: string): Promise<PickSet | null> => {
     try {
-      const response = await api.get(`/picks/me?weekId=${weekId}`);
+      const sportParam = sport ? `&sport=${sport}` : '';
+      const response = await api.get(`/picks/me?weekId=${weekId}${sportParam}`);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -68,15 +69,20 @@ export const picksApi = {
   },
 
   // Get all pick history
-  getPickHistory: async (): Promise<PickSet[]> => {
-    const response = await api.get('/picks/history');
+  getPickHistory: async (sport?: string): Promise<PickSet[]> => {
+    const sportParam = sport ? `?sport=${sport}` : '';
+    const response = await api.get(`/picks/history${sportParam}`);
     return response.data;
   },
 
   // Get picks for any user for a specific week
-  getUserPicks: async (userId: string, weekId: string): Promise<PickSet | null> => {
+  getUserPicks: async (userId: string, weekId: string, sport?: string): Promise<PickSet | null> => {
     try {
-      const response = await api.get(`/picks/user/${userId}?weekId=${weekId}`);
+      const params = new URLSearchParams({ weekId });
+      if (sport) {
+        params.append('sport', sport);
+      }
+      const response = await api.get(`/picks/user/${userId}?${params.toString()}`);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {

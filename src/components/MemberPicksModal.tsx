@@ -2,44 +2,94 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Trophy, CheckCircle2, XCircle, Minus, X } from "lucide-react";
+import { Loader2, Trophy, CheckCircle2, XCircle, Minus, X, Lock, Clock, MapPin, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { picksApi, type PickSet } from "@/lib/api/picks";
 import { getCurrentWeekIdSync } from "@/lib/utils/weekUtils";
 import WeekSelector from "./WeekSelector";
+import { roundsAPI, answersAPI, type SixNationsRound, type SixNationsUserAnswer, type SixNationsMatch } from "@/lib/api/six-nations";
+import { cn } from "@/lib/utils";
+import { TeamFlag } from "@/lib/utils/sixNations";
 
 interface MemberPicksModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
   displayName: string;
+  sport?: string;
 }
 
-export function MemberPicksModal({ isOpen, onClose, userId, displayName }: MemberPicksModalProps) {
+export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport = 'nfl' }: MemberPicksModalProps) {
+  // NFL state
   const [currentWeekPicks, setCurrentWeekPicks] = useState<PickSet | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false); // Separate loading for week changes
-  const [error, setError] = useState<string | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<string>(getCurrentWeekIdSync());
-  const [cachedWeeks, setCachedWeeks] = useState<Map<string, PickSet | null>>(new Map()); // Cache data
+  const [cachedWeeks, setCachedWeeks] = useState<Map<string, PickSet | null>>(new Map());
 
-  // Track if this is the initial load or a week change
+  // Six Nations state
+  const [rounds, setRounds] = useState<SixNationsRound[]>([]);
+  const [selectedRound, setSelectedRound] = useState<string | null>(null);
+  const [sixNationsAnswers, setSixNationsAnswers] = useState<SixNationsUserAnswer[]>([]);
+  const [cachedRounds, setCachedRounds] = useState<Map<string, SixNationsUserAnswer[]>>(new Map());
+
+  // Common state
+  const [isLoading, setIsLoading] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [collapsedMatches, setCollapsedMatches] = useState<Set<string>>(new Set());
 
+  const isSixNations = sport === 'six-nations';
+
+  const toggleMatchCollapse = (matchId: string) => {
+    setCollapsedMatches(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(matchId)) {
+        newSet.delete(matchId);
+      } else {
+        newSet.add(matchId);
+      }
+      return newSet;
+    });
+  };
+
+  // Initialize when modal opens
   useEffect(() => {
-    if (isOpen && userId && selectedWeek) {
-      const isWeekChange = hasInitialized;
-      loadWeekPicks(selectedWeek, isWeekChange);
-      if (!hasInitialized) {
-        setHasInitialized(true);
+    if (isOpen && userId) {
+      if (isSixNations) {
+        loadSixNationsRounds();
+      } else {
+        const isWeekChange = hasInitialized;
+        loadWeekPicks(selectedWeek, isWeekChange);
+        if (!hasInitialized) {
+          setHasInitialized(true);
+        }
       }
     }
-  }, [selectedWeek, isOpen, userId]);
+  }, [isOpen, userId, sport]);
+
+  // Load data when selection changes (week or round)
+  useEffect(() => {
+    if (isOpen && userId) {
+      if (isSixNations && selectedRound) {
+        console.log('🔄 Loading round answers:', { selectedRound, userId });
+        const isRoundChange = hasInitialized;
+        loadRoundAnswers(selectedRound, isRoundChange);
+        if (!hasInitialized) {
+          setHasInitialized(true);
+        }
+      } else if (!isSixNations && selectedWeek) {
+        console.log('🔄 Loading week picks:', { selectedWeek, userId });
+        const isWeekChange = hasInitialized;
+        loadWeekPicks(selectedWeek, isWeekChange);
+      }
+    }
+  }, [selectedWeek, selectedRound, isOpen, userId, isSixNations]);
 
   // Reset when modal closes
   useEffect(() => {
     if (!isOpen) {
       setHasInitialized(false);
-      setCachedWeeks(new Map()); // Clear cache when modal closes
+      setCachedWeeks(new Map());
+      setCachedRounds(new Map());
     }
   }, [isOpen]);
 
@@ -63,7 +113,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
     setError(null);
     
     try {
-      const picks = await picksApi.getUserPicks(userId, weekId);
+      const picks = await picksApi.getUserPicks(userId, weekId, sport);
       console.log('✅ API Response:', picks);
       console.log('📊 Picks data:', picks?.picks);
       if (picks?.picks && picks.picks.length > 0) {
@@ -86,6 +136,79 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
       setCurrentWeekPicks(nullResult);
       if (err.response?.status !== 404) {
         setError('Failed to load picks for this week');
+      }
+    } finally {
+      setIsLoading(false);
+      setIsTransitioning(false);
+    }
+  };
+
+  const loadSixNationsRounds = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const roundsData = await roundsAPI.getAll();
+      setRounds(roundsData);
+
+      // Find active round and select it by default
+      const activeRound = roundsData.find((r) => r.isActive);
+      if (activeRound) {
+        setSelectedRound(activeRound.id);
+      } else if (roundsData.length > 0) {
+        setSelectedRound(roundsData[0].id);
+      }
+    } catch (err: any) {
+      console.error('❌ Error loading Six Nations rounds:', err);
+      setError('Failed to load rounds');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadRoundAnswers = async (roundId: string, isRoundChange = false) => {
+    console.log('🔍 Loading Six Nations answers for player:', { userId, displayName, roundId });
+
+    // Check cache first
+    if (cachedRounds.has(roundId)) {
+      const cachedData = cachedRounds.get(roundId);
+      setSixNationsAnswers(cachedData || []);
+      return;
+    }
+
+    // Use different loading states for initial load vs round change
+    if (isRoundChange) {
+      setIsTransitioning(true);
+    } else {
+      setIsLoading(true);
+    }
+
+    setError(null);
+
+    try {
+      const answers = await answersAPI.getSpecificUserAnswers(userId, roundId);
+      console.log('✅ Six Nations API Response:', answers);
+      console.log('📊 Number of answers:', answers.length);
+      if (answers.length > 0) {
+        console.log('🎮 First answer:', answers[0]);
+        console.log('🎮 Has question?:', !!answers[0].question);
+      }
+
+      // Cache the result
+      setCachedRounds(prev => new Map(prev).set(roundId, answers));
+      setSixNationsAnswers(answers);
+    } catch (err: any) {
+      console.error('❌ Error loading user answers for round:', err);
+      const emptyResult: SixNationsUserAnswer[] = [];
+
+      // Cache empty results too (for 404s)
+      if (err.response?.status === 404) {
+        setCachedRounds(prev => new Map(prev).set(roundId, emptyResult));
+      }
+
+      setSixNationsAnswers(emptyResult);
+      if (err.response?.status !== 404) {
+        setError('Failed to load answers for this round');
       }
     } finally {
       setIsLoading(false);
@@ -203,17 +326,78 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
         </DialogHeader>
 
         <div className="flex flex-col h-full overflow-hidden">
-          {/* Week Selector */}
-          <div className="border-b border-border/10 px-3 py-2 sm:px-6 sm:py-4 bg-gradient-to-r from-emerald-50/30 via-teal-50/20 to-emerald-50/30 flex justify-center">
-            <WeekSelector
-              selectedWeek={selectedWeek}
-              onWeekChange={setSelectedWeek}
-              compact={true}
-            />
+          {/* Week/Round Selector */}
+          <div className="border-b border-border/10 py-2 sm:py-4 bg-gradient-to-r from-emerald-50/30 via-teal-50/20 to-emerald-50/30">
+            {isSixNations ? (
+              <div className="px-3 sm:px-6">
+                <div className="flex items-center justify-between gap-2 bg-secondary/30 rounded-lg px-3 py-2">
+                  <button
+                    onClick={() => {
+                      const currentIndex = rounds.findIndex((r) => r.id === selectedRound);
+                      if (currentIndex > 0) {
+                        setSelectedRound(rounds[currentIndex - 1].id);
+                      }
+                    }}
+                    disabled={rounds.findIndex((r) => r.id === selectedRound) === 0}
+                    className={cn(
+                      "p-1.5 rounded-md transition-all",
+                      rounds.findIndex((r) => r.id === selectedRound) === 0
+                        ? "text-muted-foreground/30 cursor-not-allowed"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+
+                  <div className="flex items-center gap-2 flex-1 justify-center">
+                    <span className="text-sm font-bold text-foreground">
+                      {rounds.find((r) => r.id === selectedRound)?.name}
+                    </span>
+                    {rounds.find((r) => r.id === selectedRound)?.isActive && (
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const currentIndex = rounds.findIndex((r) => r.id === selectedRound);
+                      if (currentIndex < rounds.length - 1) {
+                        setSelectedRound(rounds[currentIndex + 1].id);
+                      }
+                    }}
+                    disabled={rounds.findIndex((r) => r.id === selectedRound) === rounds.length - 1}
+                    className={cn(
+                      "p-1.5 rounded-md transition-all",
+                      rounds.findIndex((r) => r.id === selectedRound) === rounds.length - 1
+                        ? "text-muted-foreground/30 cursor-not-allowed"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <WeekSelector
+                selectedWeek={selectedWeek}
+                onWeekChange={setSelectedWeek}
+                compact={true}
+              />
+            )}
           </div>
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent via-muted/5 to-transparent">
+            {console.log('🎨 Render state:', {
+              isSixNations,
+              isLoading,
+              isTransitioning,
+              error,
+              sixNationsAnswersCount: sixNationsAnswers.length,
+              currentWeekPicksExists: !!currentWeekPicks,
+              selectedRound,
+              selectedWeek
+            })}
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-4 sm:px-6">
                 <div className="relative mb-3 sm:mb-4">
@@ -230,7 +414,9 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
                   <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
                     <div className="flex items-center gap-2 bg-background/90 px-3 py-2 rounded-full shadow-lg border">
                       <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
-                      <span className="text-sm font-medium text-foreground">Loading week...</span>
+                      <span className="text-sm font-medium text-foreground">
+                        Loading {isSixNations ? 'round' : 'week'}...
+                      </span>
                     </div>
                   </div>
                 )}
@@ -243,34 +429,239 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
                     <p className="text-red-500 font-medium text-sm sm:text-base">{error}</p>
                     <p className="text-muted-foreground text-xs sm:text-sm mt-1">Unable to load picks data</p>
                   </div>
-                ) : !currentWeekPicks ? (
+                ) : (isSixNations && sixNationsAnswers.length === 0) || (!isSixNations && !currentWeekPicks) ? (
                   <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-4 sm:px-6">
                     <div className="p-2 sm:p-3 bg-muted/20 rounded-full mb-3 sm:mb-4">
                       <Minus className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground" />
                     </div>
-                    <p className="text-foreground font-medium text-sm sm:text-base">No picks for this week</p>
-                    <p className="text-muted-foreground text-xs sm:text-sm mt-1">Player hasn't made any picks yet</p>
+                    <p className="text-foreground font-medium text-sm sm:text-base">
+                      No {isSixNations ? 'answers' : 'picks'} for this {isSixNations ? 'round' : 'week'}
+                    </p>
+                    <p className="text-muted-foreground text-xs sm:text-sm mt-1">
+                      Player hasn't made any {isSixNations ? 'predictions' : 'picks'} yet
+                    </p>
                   </div>
                 ) : (
               <>
                 <div className="p-3 sm:p-6 border-b border-border/10 bg-gradient-to-r from-rose-50/40 via-pink-50/30 to-rose-50/40">
                   <div className="flex items-center justify-center gap-3">
                     <Badge variant="outline" className="text-xs font-semibold border-indigo-200/60 bg-indigo-50/60 text-indigo-700 px-3 py-1.5 rounded-full">
-                      Week {selectedWeek.replace(/\D/g, '')}
+                      {isSixNations
+                        ? rounds.find(r => r.id === selectedRound)?.name || 'Round'
+                        : `Week ${selectedWeek.replace(/\D/g, '')}`
+                      }
                     </Badge>
                     {(() => {
-                      const summary = getWeekSummary(currentWeekPicks);
-                      return (
-                        <Badge variant="outline" className="text-xs font-medium border-slate-200/60 bg-slate-50/60 text-slate-700 px-3 py-1.5 rounded-full">
-                          {summary.wins}W {summary.losses}L {summary.pushes}D
-                        </Badge>
-                      );
+                      if (isSixNations) {
+                        const correct = sixNationsAnswers.filter(a => a.isCorrect === true).length;
+                        const incorrect = sixNationsAnswers.filter(a => a.isCorrect === false).length;
+                        const pending = sixNationsAnswers.filter(a => a.isCorrect === null).length;
+                        return (
+                          <Badge variant="outline" className="text-xs font-medium border-slate-200/60 bg-slate-50/60 text-slate-700 px-3 py-1.5 rounded-full">
+                            {correct}C {incorrect}I {pending}P
+                          </Badge>
+                        );
+                      } else {
+                        const summary = getWeekSummary(currentWeekPicks!);
+                        return (
+                          <Badge variant="outline" className="text-xs font-medium border-slate-200/60 bg-slate-50/60 text-slate-700 px-3 py-1.5 rounded-full">
+                            {summary.wins}W {summary.losses}L {summary.pushes}D
+                          </Badge>
+                        );
+                      }
                     })()}
                   </div>
                 </div>
 
                 <div className="p-3 sm:p-6 space-y-2 sm:space-y-4">
-                  {currentWeekPicks.picks?.map((pick) => {
+                  {isSixNations ? (
+                    // Six Nations Answers - grouped by match
+                    (() => {
+                      // Group answers by match
+                      const answersByMatch = sixNationsAnswers.reduce((acc, answer) => {
+                        if (!answer.question?.match) return acc;
+
+                        const matchId = answer.question.match.id;
+                        if (!acc[matchId]) {
+                          acc[matchId] = {
+                            match: answer.question.match as SixNationsMatch,
+                            answers: []
+                          };
+                        }
+                        acc[matchId].answers.push(answer);
+                        return acc;
+                      }, {} as Record<string, { match: SixNationsMatch; answers: SixNationsUserAnswer[] }>);
+
+                      return Object.values(answersByMatch)
+                        .sort((a, b) => a.match.matchNumber - b.match.matchNumber)
+                        .map(({ match, answers: matchAnswers }) => {
+                          const isCollapsed = collapsedMatches.has(match.id);
+
+                          return (
+                          <div key={match.id} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            {/* Match Header - Clickable */}
+                            <div
+                              className="bg-slate-50 px-2.5 py-2 sm:px-4 sm:py-2.5 border-b border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                              onClick={() => toggleMatchCollapse(match.id)}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                {/* Teams */}
+                                <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0">
+                                  <TeamFlag teamName={match.homeTeam} className="text-sm sm:text-lg flex-shrink-0" />
+                                  <span className="text-[11px] sm:text-sm font-bold text-slate-900 truncate">
+                                    {match.homeTeam}
+                                  </span>
+                                  <span className="text-slate-400 font-medium text-[9px] sm:text-xs px-0.5">vs</span>
+                                  <TeamFlag teamName={match.awayTeam} className="text-sm sm:text-lg flex-shrink-0" />
+                                  <span className="text-[11px] sm:text-sm font-bold text-slate-900 truncate">
+                                    {match.awayTeam}
+                                  </span>
+                                </div>
+
+                                {/* Score or Status */}
+                                <div className="flex items-center gap-2">
+                                  {match.completed ? (
+                                    <div className="bg-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border border-slate-300 flex items-center gap-1 flex-shrink-0">
+                                      <span className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase">FT</span>
+                                      <span className="text-xs sm:text-base font-black text-slate-900">
+                                        {match.homeScore}-{match.awayScore}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold flex items-center gap-0.5 flex-shrink-0">
+                                      <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+                                      Upcoming
+                                    </div>
+                                  )}
+                                  {/* Chevron indicator */}
+                                  <ChevronDown
+                                    className={cn(
+                                      "w-4 h-4 text-slate-400 transition-transform",
+                                      isCollapsed && "rotate-180"
+                                    )}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Match Details */}
+                              <div className="flex items-center gap-1.5 mt-1 text-slate-500">
+                                <span className="flex items-center gap-0.5 text-[8px] sm:text-[10px]">
+                                  <Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                                  {new Date(match.matchDate).toLocaleDateString("en-GB", {
+                                    day: "numeric",
+                                    month: "short"
+                                  })}
+                                </span>
+                                {match.venue && (
+                                  <span className="flex items-center gap-0.5 text-[8px] sm:text-[10px] truncate">
+                                    <MapPin className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                                    <span className="truncate max-w-[90px] sm:max-w-none">{match.venue}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Answers Section - Only show when not collapsed */}
+                            {!isCollapsed && (
+                            <div className="p-1.5 sm:p-3 space-y-1 sm:space-y-1.5">
+                              {matchAnswers.map((answer) => {
+                                const isHidden = answer.answer === null;
+
+                                if (isHidden) {
+                                  return (
+                                    <div key={answer.id} className="p-1.5 sm:p-2.5 rounded-md sm:rounded-lg border border-slate-300 bg-slate-50/70">
+                                      <div className="flex items-center justify-center py-3 gap-2">
+                                        <Lock className="w-4 h-4 text-muted-foreground" />
+                                        <div className="flex flex-col">
+                                          <span className="text-xs text-muted-foreground font-medium">
+                                            Answer hidden until match starts
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div
+                                    key={answer.id}
+                                    className={cn(
+                                      "p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-all border",
+                                      answer.isCorrect === true && "bg-emerald-50/70 border-emerald-200",
+                                      answer.isCorrect === false && "bg-rose-50/70 border-rose-200",
+                                      answer.isCorrect === null && "bg-slate-50/70 border-slate-200"
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between gap-1.5">
+                                      {/* Question & Answer */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1 mb-0.5">
+                                          <span className="text-[7px] sm:text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+                                            Q{answer.question?.questionNumber}
+                                          </span>
+                                          <p className="text-[9px] sm:text-[11px] font-semibold text-slate-700 leading-tight truncate">
+                                            {answer.question?.questionText || answer.question?.text}
+                                          </p>
+                                        </div>
+
+                                        <div className="flex items-center gap-1.5 sm:gap-2">
+                                          <div className="flex items-center gap-0.5">
+                                            <span className="text-[7px] sm:text-[8px] text-slate-400 font-medium">Pick:</span>
+                                            <span
+                                              className={cn(
+                                                "text-[9px] sm:text-[11px] font-bold truncate max-w-[70px] sm:max-w-none",
+                                                answer.isCorrect === true && "text-emerald-700",
+                                                answer.isCorrect === false && "text-rose-700",
+                                                answer.isCorrect === null && "text-slate-700"
+                                              )}
+                                            >
+                                              {answer.answer}
+                                            </span>
+                                          </div>
+
+                                          {answer.question?.correctAnswer && (
+                                            <div className="flex items-center gap-0.5 border-l border-slate-200 pl-1.5">
+                                              <span className="text-[7px] sm:text-[8px] text-slate-400 font-medium">Res:</span>
+                                              <span className="text-[9px] sm:text-[11px] font-bold text-slate-900 truncate max-w-[70px] sm:max-w-none">
+                                                {answer.question.correctAnswer}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+
+                                      {/* Status Badge */}
+                                      <div className="flex-shrink-0">
+                                        {answer.isCorrect === true && (
+                                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[8px] sm:text-[9px] font-bold">
+                                            <CheckCircle2 className="w-2.5 h-2.5" />
+                                            <span>{answer.question?.points}</span>
+                                          </div>
+                                        )}
+                                        {answer.isCorrect === false && (
+                                          <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-rose-600 text-white text-[8px] sm:text-[9px] font-bold">
+                                            <XCircle className="w-2.5 h-2.5" />
+                                          </div>
+                                        )}
+                                        {answer.isCorrect === null && (
+                                          <div className="flex items-center px-1.5 py-0.5 rounded-full bg-slate-300 text-slate-600 text-[8px] sm:text-[9px] font-bold">
+                                            <Clock className="w-2.5 h-2.5" />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            )}
+                          </div>
+                          );
+                        });
+                    })()
+                  ) : (
+                    // NFL Picks
+                    currentWeekPicks!.picks?.map((pick) => {
                     if (!pick.game) return null;
 
                     const selectedTeam = pick.choice === 'home' ? pick.game.homeTeam : pick.game.awayTeam;
@@ -335,10 +726,11 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName }: Membe
                         </div>
                       </div>
                     );
-                  })}
+                  })
+                  )}
                 </div>
 
-                {currentWeekPicks.tiebreakerScore && (
+                {!isSixNations && currentWeekPicks?.tiebreakerScore && (
                   <div className="mx-3 sm:mx-6 mb-3 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-amber-50/60 via-amber-50/40 to-amber-50/60 border border-amber-200/40 rounded-xl sm:rounded-2xl backdrop-blur-sm">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 sm:gap-3">

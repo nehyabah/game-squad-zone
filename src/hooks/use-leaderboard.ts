@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { leaderboardAPI, type LeaderboardEntry, type WeeklyLeaderboardEntry } from '@/lib/api/leaderboards';
 import { toast } from '@/hooks/use-toast';
+import { useSport } from '@/hooks/use-sport';
 
 export function useSeasonLeaderboard() {
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { selectedSport } = useSport();
 
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = await leaderboardAPI.getSeasonLeaderboard();
+      const result = await leaderboardAPI.getSeasonLeaderboard(selectedSport);
 
       // Sort by win percentage descending, then by points descending
       const sortedResult = result.sort((a, b) => {
@@ -31,7 +33,7 @@ export function useSeasonLeaderboard() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedSport]);
 
   return { data, loading, error, refetch: fetchData };
 }
@@ -40,6 +42,7 @@ export function useWeeklyLeaderboard(weekId: string) {
   const [data, setData] = useState<WeeklyLeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { selectedSport } = useSport();
 
   const fetchData = async () => {
     if (!weekId) return;
@@ -47,7 +50,7 @@ export function useWeeklyLeaderboard(weekId: string) {
     try {
       setLoading(true);
       setError(null);
-      const result = await leaderboardAPI.getWeeklyLeaderboard(weekId);
+      const result = await leaderboardAPI.getWeeklyLeaderboard(weekId, selectedSport);
 
       // Sort by win percentage descending, then by points descending
       const sortedResult = result.sort((a, b) => {
@@ -67,7 +70,7 @@ export function useWeeklyLeaderboard(weekId: string) {
 
   useEffect(() => {
     fetchData();
-  }, [weekId]);
+  }, [weekId, selectedSport]);
 
   return { data, loading, error, refetch: fetchData };
 }

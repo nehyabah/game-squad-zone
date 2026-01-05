@@ -45,13 +45,15 @@ class LeaderboardAPI {
   }
 
   // Get season leaderboard
-  async getSeasonLeaderboard(): Promise<LeaderboardEntry[]> {
-    return this.request<LeaderboardEntry[]>('/api/leaderboards/season');
+  async getSeasonLeaderboard(sport?: string): Promise<LeaderboardEntry[]> {
+    const params = sport ? `?sport=${sport}` : '';
+    return this.request<LeaderboardEntry[]>(`/api/leaderboards/season${params}`);
   }
 
   // Get weekly leaderboard
-  async getWeeklyLeaderboard(weekId: string): Promise<WeeklyLeaderboardEntry[]> {
-    return this.request<WeeklyLeaderboardEntry[]>(`/api/leaderboards/weekly/${weekId}`);
+  async getWeeklyLeaderboard(weekId: string, sport?: string): Promise<WeeklyLeaderboardEntry[]> {
+    const params = sport ? `?sport=${sport}` : '';
+    return this.request<WeeklyLeaderboardEntry[]>(`/api/leaderboards/weekly/${weekId}${params}`);
   }
 
   // Get squad leaderboard

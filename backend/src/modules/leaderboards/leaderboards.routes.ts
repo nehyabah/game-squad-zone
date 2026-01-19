@@ -31,7 +31,8 @@ export default async function leaderboardRoutes(app: FastifyInstance) {
   app.get('/leaderboards/weekly/:weekId', { preHandler: [app.auth] }, async (req, reply) => {
     try {
       const params = req.params as { weekId: string };
-      const data = await controller.getWeekly(params.weekId);
+      const query = req.query as { sport?: string };
+      const data = await controller.getWeekly(params.weekId, query.sport);
       return reply.send(data);
     } catch (error) {
       console.error('Error fetching weekly leaderboard:', error);
@@ -42,7 +43,8 @@ export default async function leaderboardRoutes(app: FastifyInstance) {
   // Season leaderboard
   app.get('/leaderboards/season', async (req, reply) => {
     try {
-      const data = await controller.getSeason();
+      const query = req.query as { sport?: string };
+      const data = await controller.getSeason(query.sport);
       return reply.send(data);
     } catch (error) {
       console.error('Error fetching season leaderboard:', error);

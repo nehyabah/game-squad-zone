@@ -19,6 +19,7 @@ model User {
   authProvider            String              @default("okta")
   emailVerified           Boolean             @default(true)
   status                  String              @default("active")
+  isAdmin                 Boolean             @default(false)
   walletBalance           Float               @default(0.0)
   walletCurrency          String              @default("eur")
   createdAt               DateTime            @default(now())
@@ -37,11 +38,13 @@ model User {
   notificationLogs        NotificationLog[]
   squadJoinRequests       SquadJoinRequest[]
   respondedJoinRequests   SquadJoinRequest[]  @relation("JoinRequestResponder")
+  sixNationsAnswers       SixNationsAnswer[]
 
   @@index([email])
   @@index([username])
   @@index([oktaId])
   @@index([status])
+  @@index([isAdmin])
 }
 
 model Session {
@@ -68,10 +71,13 @@ model Game {
   homeScore  Int?
   awayScore  Int?
   completed  Boolean    @default(false)
+  sport      String     @default("nfl")
   lines      GameLine[]
   picks      Pick[]
 
   @@index([weekId])
+  @@index([sport])
+  @@index([sport, weekId])
 }
 
 model GameLine {
@@ -92,13 +98,16 @@ model PickSet {
   lockedAtUtc     DateTime?
   tiebreakerScore Int?
   status          String        @default("draft")
+  sport           String        @default("nfl")
   picks           Pick[]
   user            User          @relation(fields: [userId], references: [id])
 
-  @@unique([userId, weekId])
+  @@unique([userId, weekId, sport])
   @@index([userId])
   @@index([weekId])
   @@index([status])
+  @@index([sport])
+  @@index([sport, weekId])
 }
 
 model Pick {
@@ -133,6 +142,7 @@ model Squad {
   potDeadline     DateTime?
   stripePriceId   String?
   stripeProductId String?
+  sport           String             @default("nfl")
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   owner           User               @relation("SquadOwner", fields: [ownerId], references: [id])
@@ -140,6 +150,8 @@ model Squad {
   messages        SquadMessage[]
   payments        SquadPayment[]
   joinRequests    SquadJoinRequest[]
+
+  @@index([sport])
 }
 
 model SquadMember {
@@ -264,6 +276,80 @@ model NotificationLog {
   @@index([sentAt])
 }
 
+// ====================
+// 6 Nations Models
+// ====================
+
+model SixNationsRound {
+  id          String             @id @default(uuid())
+  roundNumber Int                @unique // 1-5
+  name        String // e.g., "Round 1", "Round 2"
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean            @default(false) // Only one round can be active at a time
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  matches     SixNationsMatch[]
+
+  @@index([roundNumber])
+  @@index([isActive])
+}
+
+model SixNationsMatch {
+  id            String               @id @default(uuid())
+  roundId       String
+  matchNumber   Int // 1-3 within the round
+  homeTeam      String
+  awayTeam      String
+  matchDate     DateTime
+  venue         String?
+  homeScore     Int?
+  awayScore     Int?
+  completed     Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  round         SixNationsRound      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  questions     SixNationsQuestion[]
+
+  @@unique([roundId, matchNumber])
+  @@index([roundId])
+  @@index([matchDate])
+}
+
+model SixNationsQuestion {
+  id              String             @id @default(uuid())
+  matchId         String
+  questionNumber  Int // 1-3 within the match
+  questionText    String
+  questionType    String // "multiple_choice" | "yes_no"
+  options         Json? // For multiple choice: ["Option 1", "Option 2", "Option 3"]
+  correctAnswer   String? // The correct answer (set after match completes)
+  points          Int                @default(1) // Points awarded for correct answer
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  match           SixNationsMatch    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  answers         SixNationsAnswer[]
+
+  @@unique([matchId, questionNumber])
+  @@index([matchId])
+}
+
+model SixNationsAnswer {
+  id         String             @id @default(uuid())
+  questionId String
+  userId     String
+  answer     String // User's selected answer
+  isCorrect  Boolean? // Calculated after match completes and correct answer is set
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  question   SixNationsQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, userId])
+  @@index([questionId])
+  @@index([userId])
+}
+
 // Enums converted to strings for compatibility
 // UserStatus: "active" | "suspended" | "deleted"
 // AuthProvider: "okta"
@@ -274,3 +360,4 @@ model NotificationLog {
 // PickStatus: "pending" | "won" | "lost" | "pushed"
 // NotificationType: "pick_reminder" | "score_update" | "window_event" | "join_request" | "join_approved" | "join_rejected"
 // JoinRequestStatus: "pending" | "approved" | "rejected"
+// QuestionType: "multiple_choice" | "yes_no"

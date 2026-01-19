@@ -31,10 +31,13 @@ export class LeaderboardRepo {
   /**
    * Get global weekly leaderboard
    */
-  async fetchWeeklyLeaderboard(weekId: string): Promise<WeeklyLeaderboardEntry[]> {
+  async fetchWeeklyLeaderboard(weekId: string, sport?: string): Promise<WeeklyLeaderboardEntry[]> {
     // Get all users who made picks for this week
     const pickSets = await this.prisma.pickSet.findMany({
-      where: { weekId },
+      where: {
+        weekId,
+        ...(sport && { sport })
+      },
       include: {
         user: {
           select: {
@@ -56,8 +59,8 @@ export class LeaderboardRepo {
     const entries: WeeklyLeaderboardEntry[] = [];
 
     for (const pickSet of pickSets) {
-      // Get season stats for overall win percentage ranking
-      const seasonStats = await this.scoringService.getUserSeasonStats(pickSet.user.id);
+      // Get season stats for overall win percentage ranking (filtered by sport)
+      const seasonStats = await this.scoringService.getUserSeasonStats(pickSet.user.id, sport);
 
       // Get weekly points for this specific week
       let weeklyPoints = 0;
@@ -101,12 +104,14 @@ export class LeaderboardRepo {
   /**
    * Get global season leaderboard
    */
-  async fetchSeasonLeaderboard(): Promise<LeaderboardEntry[]> {
+  async fetchSeasonLeaderboard(sport?: string): Promise<LeaderboardEntry[]> {
     // Get all users who have made picks
     const users = await this.prisma.user.findMany({
       where: {
         pickSets: {
-          some: {}
+          some: {
+            ...(sport && { sport })
+          }
         }
       },
       select: {
@@ -121,7 +126,7 @@ export class LeaderboardRepo {
     const entries: LeaderboardEntry[] = [];
 
     for (const user of users) {
-      const stats = await this.scoringService.getUserSeasonStats(user.id);
+      const stats = await this.scoringService.getUserSeasonStats(user.id, sport);
       
       entries.push({
         userId: user.id,
@@ -156,6 +161,19 @@ export class LeaderboardRepo {
    * Get squad leaderboard for a specific squad and week
    */
   async fetchSquadLeaderboard(squadId: string, weekId?: string): Promise<LeaderboardEntry[]> {
+    // First get squad to know its sport
+    const squad = await this.prisma.squad.findUnique({
+      where: { id: squadId },
+      select: { sport: true }
+    });
+
+    const sport = squad?.sport;
+
+    // Handle Six Nations squads differently
+    if (sport === 'six-nations') {
+      return this.fetchSixNationsSquadLeaderboard(squadId, weekId);
+    }
+
     // Get squad members
     const squadMembers = await this.prisma.squadMember.findMany({
       where: { squadId },
@@ -176,17 +194,18 @@ export class LeaderboardRepo {
 
     for (const member of squadMembers) {
       let stats;
-      
+
       if (weekId) {
-        // Get weekly stats
-        const points = await this.scoringService.getUserWeekPoints(member.userId, weekId);
-        
+        // Get weekly stats (filtered by squad's sport)
+        const points = await this.scoringService.getUserWeekPoints(member.userId, weekId, sport);
+
         // Get pick stats for the week
         const pickSet = await this.prisma.pickSet.findUnique({
           where: {
-            userId_weekId: {
+            userId_weekId_sport: {
               userId: member.userId,
-              weekId
+              weekId,
+              sport: sport || 'nfl'
             }
           },
           include: { picks: true }
@@ -215,8 +234,8 @@ export class LeaderboardRepo {
           winPercentage: Math.round(winPercentage * 100) / 100
         };
       } else {
-        // Get season stats
-        stats = await this.scoringService.getUserSeasonStats(member.userId);
+        // Get season stats (filtered by squad's sport)
+        stats = await this.scoringService.getUserSeasonStats(member.userId, sport);
       }
 
       entries.push({
@@ -238,6 +257,125 @@ export class LeaderboardRepo {
     entries.sort((a, b) => {
       if (b.winPercentage !== a.winPercentage) return b.winPercentage - a.winPercentage;
       return b.points - a.points;
+    });
+
+    // Assign ranks
+    entries.forEach((entry, index) => {
+      entry.rank = index + 1;
+    });
+
+    return entries;
+  }
+
+  /**
+   * Get Six Nations squad leaderboard
+   * Shows cumulative stats across ALL rounds for the tournament
+   * Note: weekId parameter is ignored for Six Nations squads (we show all-time stats)
+   */
+  private async fetchSixNationsSquadLeaderboard(squadId: string, roundId?: string): Promise<LeaderboardEntry[]> {
+    // Get squad members
+    const squadMembers = await this.prisma.squadMember.findMany({
+      where: { squadId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      }
+    });
+
+    // Get member user IDs
+    const memberUserIds = squadMembers.map(m => m.userId);
+
+    // Get ALL answers for squad members across ALL rounds (not filtered by round)
+    // This shows cumulative tournament stats
+    const answers = await this.prisma.sixNationsAnswer.findMany({
+      where: {
+        userId: { in: memberUserIds }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            firstName: true,
+            lastName: true
+          }
+        },
+        question: true
+      }
+    });
+
+    // Group by user and calculate stats
+    const userScores = new Map<string, {
+      user: any;
+      totalPoints: number;
+      correctAnswers: number;
+      incorrectAnswers: number;
+      totalAnswers: number;
+    }>();
+
+    // Initialize all squad members with zero stats
+    for (const member of squadMembers) {
+      userScores.set(member.userId, {
+        user: member.user,
+        totalPoints: 0,
+        correctAnswers: 0,
+        incorrectAnswers: 0,
+        totalAnswers: 0
+      });
+    }
+
+    // Populate with actual answer data
+    for (const answer of answers) {
+      const userId = answer.userId;
+      const existing = userScores.get(userId)!;
+
+      existing.totalAnswers += 1;
+      if (answer.isCorrect === true) {
+        existing.totalPoints += answer.question.points;
+        existing.correctAnswers += 1;
+      } else if (answer.isCorrect === false) {
+        existing.incorrectAnswers += 1;
+      }
+    }
+
+    // Convert to leaderboard entries
+    const entries: LeaderboardEntry[] = Array.from(userScores.values()).map(entry => {
+      // For Six Nations, use correctAnswers as wins, incorrectAnswers as losses
+      // Pending answers (not yet scored) = totalAnswers - correctAnswers - incorrectAnswers
+      const pendingAnswers = entry.totalAnswers - entry.correctAnswers - entry.incorrectAnswers;
+
+      // Calculate win percentage if there are answers
+      const winPercentage = entry.totalAnswers > 0
+        ? Math.round((entry.correctAnswers / entry.totalAnswers) * 100 * 100) / 100
+        : 0;
+
+      return {
+        userId: entry.user.id,
+        username: entry.user.username,
+        displayName: entry.user.displayName,
+        firstName: entry.user.firstName,
+        lastName: entry.user.lastName,
+        points: entry.totalPoints,
+        wins: entry.correctAnswers,
+        losses: entry.incorrectAnswers,
+        pushes: pendingAnswers, // Use pending answers as "pushes"
+        winPercentage,
+        rank: 0 // Will be assigned after sorting
+      };
+    });
+
+    // Sort by total points (descending), then by correct answers (descending)
+    entries.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      return b.wins - a.wins;
     });
 
     // Assign ranks

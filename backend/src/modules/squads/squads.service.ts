@@ -14,6 +14,7 @@ interface SquadCreateData {
   potEnabled?: boolean;
   potAmount?: number;
   potDeadline?: string;
+  sport?: 'nfl' | 'six-nations';
 }
 
 interface SquadUpdateData {
@@ -127,6 +128,7 @@ export class SquadService {
       potEnabled: data.potEnabled || false,
       potAmount: data.potAmount,
       potDeadline: data.potDeadline ? new Date(data.potDeadline) : undefined,
+      sport: data.sport || 'nfl',
       members: {
         create: {
           userId,
@@ -314,12 +316,13 @@ export class SquadService {
   }
 
   // Get user's squads
-  async getUserSquads(userId: string) {
+  async getUserSquads(userId: string, sport?: string) {
     const squads = await this.prisma.squad.findMany({
       where: {
         members: {
           some: { userId },
         },
+        ...(sport && { sport }),
       },
       include: {
         members: {
@@ -681,6 +684,7 @@ export class SquadService {
       potEnabled: data.potEnabled,
       potAmount: data.potAmount,
       potDeadline: data.potDeadline,
+      sport: data.sport || 'nfl', // Include sport with default
     };
     return this.createSquad(userId, squadData);
   }
@@ -1226,11 +1230,12 @@ export class SquadService {
   }
 
   // Get all of user's join requests across all squads
-  async getUserJoinRequests(userId: string) {
+  async getUserJoinRequests(userId: string, sport?: string) {
     const requests = await this.prisma.squadJoinRequest.findMany({
       where: {
         userId,
         status: 'pending', // Only show pending requests
+        ...(sport && { squad: { sport } }),
       },
       include: {
         squad: {

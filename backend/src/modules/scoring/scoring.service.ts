@@ -176,13 +176,12 @@ export class ScoringService {
   /**
    * Get user's total points for a week
    */
-  async getUserWeekPoints(userId: string, weekId: string): Promise<number> {
-    const pickSet = await this.prisma.pickSet.findUnique({
+  async getUserWeekPoints(userId: string, weekId: string, sport?: string): Promise<number> {
+    const pickSet = await this.prisma.pickSet.findFirst({
       where: {
-        userId_weekId: {
-          userId,
-          weekId
-        }
+        userId,
+        weekId,
+        ...(sport && { sport })
       },
       include: {
         picks: {
@@ -209,7 +208,7 @@ export class ScoringService {
   /**
    * Get user's season statistics
    */
-  async getUserSeasonStats(userId: string): Promise<{
+  async getUserSeasonStats(userId: string, sport?: string): Promise<{
     totalPoints: number;
     wins: number;
     losses: number;
@@ -219,7 +218,8 @@ export class ScoringService {
     const picks = await this.prisma.pick.findMany({
       where: {
         pickSet: {
-          userId
+          userId,
+          ...(sport && { sport })
         }
       }
     });

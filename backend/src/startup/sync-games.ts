@@ -31,8 +31,8 @@ export async function syncGamesOnStartup(prisma: PrismaClient) {
       if (!response.ok) {
         throw new Error(`API request failed: ${response.statusText}`);
       }
-      
-      apiGames = await response.json();
+
+      apiGames = await response.json() as OddsApiGame[];
       console.log(`📊 Found ${apiGames.length} games from API`);
     } catch (error) {
       console.log('⚠️ API request failed, using Week 3 fallback games to match frontend');

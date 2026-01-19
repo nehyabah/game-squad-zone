@@ -3,6 +3,22 @@ import { FastifyInstance, FastifyRequest } from "fastify";
 import { AuthService } from "./auth.service";
 import crypto from "node:crypto";
 
+// Auth0 token response types
+interface Auth0TokenSuccess {
+  access_token: string;
+  id_token?: string;
+  refresh_token?: string;
+  token_type: string;
+  expires_in: number;
+}
+
+interface Auth0TokenError {
+  error: string;
+  error_description?: string;
+}
+
+type Auth0TokenResponse = Auth0TokenSuccess | Auth0TokenError;
+
 export default async function authRoutes(app: FastifyInstance) {
   // Initialize AuthService if it exists
   let svc: AuthService | null = null;
@@ -217,9 +233,9 @@ export default async function authRoutes(app: FastifyInstance) {
         }),
       });
 
-      const tokens = await tokenResponse.json();
+      const tokens = await tokenResponse.json() as Auth0TokenResponse;
 
-      if (tokens.error) {
+      if ('error' in tokens) {
         console.error("Auth0 token exchange error:", {
           error: tokens.error,
           description: tokens.error_description,
@@ -354,9 +370,9 @@ export default async function authRoutes(app: FastifyInstance) {
         }),
       });
 
-      const tokens = await tokenResponse.json();
+      const tokens = await tokenResponse.json() as Auth0TokenResponse;
 
-      if (tokens.error) {
+      if ('error' in tokens) {
         console.error("Auth0 token exchange error:", {
           error: tokens.error,
           description: tokens.error_description,
@@ -515,6 +531,7 @@ export default async function authRoutes(app: FastifyInstance) {
         firstName: true,
         lastName: true,
         avatarUrl: true,
+        isAdmin: true,
         status: true,
         createdAt: true,
         lastLoginAt: true,

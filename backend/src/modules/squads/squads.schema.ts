@@ -27,6 +27,7 @@ export const createSquadSchema = z.object({
   potDeadline: z.string()
     .datetime("Must be a valid datetime")
     .optional(),
+  sport: z.enum(['nfl', 'six-nations']).default('nfl'),
 });
 
 export const joinSquadSchema = z.object({

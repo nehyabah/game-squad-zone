@@ -18,15 +18,15 @@ export class LeaderboardService {
   /**
    * Get weekly global leaderboard
    */
-  async getWeeklyLeaderboard(weekId: string): Promise<WeeklyLeaderboardEntry[]> {
-    return this.repo.fetchWeeklyLeaderboard(weekId);
+  async getWeeklyLeaderboard(weekId: string, sport?: string): Promise<WeeklyLeaderboardEntry[]> {
+    return this.repo.fetchWeeklyLeaderboard(weekId, sport);
   }
 
   /**
    * Get season global leaderboard
    */
-  async getSeasonLeaderboard(): Promise<LeaderboardEntry[]> {
-    return this.repo.fetchSeasonLeaderboard();
+  async getSeasonLeaderboard(sport?: string): Promise<LeaderboardEntry[]> {
+    return this.repo.fetchSeasonLeaderboard(sport);
   }
 
   /**

@@ -118,7 +118,7 @@ export class GameSyncService {
         throw new Error(`API request failed: ${response.statusText}`);
       }
 
-      const apiGames = await response.json();
+      const apiGames = await response.json() as any[];
       console.log(`Found ${apiGames.length} games from API`);
 
       if (apiGames.length === 0) {

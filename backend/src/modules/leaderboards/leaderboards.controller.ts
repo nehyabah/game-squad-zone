@@ -11,12 +11,12 @@ export class LeaderboardController {
     return this.service.getLeaderboard(query);
   }
 
-  async getWeekly(weekId: string) {
-    return this.service.getWeeklyLeaderboard(weekId);
+  async getWeekly(weekId: string, sport?: string) {
+    return this.service.getWeeklyLeaderboard(weekId, sport);
   }
 
-  async getSeason() {
-    return this.service.getSeasonLeaderboard();
+  async getSeason(sport?: string) {
+    return this.service.getSeasonLeaderboard(sport);
   }
 
   async getSquad(squadId: string, weekId?: string) {

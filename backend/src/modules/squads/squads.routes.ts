@@ -245,9 +245,10 @@ export default async function squadsRoutes(app: FastifyInstance) {
   // Get user's squads
   app.get("/squads", { preHandler: [app.auth] }, async (req, reply) => {
     const userId = req.currentUser!.id;
+    const { sport } = req.query as { sport?: string };
 
     try {
-      const squads = await svc.getUserSquads(userId);
+      const squads = await svc.getUserSquads(userId, sport);
       return squads;
     } catch (error) {
       return reply.status(500).send({
@@ -263,7 +264,8 @@ export default async function squadsRoutes(app: FastifyInstance) {
     async (req, reply) => {
       try {
         const userId = req.currentUser!.id;
-        const requests = await svc.getUserJoinRequests(userId);
+        const { sport } = req.query as { sport?: string };
+        const requests = await svc.getUserJoinRequests(userId, sport);
         return requests;
       } catch (error) {
         return reply.status(500).send({

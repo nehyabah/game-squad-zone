@@ -105,7 +105,7 @@ export class AutoScoringService {
         const response = await fetch(scoresUrl);
 
         if (response.ok) {
-          const scores = await response.json();
+          const scores = await response.json() as any[];
           const completedGames = scores.filter(g => g.completed && g.scores && g.scores.length > 0);
 
           console.log(`📊 Fetched ${scores.length} games, ${completedGames.length} completed with scores`);
@@ -255,7 +255,7 @@ export class AutoScoringService {
 
           const response = await fetch(scoresUrl);
           if (response.ok) {
-            const scores = await response.json();
+            const scores = await response.json() as any[];
 
             // Find matching game by team names
             const apiGame = scores.find(g =>

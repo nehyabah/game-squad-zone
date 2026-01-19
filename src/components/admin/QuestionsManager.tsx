@@ -9,6 +9,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, CheckCircle, X } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, X, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Match, Question } from "./SixNationsManager";
@@ -37,6 +42,7 @@ interface QuestionsManagerProps {
 export default function QuestionsManager({ matches, questions, setQuestions, onRefresh }: QuestionsManagerProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [openMatches, setOpenMatches] = useState<Record<string, boolean>>({});
   const [newQuestion, setNewQuestion] = useState({
     matchId: "",
     questionNumber: 1,
@@ -46,6 +52,14 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
     points: 1,
   });
   const { toast } = useToast();
+
+  // Toggle match collapse state
+  const toggleMatch = (matchId: string) => {
+    setOpenMatches(prev => ({
+      ...prev,
+      [matchId]: !prev[matchId]
+    }));
+  };
 
   // Calculate next available question number for selected match
   const getNextQuestionNumber = (matchId: string) => {
@@ -98,6 +112,42 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
       options: updatedOptions
     });
   };
+
+  // Detect duplicate options (case-insensitive, trimmed)
+  const detectDuplicates = () => {
+    const options = newQuestion.options;
+    const duplicateIndices: number[] = [];
+    const seen = new Map<string, number[]>();
+
+    options.forEach((option, index) => {
+      const normalized = option.trim().toLowerCase();
+      if (!normalized) return; // Skip empty options for duplicate check
+
+      if (seen.has(normalized)) {
+        // Mark this index and all previous indices with same value as duplicates
+        duplicateIndices.push(index);
+        seen.get(normalized)!.forEach(i => {
+          if (!duplicateIndices.includes(i)) {
+            duplicateIndices.push(i);
+          }
+        });
+        seen.get(normalized)!.push(index);
+      } else {
+        seen.set(normalized, [index]);
+      }
+    });
+
+    return duplicateIndices;
+  };
+
+  const duplicateIndices = detectDuplicates();
+  const hasDuplicates = duplicateIndices.length > 0;
+  const hasEmptyOptions = newQuestion.questionType === "multiple_choice" &&
+    newQuestion.options.some(opt => opt.trim() === "");
+  const isFormValid = newQuestion.matchId &&
+    newQuestion.questionText.trim() &&
+    !hasDuplicates &&
+    !hasEmptyOptions;
 
   const handleCreateQuestion = async () => {
     try {
@@ -304,25 +354,60 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                 <div className="grid grid-cols-4 items-start gap-4">
                   <Label className="text-right pt-2">Options</Label>
                   <div className="col-span-3 space-y-2">
-                    {newQuestion.options.map((option, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          value={option}
-                          onChange={(e) => handleUpdateOption(index, e.target.value)}
-                          placeholder={`Option ${index + 1}`}
-                        />
-                        {newQuestion.options.length > 2 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveOption(index)}
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        )}
+                    <p className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-md p-2">
+                      ℹ️ "None of the above" will be automatically added as the last option
+                    </p>
+                    {newQuestion.options.map((option, index) => {
+                      const isDuplicate = duplicateIndices.includes(index);
+                      const isEmpty = option.trim() === "";
+                      return (
+                        <div key={index} className="space-y-1">
+                          <div className="flex gap-2">
+                            <Input
+                              value={option}
+                              onChange={(e) => handleUpdateOption(index, e.target.value)}
+                              placeholder={`Option ${index + 1}`}
+                              className={isDuplicate ? "border-red-500 focus-visible:ring-red-500" : ""}
+                            />
+                            {newQuestion.options.length > 2 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveOption(index)}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                          {isDuplicate && !isEmpty && (
+                            <p className="text-xs text-red-500 ml-1">
+                              Duplicate option detected
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {hasDuplicates && (
+                      <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md p-3">
+                        <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                          ⚠️ Duplicate options detected
+                        </p>
+                        <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+                          Each option must be unique (case-insensitive). Please remove or rename duplicate options.
+                        </p>
                       </div>
-                    ))}
+                    )}
+                    {hasEmptyOptions && !hasDuplicates && (
+                      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md p-3">
+                        <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+                          ⚠️ Empty options detected
+                        </p>
+                        <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">
+                          Please fill in all options or remove empty ones.
+                        </p>
+                      </div>
+                    )}
                     <Button
                       type="button"
                       variant="outline"
@@ -365,7 +450,11 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
               }}>
                 Close
               </Button>
-              <Button onClick={handleCreateQuestion}>
+              <Button
+                onClick={handleCreateQuestion}
+                disabled={!isFormValid}
+                title={!isFormValid ? "Please fix form errors before creating" : ""}
+              >
                 Create & Add Another
               </Button>
             </DialogFooter>
@@ -403,26 +492,40 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
 
             return Object.entries(questionsByMatch).map(([matchId, matchQuestions]) => {
               const match = matches.find(m => m.id === matchId);
+              const isOpen = openMatches[matchId] !== false; // Default to open
 
               return (
-                <div key={matchId} className="space-y-3">
+                <Collapsible
+                  key={matchId}
+                  open={isOpen}
+                  onOpenChange={() => toggleMatch(matchId)}
+                  className="space-y-3"
+                >
                   {/* Match Header */}
                   {match && (
-                    <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-lg border">
-                      <TeamFlag teamName={match.homeTeam} />
-                      <span className="font-semibold">{match.homeTeam}</span>
-                      <span className="text-muted-foreground">vs</span>
-                      <TeamFlag teamName={match.awayTeam} />
-                      <span className="font-semibold">{match.awayTeam}</span>
-                      <span className="text-xs text-muted-foreground ml-auto">
-                        {match.roundName} - Match {match.matchNumber}
-                      </span>
-                      <Badge variant="secondary">{matchQuestions.length}/3 questions</Badge>
-                    </div>
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-lg border cursor-pointer hover:bg-muted/70 transition-colors">
+                        {isOpen ? (
+                          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                        ) : (
+                          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                        )}
+                        <TeamFlag teamName={match.homeTeam} />
+                        <span className="font-semibold">{match.homeTeam}</span>
+                        <span className="text-muted-foreground">vs</span>
+                        <TeamFlag teamName={match.awayTeam} />
+                        <span className="font-semibold">{match.awayTeam}</span>
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {match.roundName} - Match {match.matchNumber}
+                        </span>
+                        <Badge variant="secondary">{matchQuestions.length}/3 questions</Badge>
+                      </div>
+                    </CollapsibleTrigger>
                   )}
 
                   {/* Questions for this match */}
-                  <div className="grid gap-3 pl-4">
+                  <CollapsibleContent>
+                    <div className="grid gap-3 pl-4">
                     {matchQuestions.map((question) => (
                       <Card key={question.id} className={question.correctAnswer ? "border-green-500" : ""}>
                         <CardHeader>
@@ -538,12 +641,13 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                 </div>
               </CardHeader>
             </Card>
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                );
-              });
-            })()
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          });
+        })()
         )}
       </div>
     </div>

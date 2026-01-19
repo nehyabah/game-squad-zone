@@ -7,6 +7,7 @@
 ## **PHASE 1: Frontend Sport Selection & UI Foundation (CURRENT PHASE)**
 
 ### **1.1 Sport Selection UI** 🎯 **START HERE**
+
 - [ ] Create sport toggle/selector component (NFL ⚡ Six Nations 🏉)
 - [ ] Design sport selection screen on app entry
 - [ ] Add sport context/state management (React Context or Zustand)
@@ -16,6 +17,7 @@
 - [ ] Add sport preference to user profile settings
 
 ### **1.2 Multi-Sport Architecture (Frontend)**
+
 - [ ] Create `src/contexts/SportContext.tsx` for sport state
 - [ ] Design routing structure: `/nfl/*` and `/sixnations/*`
 - [ ] Create shared components (Leaderboard, SquadManager, etc.)
@@ -23,6 +25,7 @@
 - [ ] Plan component reusability vs duplication strategy
 
 ### **1.3 Six Nations UI Components (Initial)**
+
 - [ ] Create `SixNationsMatchList.tsx` - Display matches by round
 - [ ] Create `SixNationsQuestionCard.tsx` - Display question with answer options
 - [ ] Create `SixNationsPickSheet.tsx` - Full pick submission view
@@ -36,6 +39,7 @@
 ### **2.1 Database Schema (Admin-Driven Model)**
 
 #### **Core Tables**
+
 ```prisma
 enum Sport {
   NFL
@@ -145,6 +149,7 @@ model SixNationsLeaderboard {
 ### **2.2 Backend API Endpoints**
 
 #### **Admin Endpoints** (Protected)
+
 ```
 POST   /api/admin/sixnations/matches              - Create match
 PUT    /api/admin/sixnations/matches/:id          - Update match
@@ -164,6 +169,7 @@ POST   /api/admin/sixnations/matches/:id/lock     - Lock questions 24h before ki
 ```
 
 #### **User Endpoints**
+
 ```
 GET    /api/sixnations/matches?round=              - List matches by round
 GET    /api/sixnations/matches/:id                 - Get match details with questions
@@ -178,12 +184,14 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **PHASE 3: Admin Panel (Critical for Admin-Driven Model)**
 
 ### **3.1 Admin Dashboard**
+
 - [ ] Create `/admin/sixnations` route (protected)
 - [ ] Create admin sidebar navigation
 - [ ] Add role-based access control (admin users only)
 - [ ] Create admin home dashboard with overview
 
 ### **3.2 Match Management UI**
+
 - [ ] **Create Match Form**
   - Round selector (1-5)
   - Home team input
@@ -201,6 +209,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
   - Mark match as completed
 
 ### **3.3 Question Management UI**
+
 - [ ] **Create Question Form**
   - Select match
   - Question number (1, 2, 3)
@@ -215,6 +224,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
   - Show locked status with timestamp
 
 ### **3.4 Answer Management UI**
+
 - [ ] **Create Answer Form**
   - Select question
   - Answer text (e.g., "Yes", "Over 40.5")
@@ -227,6 +237,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
   - Mark correct answer (post-match)
 
 ### **3.5 Scoring Management UI**
+
 - [ ] **Match Results Entry**
   - Enter home score
   - Enter away score
@@ -240,6 +251,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
   - Display users affected
 
 ### **3.6 Admin Analytics**
+
 - [ ] View pick submission rate by round
 - [ ] View most/least popular answers
 - [ ] View user engagement metrics
@@ -250,6 +262,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **PHASE 4: User Pick Submission Flow**
 
 ### **4.1 Pick Submission UI**
+
 - [ ] Display matches for selected round (3 matches)
 - [ ] Display 3 questions per match (9 questions total)
 - [ ] Radio buttons or cards for answer selection
@@ -259,12 +272,14 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Show confirmation message
 
 ### **4.2 Pick Locking**
+
 - [ ] Display countdown timer to lock deadline
 - [ ] Show "Locked" badge when deadline passes
 - [ ] Prevent editing locked picks
 - [ ] Display locked picks in read-only mode
 
 ### **4.3 My Picks View**
+
 - [ ] Display user's picks by round
 - [ ] Show question, selected answer, points
 - [ ] Show correct answer (after match completion)
@@ -275,6 +290,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **PHASE 5: Scoring & Leaderboard**
 
 ### **5.1 Scoring Logic (Backend)**
+
 - [ ] Fetch completed match
 - [ ] Get all questions with correct answers set
 - [ ] Find all user picks for those questions
@@ -284,6 +300,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Update SixNationsLeaderboard (round and overall)
 
 ### **5.2 Leaderboard UI**
+
 - [ ] Display round leaderboard (top users for round)
 - [ ] Display overall leaderboard (cumulative points)
 - [ ] Show rank, username, points, correct picks
@@ -295,6 +312,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **PHASE 6: Testing & Polish**
 
 ### **6.1 Admin Testing**
+
 - [ ] Test full match creation flow
 - [ ] Test question creation with multiple answers
 - [ ] Test answer weighting (different point values)
@@ -303,6 +321,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Test editing questions/answers after creation
 
 ### **6.2 User Testing**
+
 - [ ] Test sport selection flow
 - [ ] Test pick submission (all 9 questions)
 - [ ] Test pick locking (deadline enforcement)
@@ -310,6 +329,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Test missed pick scenarios (incomplete submissions)
 
 ### **6.3 Edge Cases**
+
 - [ ] Match postponement handling
 - [ ] Incorrect correct answer (admin override)
 - [ ] Partial pick submissions
@@ -321,6 +341,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **CRITICAL PATH (MVP - Must Have)**
 
 ### **Week 1-2: Frontend Foundation**
+
 1. ✅ Sport selection UI (NFL ⚡ Six Nations 🏉)
 2. ✅ Sport context and routing
 3. ✅ Six Nations match list UI
@@ -328,12 +349,14 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 5. ✅ Pick submission form UI
 
 ### **Week 3-4: Backend & Database**
+
 6. ✅ Database schema migration
 7. ✅ Admin API endpoints (matches, questions, answers)
 8. ✅ User API endpoints (picks, leaderboard)
 9. ✅ Scoring service logic
 
 ### **Week 5-6: Admin Panel**
+
 10. ✅ Admin dashboard and navigation
 11. ✅ Match management UI
 12. ✅ Question management UI
@@ -342,6 +365,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 15. ✅ Scoring trigger UI
 
 ### **Week 7-8: Integration & Testing**
+
 16. ✅ End-to-end pick submission flow
 17. ✅ End-to-end scoring flow (admin → user)
 18. ✅ Leaderboard calculation and display
@@ -397,6 +421,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 2: Database & Backend Foundation (Week 2-4)**
 
 ### **Database Schema**
+
 - [ ] Create `Sport` enum/table (NFL, SixNations)
 - [ ] Create `SixNationsFixture` table (match, round, teams, kickoff time)
 - [ ] Create `SixNationsQuestion` table (fixture FK, type: spread/total/prop, line value)
@@ -408,6 +433,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Update PickSet/Pick schema to support multiple sports (or create separate tables)
 
 ### **Backend APIs**
+
 - [ ] Implement `/api/sixnations/fixtures` (list matches by round)
 - [ ] Implement `/api/sixnations/questions/:fixtureId` (get 3 questions per match)
 - [ ] Implement `/api/sixnations/picks` (submit answers)
@@ -419,6 +445,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Create line locking service (cron job 24h before kickoff)
 
 ### **Data Services**
+
 - [ ] Create SixNationsOddsService (fetch spread, total, props from API)
 - [ ] Create SixNationsFixtureService (manage fixtures and rounds)
 - [ ] Create SixNationsScoringService (calculate points after match completion)
@@ -430,6 +457,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 3: Frontend Foundation (Week 4-6)**
 
 ### **Sport Selection Flow**
+
 - [ ] Create SportsHub component (NFL Pick'em vs Six Nations cards)
 - [ ] Add sport selection to user preferences/settings
 - [ ] Update navigation to show active sport
@@ -437,6 +465,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Design sport-specific branding (colors, logos, themes)
 
 ### **Six Nations UI Components**
+
 - [ ] Create SixNationsFixturesList component
 - [ ] Create SixNationsQuestionCard component (3 questions per match)
 - [ ] Create SixNationsPickSubmission form
@@ -447,6 +476,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Create SixNationsRoundSelector (navigate between 5 rounds)
 
 ### **User Experience**
+
 - [ ] Add countdown timer to line lock deadline
 - [ ] Show locked lines on pick submission page
 - [ ] Display "Picks Locked" badge when deadline passes
@@ -458,6 +488,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 4: Core Features (Week 6-9)**
 
 ### **Fixture & Question Management**
+
 - [ ] Admin panel to add/edit Six Nations fixtures
 - [ ] Admin panel to set questions (spread, total, prop)
 - [ ] Automated odds fetching from API (if available)
@@ -466,6 +497,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Match cancellation/postponement handling
 
 ### **Pick Submission**
+
 - [ ] Implement pick submission with validation
 - [ ] Lock picks after deadline
 - [ ] Show preview of locked picks before submission
@@ -473,6 +505,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Handle partial submissions (some matches picked, others missed)
 
 ### **Scoring & Results**
+
 - [ ] Fetch match results (scores, try scorers)
 - [ ] Auto-score Q1 (spread) and Q2 (total)
 - [ ] Manual entry for Q3 (bonus props like try scorers)
@@ -481,6 +514,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Show correct answers after match completion
 
 ### **Leagues & Social**
+
 - [ ] Create private league (generate join code)
 - [ ] Join league via code
 - [ ] View league members and their picks (after lock)
@@ -492,24 +526,30 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 5: Missed Picks & Edge Cases (Week 9-10)**
 
 ### **Missed Pick Strategies (Choose One)**
+
 **Option A: Zero Points**
+
 - [ ] Award 0 points for missed questions
 - [ ] Simple, fair, encourages participation
 
 **Option B: Average Score**
+
 - [ ] Award 50% of possible points (0.5 per question)
 - [ ] Reduces penalty, maintains engagement
 
 **Option C: Most Popular Pick**
+
 - [ ] Auto-select the most common answer from league
 - [ ] Complex, requires real-time calculation
 
 **Option D: Carry Forward**
+
 - [ ] Use previous week's picks for same teams (not applicable here)
 
 **Recommendation:** Start with Option A (zero points), add Option B later based on feedback.
 
 ### **Edge Case Handling**
+
 - [ ] Match postponement (freeze picks, extend deadline)
 - [ ] Match cancellation (void questions, refund picks)
 - [ ] Incorrect line posted (admin override, recalculate scores)
@@ -522,6 +562,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 6: Admin Tools (Week 10-11)**
 
 ### **Admin Dashboard**
+
 - [ ] View all fixtures and questions
 - [ ] Edit/override locked lines
 - [ ] Manually enter match results
@@ -532,6 +573,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Send notifications to users
 
 ### **Monitoring & Alerts**
+
 - [ ] Alert when lines don't lock on time
 - [ ] Alert when match results missing
 - [ ] Alert when scoring fails
@@ -543,6 +585,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 7: Testing & Polish (Week 11-12)**
 
 ### **Testing**
+
 - [ ] Test full pick submission flow
 - [ ] Test line locking mechanism (schedule test locks)
 - [ ] Test scoring across all 3 question types
@@ -554,6 +597,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Mobile responsiveness testing
 
 ### **Polish & UX**
+
 - [ ] Add Six Nations branding/theme
 - [ ] Create onboarding guide for new users
 - [ ] Add tooltips explaining question types
@@ -566,6 +610,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 8: Launch Prep (Week 12-13)**
 
 ### **Pre-Launch**
+
 - [ ] Create Six Nations fixtures for full tournament (5 rounds, 15 matches)
 - [ ] Set up question templates for all 45 questions
 - [ ] Configure line fetching API integration
@@ -575,6 +620,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Create user guide/FAQ
 
 ### **Launch**
+
 - [ ] Soft launch with beta users
 - [ ] Monitor for issues
 - [ ] Gather feedback
@@ -586,6 +632,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Phase 9: Post-Launch (Ongoing)**
 
 ### **Maintenance**
+
 - [ ] Monitor line locking daily
 - [ ] Enter match results promptly
 - [ ] Score bonus props manually
@@ -593,6 +640,7 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 - [ ] Handle admin overrides as needed
 
 ### **Enhancements (Future)**
+
 - [ ] Add "Confidence Points" (rank your 9 answers)
 - [ ] Add weekly prizes/badges
 - [ ] Add Six Nations statistics page
@@ -643,12 +691,14 @@ GET    /api/sixnations/my-stats                    - Get personal statistics
 ## **Tournament Structure Reference**
 
 **Six Nations 2025 (Example):**
+
 - **Duration:** 5 Rounds (February - March)
 - **Matches:** 3 matches per round = 15 total matches
 - **Questions:** 3 questions per match = 9 questions per round = 45 total questions
 - **Scoring:** 1 point per correct answer = 9 points max per round = 45 points max overall
 
 **Match Structure:**
+
 ```
 Round 1 (Example):
 ├── Match 1: Ireland vs England

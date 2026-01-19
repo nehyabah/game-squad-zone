@@ -190,8 +190,13 @@ export const questionsAPI = {
 
 // Admin Users API
 export const adminUsersAPI = {
-  getAll: async (): Promise<User[]> => {
+  getAdmins: async (): Promise<User[]> => {
     const response = await api.get('/six-nations/admin/users');
+    return response.data;
+  },
+
+  addByEmail: async (email: string): Promise<User> => {
+    const response = await api.post('/six-nations/admin/users/by-email', { email });
     return response.data;
   },
 

@@ -35,7 +35,8 @@ interface MatchesManagerProps {
 
 export default function MatchesManager({ rounds, matches, setMatches, onMatchCreated, onRefresh }: MatchesManagerProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [scoreDialogOpen, setScoreDialogOpen] = useState<string | null>(null);
+  const [editScores, setEditScores] = useState<{ homeScore: number; awayScore: number }>({ homeScore: 0, awayScore: 0 });
   const [newMatch, setNewMatch] = useState({
     roundId: "",
     matchNumber: 1,
@@ -81,7 +82,6 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
   const handleUpdateScore = async (matchId: string, homeScore: number, awayScore: number) => {
     try {
       await matchesAPI.updateScore(matchId, homeScore, awayScore);
-      setEditingMatch(null);
       toast({
         title: "Success",
         description: "Match score updated successfully",
@@ -296,7 +296,17 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
-                    <Dialog>
+                    <Dialog open={scoreDialogOpen === match.id} onOpenChange={(open) => {
+                      if (open) {
+                        setScoreDialogOpen(match.id);
+                        setEditScores({
+                          homeScore: match.homeScore || 0,
+                          awayScore: match.awayScore || 0
+                        });
+                      } else {
+                        setScoreDialogOpen(null);
+                      }
+                    }}>
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline">
                           <Edit className="w-4 h-4 mr-2" />
@@ -316,11 +326,8 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
                             <Input
                               type="number"
                               min="0"
-                              defaultValue={match.homeScore || 0}
-                              onChange={(e) => {
-                                const awayScore = match.awayScore || 0;
-                                handleUpdateScore(match.id, parseInt(e.target.value), awayScore);
-                              }}
+                              value={editScores.homeScore}
+                              onChange={(e) => setEditScores({ ...editScores, homeScore: parseInt(e.target.value) || 0 })}
                               className="col-span-3"
                             />
                           </div>
@@ -329,15 +336,23 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
                             <Input
                               type="number"
                               min="0"
-                              defaultValue={match.awayScore || 0}
-                              onChange={(e) => {
-                                const homeScore = match.homeScore || 0;
-                                handleUpdateScore(match.id, homeScore, parseInt(e.target.value));
-                              }}
+                              value={editScores.awayScore}
+                              onChange={(e) => setEditScores({ ...editScores, awayScore: parseInt(e.target.value) || 0 })}
                               className="col-span-3"
                             />
                           </div>
                         </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setScoreDialogOpen(null)}>
+                            Cancel
+                          </Button>
+                          <Button onClick={() => {
+                            handleUpdateScore(match.id, editScores.homeScore, editScores.awayScore);
+                            setScoreDialogOpen(null);
+                          }}>
+                            Update Score
+                          </Button>
+                        </DialogFooter>
                       </DialogContent>
                     </Dialog>
                     <Button

@@ -35,12 +35,12 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
-  const [collapsedMatches, setCollapsedMatches] = useState<Set<string>>(new Set());
+  const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
 
   const isSixNations = sport === 'six-nations';
 
   const toggleMatchCollapse = (matchId: string) => {
-    setCollapsedMatches(prev => {
+    setExpandedMatches(prev => {
       const newSet = new Set(prev);
       if (newSet.has(matchId)) {
         newSet.delete(matchId);
@@ -90,6 +90,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
       setHasInitialized(false);
       setCachedWeeks(new Map());
       setCachedRounds(new Map());
+      setExpandedMatches(new Set());
     }
   }, [isOpen]);
 
@@ -387,7 +388,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent via-muted/5 to-transparent">
+          <div className="flex-1 overflow-y-auto overscroll-contain bg-gradient-to-b from-transparent via-muted/5 to-transparent" style={{ maxHeight: 'calc(90vh - 180px)' }}>
             {console.log('🎨 Render state:', {
               isSixNations,
               isLoading,
@@ -473,7 +474,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                   </div>
                 </div>
 
-                <div className="p-3 sm:p-6 space-y-2 sm:space-y-4">
+                <div className="p-3 sm:p-6 pb-6 sm:pb-8 space-y-2 sm:space-y-4">
                   {isSixNations ? (
                     // Six Nations Answers - grouped by match
                     (() => {
@@ -495,13 +496,19 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                       return Object.values(answersByMatch)
                         .sort((a, b) => a.match.matchNumber - b.match.matchNumber)
                         .map(({ match, answers: matchAnswers }) => {
-                          const isCollapsed = collapsedMatches.has(match.id);
+                          const isExpanded = expandedMatches.has(match.id);
+                          const correctCount = matchAnswers.filter(a => a.isCorrect === true).length;
+                          const incorrectCount = matchAnswers.filter(a => a.isCorrect === false).length;
+                          const pendingCount = matchAnswers.filter(a => a.isCorrect === null).length;
 
                           return (
                           <div key={match.id} className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             {/* Match Header - Clickable */}
                             <div
-                              className="bg-slate-50 px-2.5 py-2 sm:px-4 sm:py-2.5 border-b border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors"
+                              className={cn(
+                                "bg-slate-50 px-2.5 py-2 sm:px-4 sm:py-2.5 cursor-pointer hover:bg-slate-100 transition-colors",
+                                isExpanded && "border-b border-slate-200"
+                              )}
                               onClick={() => toggleMatchCollapse(match.id)}
                             >
                               <div className="flex items-center justify-between gap-2">
@@ -520,6 +527,30 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
 
                                 {/* Score or Status */}
                                 <div className="flex items-center gap-2">
+                                  {/* Compact summary when collapsed */}
+                                  {!isExpanded && (
+                                    <div className="flex items-center gap-1.5">
+                                      {correctCount > 0 && (
+                                        <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-bold">
+                                          <CheckCircle2 className="w-2.5 h-2.5" />
+                                          {correctCount}
+                                        </div>
+                                      )}
+                                      {incorrectCount > 0 && (
+                                        <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[9px] font-bold">
+                                          <XCircle className="w-2.5 h-2.5" />
+                                          {incorrectCount}
+                                        </div>
+                                      )}
+                                      {pendingCount > 0 && (
+                                        <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[9px] font-bold">
+                                          <Clock className="w-2.5 h-2.5" />
+                                          {pendingCount}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
                                   {match.completed ? (
                                     <div className="bg-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border border-slate-300 flex items-center gap-1 flex-shrink-0">
                                       <span className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase">FT</span>
@@ -537,32 +568,34 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                                   <ChevronDown
                                     className={cn(
                                       "w-4 h-4 text-slate-400 transition-transform",
-                                      isCollapsed && "rotate-180"
+                                      !isExpanded && "rotate-180"
                                     )}
                                   />
                                 </div>
                               </div>
 
-                              {/* Match Details */}
-                              <div className="flex items-center gap-1.5 mt-1 text-slate-500">
-                                <span className="flex items-center gap-0.5 text-[8px] sm:text-[10px]">
-                                  <Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                                  {new Date(match.matchDate).toLocaleDateString("en-GB", {
-                                    day: "numeric",
-                                    month: "short"
-                                  })}
-                                </span>
-                                {match.venue && (
-                                  <span className="flex items-center gap-0.5 text-[8px] sm:text-[10px] truncate">
-                                    <MapPin className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                                    <span className="truncate max-w-[90px] sm:max-w-none">{match.venue}</span>
+                              {/* Match Details - Only show when expanded */}
+                              {isExpanded && (
+                                <div className="flex items-center gap-1.5 mt-1 text-slate-500">
+                                  <span className="flex items-center gap-0.5 text-[8px] sm:text-[10px]">
+                                    <Clock className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                                    {new Date(match.matchDate).toLocaleDateString("en-GB", {
+                                      day: "numeric",
+                                      month: "short"
+                                    })}
                                   </span>
-                                )}
-                              </div>
+                                  {match.venue && (
+                                    <span className="flex items-center gap-0.5 text-[8px] sm:text-[10px] truncate">
+                                      <MapPin className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                                      <span className="truncate max-w-[90px] sm:max-w-none">{match.venue}</span>
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
-                            {/* Answers Section - Only show when not collapsed */}
-                            {!isCollapsed && (
+                            {/* Answers Section - Only show when expanded */}
+                            {isExpanded && (
                             <div className="p-1.5 sm:p-3 space-y-1 sm:space-y-1.5">
                               {matchAnswers.map((answer) => {
                                 const isHidden = answer.answer === null;

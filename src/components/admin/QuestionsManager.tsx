@@ -235,6 +235,60 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
     }
   };
 
+  const handleEditQuestion = async () => {
+    if (!editingQuestion) return;
+
+    try {
+      await questionsAPI.update(editingQuestion.id, {
+        questionNumber: newQuestion.questionNumber,
+        questionText: newQuestion.questionText,
+        questionType: newQuestion.questionType,
+        options: newQuestion.questionType === "multiple_choice" ? newQuestion.options.filter(o => o.trim()) : undefined,
+        points: newQuestion.points,
+      });
+
+      toast({
+        title: "Success",
+        description: "Question updated successfully",
+      });
+
+      setEditingQuestion(null);
+      setNewQuestion({
+        matchId: "",
+        questionNumber: 1,
+        questionText: "",
+        questionType: "multiple_choice",
+        options: ["", "", ""],
+        points: 1,
+      });
+
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error("Error updating question:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update question",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditDialog = (question: Question) => {
+    setEditingQuestion(question);
+    setNewQuestion({
+      matchId: question.matchId,
+      questionNumber: question.questionNumber,
+      questionText: question.questionText,
+      questionType: question.questionType,
+      options: question.questionType === "multiple_choice" && question.options
+        ? [...question.options]
+        : ["", "", ""],
+      points: question.points,
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -244,7 +298,25 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
             Manage questions - 3 per match, 9 per round, 45 total
           </p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog
+          open={isCreateDialogOpen || !!editingQuestion}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsCreateDialogOpen(false);
+              setEditingQuestion(null);
+              setNewQuestion({
+                matchId: "",
+                questionNumber: 1,
+                questionText: "",
+                questionType: "multiple_choice",
+                options: ["", "", ""],
+                points: 1,
+              });
+            } else {
+              setIsCreateDialogOpen(true);
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
@@ -253,9 +325,9 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
           </DialogTrigger>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
-              <DialogTitle>Create New Question</DialogTitle>
+              <DialogTitle>{editingQuestion ? "Edit Question" : "Create New Question"}</DialogTitle>
               <DialogDescription>
-                Add a question to a match
+                {editingQuestion ? "Update question details" : "Add a question to a match"}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -267,6 +339,7 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                   <Select
                     value={newQuestion.matchId}
                     onValueChange={handleMatchChange}
+                    disabled={!!editingQuestion}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select match" />
@@ -290,9 +363,14 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                       })}
                     </SelectContent>
                   </Select>
-                  {newQuestion.matchId && (
+                  {newQuestion.matchId && !editingQuestion && (
                     <p className="text-xs text-muted-foreground">
                       {getMatchQuestionCount(newQuestion.matchId)} question(s) already exist for this match
+                    </p>
+                  )}
+                  {editingQuestion && (
+                    <p className="text-xs text-muted-foreground">
+                      Match cannot be changed when editing
                     </p>
                   )}
                 </div>
@@ -439,6 +517,7 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
             <DialogFooter>
               <Button variant="outline" onClick={() => {
                 setIsCreateDialogOpen(false);
+                setEditingQuestion(null);
                 setNewQuestion({
                   matchId: "",
                   questionNumber: 1,
@@ -448,15 +527,25 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                   points: 1,
                 });
               }}>
-                Close
+                Cancel
               </Button>
-              <Button
-                onClick={handleCreateQuestion}
-                disabled={!isFormValid}
-                title={!isFormValid ? "Please fix form errors before creating" : ""}
-              >
-                Create & Add Another
-              </Button>
+              {editingQuestion ? (
+                <Button
+                  onClick={handleEditQuestion}
+                  disabled={!isFormValid}
+                  title={!isFormValid ? "Please fix form errors before updating" : ""}
+                >
+                  Update Question
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleCreateQuestion}
+                  disabled={!isFormValid}
+                  title={!isFormValid ? "Please fix form errors before creating" : ""}
+                >
+                  Create & Add Another
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -583,10 +672,18 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                   </div>
 
                   <div className="flex flex-col gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditDialog(question)}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Question
+                    </Button>
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline">
-                          <Edit className="w-4 h-4 mr-2" />
+                          <CheckCircle className="w-4 h-4 mr-2" />
                           Set Answer
                         </Button>
                       </DialogTrigger>

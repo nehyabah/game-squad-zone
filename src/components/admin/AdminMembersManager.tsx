@@ -141,7 +141,7 @@ export default function AdminMembersManager() {
       <div>
         <h3 className="text-lg font-semibold mb-2">Admin Members</h3>
         <p className="text-sm text-muted-foreground">
-          Manage who has access to the admin panel. Currently {admins.length} admin
+          Manage who has access to the admin panel. Currently showing {admins.length} admin
           {admins.length !== 1 ? "s" : ""}.
         </p>
       </div>

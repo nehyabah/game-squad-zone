@@ -194,19 +194,44 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
 
   const handleSetCorrectAnswer = async (questionId: string, answer: string) => {
     try {
-      await questionsAPI.setCorrectAnswer(questionId, answer);
+      const updatedQuestion = await questionsAPI.setCorrectAnswer(questionId, answer);
+      // Update local state instead of full refresh
+      setQuestions(questions.map(q =>
+        q.id === questionId ? { ...q, correctAnswer: answer } : q
+      ));
       toast({
         title: "Success",
         description: "Correct answer set successfully",
       });
-      if (onRefresh) {
-        onRefresh();
-      }
     } catch (error) {
       console.error("Error setting correct answer:", error);
       toast({
         title: "Error",
         description: "Failed to set correct answer",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleClearCorrectAnswer = async (questionId: string) => {
+    if (!confirm("Are you sure you want to clear the correct answer? This will reset all user answer results for this question.")) {
+      return;
+    }
+    try {
+      await questionsAPI.clearCorrectAnswer(questionId);
+      // Update local state instead of full refresh
+      setQuestions(questions.map(q =>
+        q.id === questionId ? { ...q, correctAnswer: null } : q
+      ));
+      toast({
+        title: "Success",
+        description: "Correct answer cleared successfully",
+      });
+    } catch (error) {
+      console.error("Error clearing correct answer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear correct answer",
         variant: "destructive",
       });
     }
@@ -604,8 +629,11 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                         <span className="text-muted-foreground">vs</span>
                         <TeamFlag teamName={match.awayTeam} />
                         <span className="font-semibold">{match.awayTeam}</span>
-                        <span className="text-xs text-muted-foreground ml-auto">
-                          {match.roundName} - Match {match.matchNumber}
+                        <span className="text-xs text-muted-foreground ml-auto flex items-center gap-2">
+                          <span>{new Date(match.matchDate).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                          <span>{new Date(match.matchDate).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="mx-1">•</span>
+                          <span>{match.roundName} - Match {match.matchNumber}</span>
                         </span>
                         <Badge variant="secondary">{matchQuestions.length}/3 questions</Badge>
                       </div>
@@ -637,36 +665,43 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                     {question.questionType === "multiple_choice" && question.options && (
                       <div className="space-y-1 mt-2">
                         {question.options.map((option, index) => (
-                          <div
+                          <button
                             key={index}
-                            className={`text-sm px-3 py-2 rounded border ${
+                            onClick={() => handleSetCorrectAnswer(question.id, option)}
+                            className={`w-full text-left text-sm px-3 py-2 rounded border transition-colors cursor-pointer ${
                               question.correctAnswer === option
                                 ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
-                                : "bg-muted/50"
+                                : "bg-muted/50 hover:bg-muted hover:border-primary/50"
                             }`}
                           >
                             {option}
-                          </div>
+                          </button>
                         ))}
                       </div>
                     )}
 
                     {question.questionType === "yes_no" && (
                       <div className="flex gap-2 mt-2">
-                        <div className={`text-sm px-4 py-2 rounded border ${
-                          question.correctAnswer === "Yes"
-                            ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
-                            : "bg-muted/50"
-                        }`}>
+                        <button
+                          onClick={() => handleSetCorrectAnswer(question.id, "Yes")}
+                          className={`text-sm px-4 py-2 rounded border transition-colors cursor-pointer ${
+                            question.correctAnswer === "Yes"
+                              ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
+                              : "bg-muted/50 hover:bg-muted hover:border-primary/50"
+                          }`}
+                        >
                           Yes
-                        </div>
-                        <div className={`text-sm px-4 py-2 rounded border ${
-                          question.correctAnswer === "No"
-                            ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
-                            : "bg-muted/50"
-                        }`}>
+                        </button>
+                        <button
+                          onClick={() => handleSetCorrectAnswer(question.id, "No")}
+                          className={`text-sm px-4 py-2 rounded border transition-colors cursor-pointer ${
+                            question.correctAnswer === "No"
+                              ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
+                              : "bg-muted/50 hover:bg-muted hover:border-primary/50"
+                          }`}
+                        >
                           No
-                        </div>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -680,53 +715,17 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Question
                     </Button>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Set Answer
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Set Correct Answer</DialogTitle>
-                          <DialogDescription>
-                            {question.questionText}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="py-4 space-y-2">
-                          {question.questionType === "yes_no" ? (
-                            <>
-                              <Button
-                                onClick={() => handleSetCorrectAnswer(question.id, "Yes")}
-                                variant={question.correctAnswer === "Yes" ? "default" : "outline"}
-                                className="w-full"
-                              >
-                                Yes
-                              </Button>
-                              <Button
-                                onClick={() => handleSetCorrectAnswer(question.id, "No")}
-                                variant={question.correctAnswer === "No" ? "default" : "outline"}
-                                className="w-full"
-                              >
-                                No
-                              </Button>
-                            </>
-                          ) : (
-                            question.options?.map((option) => (
-                              <Button
-                                key={option}
-                                onClick={() => handleSetCorrectAnswer(question.id, option)}
-                                variant={question.correctAnswer === option ? "default" : "outline"}
-                                className="w-full justify-start"
-                              >
-                                {option}
-                              </Button>
-                            ))
-                          )}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                    {question.correctAnswer && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+                        onClick={() => handleClearCorrectAnswer(question.id)}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Clear Answer
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="destructive"

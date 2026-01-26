@@ -203,8 +203,25 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   }, [squad?.maxMembers, squad?.name]);
 
   const memberRanking = useMemo(() => {
-    return squadLeaderboard.data || [];
-  }, [squadLeaderboard.data]);
+    const data = squadLeaderboard.data || [];
+
+    // Sort by points for Six Nations, by winPercentage for NFL
+    if (isSixNations) {
+      return [...data]
+        .sort((a, b) => {
+          // Sort by points descending first
+          if (b.points !== a.points) return b.points - a.points;
+          // Then by wins (correct answers) descending
+          return b.wins - a.wins;
+        })
+        .map((member, index) => ({
+          ...member,
+          rank: index + 1, // Recalculate rank based on sorted order
+        }));
+    }
+
+    return data;
+  }, [squadLeaderboard.data, isSixNations]);
 
   if (loading) {
     return (

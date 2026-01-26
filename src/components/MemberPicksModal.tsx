@@ -551,19 +551,41 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                                     </div>
                                   )}
 
-                                  {match.completed ? (
-                                    <div className="bg-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border border-slate-300 flex items-center gap-1 flex-shrink-0">
-                                      <span className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase">FT</span>
-                                      <span className="text-xs sm:text-base font-black text-slate-900">
-                                        {match.homeScore}-{match.awayScore}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <div className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold flex items-center gap-0.5 flex-shrink-0">
-                                      <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
-                                      Upcoming
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const matchTime = new Date(match.matchDate);
+                                    const now = new Date();
+                                    const twoHoursAfterStart = new Date(matchTime.getTime() + 2 * 60 * 60 * 1000);
+
+                                    if (match.completed) {
+                                      return (
+                                        <div className="bg-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded border border-slate-300 flex items-center gap-1 flex-shrink-0">
+                                          <span className="text-[8px] sm:text-[9px] font-bold text-slate-600 uppercase">FT</span>
+                                          <span className="text-xs sm:text-base font-black text-slate-900">
+                                            {match.homeScore}-{match.awayScore}
+                                          </span>
+                                        </div>
+                                      );
+                                    } else if (now >= twoHoursAfterStart) {
+                                      // More than 2 hours after start - show nothing
+                                      return null;
+                                    } else if (now >= matchTime) {
+                                      // Started but less than 2 hours ago - show Live
+                                      return (
+                                        <div className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold flex items-center gap-0.5 flex-shrink-0">
+                                          <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                                          Live
+                                        </div>
+                                      );
+                                    } else {
+                                      // Not started yet - show Upcoming
+                                      return (
+                                        <div className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-bold flex items-center gap-0.5 flex-shrink-0">
+                                          <div className="w-1 h-1 rounded-full bg-amber-500 animate-pulse" />
+                                          Upcoming
+                                        </div>
+                                      );
+                                    }
+                                  })()}
                                   {/* Chevron indicator */}
                                   <ChevronDown
                                     className={cn(

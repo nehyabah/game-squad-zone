@@ -186,12 +186,22 @@ export const questionsAPI = {
     const response = await api.patch(`/six-nations/questions/${id}/answer`, { correctAnswer });
     return response.data;
   },
+
+  clearCorrectAnswer: async (id: string): Promise<SixNationsQuestion> => {
+    const response = await api.delete(`/six-nations/questions/${id}/answer`);
+    return response.data;
+  },
 };
 
 // Admin Users API
 export const adminUsersAPI = {
   getAdmins: async (): Promise<User[]> => {
     const response = await api.get('/six-nations/admin/users');
+    return response.data;
+  },
+
+  getAllUsers: async (): Promise<User[]> => {
+    const response = await api.get('/six-nations/admin/all-users');
     return response.data;
   },
 

@@ -35,10 +35,18 @@ interface MatchesManagerProps {
 
 export default function MatchesManager({ rounds, matches, setMatches, onMatchCreated, onRefresh }: MatchesManagerProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [scoreDialogOpen, setScoreDialogOpen] = useState<string | null>(null);
   const [editScores, setEditScores] = useState<{ homeScore: number; awayScore: number }>({ homeScore: 0, awayScore: 0 });
   const [newMatch, setNewMatch] = useState({
     roundId: "",
+    matchNumber: 1,
+    homeTeam: "",
+    awayTeam: "",
+    matchDate: "",
+    venue: "",
+  });
+  const [editMatch, setEditMatch] = useState({
     matchNumber: 1,
     homeTeam: "",
     awayTeam: "",
@@ -117,6 +125,48 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
       toast({
         title: "Error",
         description: "Failed to delete match",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditDialog = (match: Match) => {
+    setEditingMatch(match);
+    // Convert ISO date to datetime-local format
+    const dateObj = new Date(match.matchDate);
+    const localDateTime = dateObj.toISOString().slice(0, 16);
+    setEditMatch({
+      matchNumber: match.matchNumber,
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      matchDate: localDateTime,
+      venue: match.venue || "",
+    });
+  };
+
+  const handleUpdateMatch = async () => {
+    if (!editingMatch) return;
+    try {
+      await matchesAPI.update(editingMatch.id, {
+        matchNumber: editMatch.matchNumber,
+        homeTeam: editMatch.homeTeam,
+        awayTeam: editMatch.awayTeam,
+        matchDate: editMatch.matchDate,
+        venue: editMatch.venue,
+      });
+      setEditingMatch(null);
+      toast({
+        title: "Success",
+        description: "Match updated successfully",
+      });
+      if (onRefresh) {
+        onRefresh();
+      }
+    } catch (error) {
+      console.error("Error updating match:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update match",
         variant: "destructive",
       });
     }
@@ -296,6 +346,10 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openEditDialog(match)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
                     <Dialog open={scoreDialogOpen === match.id} onOpenChange={(open) => {
                       if (open) {
                         setScoreDialogOpen(match.id);
@@ -309,8 +363,8 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
                     }}>
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline">
-                          <Edit className="w-4 h-4 mr-2" />
-                          Update Score
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Score
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -369,6 +423,112 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
           ))
         )}
       </div>
+
+      {/* Edit Match Dialog */}
+      <Dialog open={!!editingMatch} onOpenChange={(open) => !open && setEditingMatch(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Match</DialogTitle>
+            <DialogDescription>
+              Update match details including date and time
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-matchNumber" className="text-right">
+                Match #
+              </Label>
+              <Input
+                id="edit-matchNumber"
+                type="number"
+                min="1"
+                max="3"
+                value={editMatch.matchNumber}
+                onChange={(e) => setEditMatch({ ...editMatch, matchNumber: parseInt(e.target.value) })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-homeTeam" className="text-right">
+                Home Team
+              </Label>
+              <Select
+                value={editMatch.homeTeam}
+                onValueChange={(value) => setEditMatch({ ...editMatch, homeTeam: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select home team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEAM_NAMES.map(team => (
+                    <SelectItem key={team} value={team}>
+                      <div className="flex items-center gap-2">
+                        <span className={getTeamFlagClass(team)}></span>
+                        <span>{team}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-awayTeam" className="text-right">
+                Away Team
+              </Label>
+              <Select
+                value={editMatch.awayTeam}
+                onValueChange={(value) => setEditMatch({ ...editMatch, awayTeam: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select away team" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEAM_NAMES.map(team => (
+                    <SelectItem key={team} value={team}>
+                      <div className="flex items-center gap-2">
+                        <span className={getTeamFlagClass(team)}></span>
+                        <span>{team}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-matchDate" className="text-right">
+                Match Date
+              </Label>
+              <Input
+                id="edit-matchDate"
+                type="datetime-local"
+                value={editMatch.matchDate}
+                onChange={(e) => setEditMatch({ ...editMatch, matchDate: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-venue" className="text-right">
+                Venue
+              </Label>
+              <Input
+                id="edit-venue"
+                value={editMatch.venue}
+                onChange={(e) => setEditMatch({ ...editMatch, venue: e.target.value })}
+                placeholder="e.g., Twickenham Stadium"
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingMatch(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateMatch}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

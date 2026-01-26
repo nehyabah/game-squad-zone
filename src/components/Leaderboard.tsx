@@ -204,7 +204,16 @@ const Leaderboard = () => {
     apiData: SixNationsLeaderboardEntry[]
   ): LeaderboardDisplayEntry[] => {
     console.log('🔄 Transforming Six Nations data:', apiData.length, 'entries');
-    return apiData.map((entry) => {
+
+    // Sort by points descending, then by correct answers descending
+    const sortedData = [...apiData].sort((a, b) => {
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      return b.correctAnswers - a.correctAnswers;
+    });
+
+    return sortedData.map((entry, index) => {
       console.log('📝 Transforming entry:', {
         username: entry.user.username,
         totalAnswers: entry.totalAnswers,
@@ -227,7 +236,7 @@ const Leaderboard = () => {
       const pendingAnswers = entry.totalAnswers - entry.correctAnswers - entry.incorrectAnswers;
 
       return {
-        rank: entry.rank,
+        rank: index + 1, // Recalculate rank based on sorted order
         username: entry.user.username,
         displayName: entry.user.displayName,
         firstName: entry.user.firstName,

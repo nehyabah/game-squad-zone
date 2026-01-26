@@ -98,6 +98,12 @@ export default async function sixNationsRoutes(app: FastifyInstance) {
     return controller.setCorrectAnswer(request, reply);
   });
 
+  app.delete("/six-nations/questions/:id/answer", {
+    preHandler: [app.auth],
+  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    return controller.clearCorrectAnswer(request, reply);
+  });
+
   // Admin endpoints - view all data regardless of round activation
   app.get("/six-nations/admin/matches", {
     preHandler: [app.auth],
@@ -116,6 +122,12 @@ export default async function sixNationsRoutes(app: FastifyInstance) {
     preHandler: [app.auth],
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     return controller.getAdminUsers(request, reply);
+  });
+
+  app.get("/six-nations/admin/all-users", {
+    preHandler: [app.auth],
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return controller.getAllUsers(request, reply);
   });
 
   app.post("/six-nations/admin/users/by-email", {

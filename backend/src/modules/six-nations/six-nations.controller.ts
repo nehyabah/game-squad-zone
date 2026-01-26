@@ -271,6 +271,17 @@ export class SixNationsController {
     }
   }
 
+  async clearCorrectAnswer(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    try {
+      const { id } = request.params;
+      const question = await this.service.clearCorrectAnswer(id);
+      return reply.send(question);
+    } catch (error) {
+      console.error("Error clearing correct answer:", error);
+      return reply.status(500).send({ error: "Failed to clear correct answer" });
+    }
+  }
+
   // Admin user management
   async getAdminUsers(request: FastifyRequest, reply: FastifyReply) {
     try {
@@ -279,6 +290,16 @@ export class SixNationsController {
     } catch (error) {
       console.error("Error fetching admin users:", error);
       return reply.status(500).send({ error: "Failed to fetch admin users" });
+    }
+  }
+
+  async getAllUsers(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const users = await this.service.getAllUsers();
+      return reply.send(users);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      return reply.status(500).send({ error: "Failed to fetch users" });
     }
   }
 

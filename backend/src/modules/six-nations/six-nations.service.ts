@@ -452,6 +452,29 @@ export class SixNationsService {
     return question;
   }
 
+  async clearCorrectAnswer(id: string) {
+    // Update the question to clear the correct answer
+    const question = await this.prisma.sixNationsQuestion.update({
+      where: { id },
+      data: { correctAnswer: null },
+      include: {
+        match: {
+          include: {
+            round: true,
+          },
+        },
+      },
+    });
+
+    // Clear all isCorrect values for answers to this question
+    await this.prisma.sixNationsAnswer.updateMany({
+      where: { questionId: id },
+      data: { isCorrect: null },
+    });
+
+    return question;
+  }
+
   // Helper method to calculate answer results
   private async calculateAnswerResults(questionId: string, correctAnswer: string) {
     // Get all answers for this question
@@ -699,6 +722,21 @@ export class SixNationsService {
     // Only return users who are admins
     return this.prisma.user.findMany({
       where: { isAdmin: true },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        isAdmin: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getAllUsers() {
+    // Return all users with their admin status
+    return this.prisma.user.findMany({
       select: {
         id: true,
         email: true,

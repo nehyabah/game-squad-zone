@@ -21,6 +21,7 @@ import leaderboardRoutes from "./modules/leaderboards/leaderboards.routes";
 import statsRoutes from "./modules/stats/stats.routes";
 import gameRoutes from "./modules/games/games.routes";
 import sixNationsRoutes from "./modules/six-nations/six-nations.routes";
+import feedbackRoutes from "./modules/feedback/feedback.routes";
 import { basicNotificationRoutes } from "./routes/basic-notifications";
 import { syncGamesOnStartup } from "./startup/sync-games";
 import { AutoScoringService } from "./services/auto-scoring.service";
@@ -318,6 +319,9 @@ export function buildApp(): FastifyInstance {
 
   // Six Nations routes
   app.register(sixNationsRoutes, { prefix: "/api" });
+
+  // Feedback routes
+  app.register(feedbackRoutes, { prefix: "/api" });
 
   // Notification routes - wrapped in async plugin to ensure app.auth is available
   app.register(async (app) => {

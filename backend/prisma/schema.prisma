@@ -350,6 +350,21 @@ model SixNationsAnswer {
   @@index([userId])
 }
 
+model Feedback {
+  id           String   @id @default(uuid())
+  content      String
+  category     String   @default("general") // "bug" | "feature" | "general"
+  contactEmail String?
+  status       String   @default("new") // "new" | "reviewed" | "resolved"
+  adminNotes   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
 // Enums converted to strings for compatibility
 // UserStatus: "active" | "suspended" | "deleted"
 // AuthProvider: "okta"

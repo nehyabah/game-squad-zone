@@ -145,7 +145,7 @@ export default function FeedbackForm({ open, onOpenChange }: FeedbackFormProps) 
                   placeholder="Tell us what's on your mind..."
                   value={content}
                   onChange={(e) => setContent(e.target.value.slice(0, 2000))}
-                  className="min-h-[100px] resize-none"
+                  className="min-h-[100px] resize-none text-base"
                 />
                 {content.length > 0 && content.length < 10 && (
                   <p className="text-xs text-destructive mt-1">At least 10 characters required</p>
@@ -162,6 +162,7 @@ export default function FeedbackForm({ open, onOpenChange }: FeedbackFormProps) 
                   placeholder="your@email.com"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
+                  className="text-base"
                 />
               </div>
             </>

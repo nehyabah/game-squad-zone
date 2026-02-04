@@ -291,7 +291,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
               value="leaderboard"
               className="font-medium text-sm px-2 py-2 rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-primary/30 data-[state=active]:shadow-md data-[state=active]:text-primary transition-all duration-200 text-primary/60 hover:text-primary/80"
             >
-              Leaderboard
+              Global Leaderboard
             </TabsTrigger>
             <button
               onClick={() => setShowSportSelector(true)}

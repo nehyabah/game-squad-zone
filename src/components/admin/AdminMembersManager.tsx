@@ -29,34 +29,38 @@ interface User {
 }
 
 export default function AdminMembersManager() {
-  const [admins, setAdmins] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [emailInput, setEmailInput] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [filterAdminsOnly, setFilterAdminsOnly] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadAdmins();
+    loadUsers();
   }, []);
 
-  const loadAdmins = async () => {
+  const loadUsers = async () => {
     try {
       setLoading(true);
-      const data = await adminUsersAPI.getAdmins();
-      setAdmins(data);
+      const data = await adminUsersAPI.getAllUsers();
+      setUsers(data);
     } catch (error) {
-      console.error("Error loading admins:", error);
+      console.error("Error loading users:", error);
       toast({
         title: "Error",
-        description: "Failed to load admin users",
+        description: "Failed to load users",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  const admins = users.filter(u => u.isAdmin);
+  const filteredUsers = filterAdminsOnly ? admins : users;
 
   const handleAddAdmin = async () => {
     if (!emailInput.trim()) {
@@ -76,7 +80,7 @@ export default function AdminMembersManager() {
         description: `Admin access granted to ${emailInput}`,
       });
       setEmailInput("");
-      loadAdmins();
+      loadUsers();
     } catch (error: any) {
       console.error("Error adding admin:", error);
       const errorMessage = error.response?.data?.error || "Failed to add admin";
@@ -99,12 +103,15 @@ export default function AdminMembersManager() {
     if (!selectedUser) return;
 
     try {
-      await adminUsersAPI.toggleAdmin(selectedUser.id, !selectedUser.isAdmin);
+      const newAdminStatus = !selectedUser.isAdmin;
+      await adminUsersAPI.toggleAdmin(selectedUser.id, newAdminStatus);
       toast({
         title: "Success",
-        description: `Admin access removed from ${getDisplayName(selectedUser)}`,
+        description: newAdminStatus
+          ? `Admin access granted to ${getDisplayName(selectedUser)}`
+          : `Admin access removed from ${getDisplayName(selectedUser)}`,
       });
-      loadAdmins();
+      loadUsers();
     } catch (error) {
       console.error("Error toggling admin status:", error);
       toast({
@@ -139,11 +146,19 @@ export default function AdminMembersManager() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Admin Members</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage who has access to the admin panel. Currently showing {admins.length} admin
-          {admins.length !== 1 ? "s" : ""}.
-        </p>
+        <h3 className="text-lg font-semibold mb-2">User Management</h3>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Total users: {users.length} • Admins: {admins.length}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFilterAdminsOnly(!filterAdminsOnly)}
+          >
+            {filterAdminsOnly ? "Show All Users" : "Show Admins Only"}
+          </Button>
+        </div>
       </div>
 
       <Alert>
@@ -185,11 +200,13 @@ export default function AdminMembersManager() {
         </CardContent>
       </Card>
 
-      {/* Current Admins List */}
+      {/* Users List */}
       <div>
-        <h4 className="text-sm font-semibold mb-3">Current Admins</h4>
+        <h4 className="text-sm font-semibold mb-3">
+          {filterAdminsOnly ? "Admins" : "All Users"} ({filteredUsers.length})
+        </h4>
         <div className="grid gap-4">
-          {admins.length === 0 ? (
+          {filteredUsers.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <p className="text-muted-foreground">
@@ -198,13 +215,13 @@ export default function AdminMembersManager() {
               </CardContent>
             </Card>
           ) : (
-            admins.map((user) => (
+            filteredUsers.map((user) => (
               <Card key={user.id}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <Avatar className="w-12 h-12">
-                        <AvatarFallback className="bg-primary text-primary-foreground">
+                        <AvatarFallback className={user.isAdmin ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}>
                           {getInitials(user)}
                         </AvatarFallback>
                       </Avatar>
@@ -213,10 +230,12 @@ export default function AdminMembersManager() {
                           <CardTitle className="text-base">
                             {getDisplayName(user)}
                           </CardTitle>
-                          <Badge className="bg-blue-600">
-                            <Shield className="w-3 h-3 mr-1" />
-                            Admin
-                          </Badge>
+                          {user.isAdmin && (
+                            <Badge className="bg-blue-600">
+                              <Shield className="w-3 h-3 mr-1" />
+                              Admin
+                            </Badge>
+                          )}
                         </div>
                         <CardDescription>
                           {user.email} • @{user.username}
@@ -224,12 +243,21 @@ export default function AdminMembersManager() {
                       </div>
                     </div>
                     <Button
-                      variant="destructive"
+                      variant={user.isAdmin ? "destructive" : "default"}
                       size="sm"
                       onClick={() => handleToggleAdmin(user)}
                     >
-                      <ShieldOff className="w-4 h-4 mr-2" />
-                      Remove Admin
+                      {user.isAdmin ? (
+                        <>
+                          <ShieldOff className="w-4 h-4 mr-2" />
+                          Remove Admin
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-4 h-4 mr-2" />
+                          Make Admin
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardHeader>
@@ -243,17 +271,32 @@ export default function AdminMembersManager() {
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Admin Access</AlertDialogTitle>
+            <AlertDialogTitle>
+              {selectedUser?.isAdmin ? "Remove Admin Access" : "Grant Admin Access"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove admin access from{" "}
-              <strong>{selectedUser ? getDisplayName(selectedUser) : ""}</strong>?
-              They will no longer be able to access the admin panel.
+              {selectedUser?.isAdmin ? (
+                <>
+                  Are you sure you want to remove admin access from{" "}
+                  <strong>{selectedUser ? getDisplayName(selectedUser) : ""}</strong>?
+                  They will no longer be able to access the admin panel.
+                </>
+              ) : (
+                <>
+                  Are you sure you want to grant admin access to{" "}
+                  <strong>{selectedUser ? getDisplayName(selectedUser) : ""}</strong>?
+                  They will be able to manage rounds, matches, questions, and other users.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmToggleAdmin} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Remove Admin
+            <AlertDialogAction
+              onClick={confirmToggleAdmin}
+              className={selectedUser?.isAdmin ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            >
+              {selectedUser?.isAdmin ? "Remove Admin" : "Grant Admin"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -148,6 +148,10 @@ export function useSquads() {
     }
   }, [user, selectedSport]);
 
+  const clearUnreadCount = (squadId: string) => {
+    setSquads(prev => prev.map(s => s.id === squadId ? { ...s, unreadCount: 0 } : s));
+  };
+
   return {
     squads,
     loading,
@@ -156,6 +160,7 @@ export function useSquads() {
     joinSquad,
     leaveSquad,
     deleteSquad,
+    clearUnreadCount,
     refetch: fetchSquads,
   };
 }

@@ -32,7 +32,7 @@ import { MyJoinRequests } from "./MyJoinRequests";
 import type { Squad } from "@/lib/api/squads";
 
 const SquadManager = () => {
-  const { squads, loading, createSquad, refetch, error } =
+  const { squads, loading, createSquad, refetch, error, clearUnreadCount } =
     useSquads();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
@@ -187,6 +187,11 @@ const SquadManager = () => {
     try {
       console.log("Viewing squad:", squad);
       setSelectedSquad(squad);
+      // Clear badge immediately and mark messages as read on server
+      if (squad.unreadCount && squad.unreadCount > 0) {
+        clearUnreadCount(squad.id);
+        squadsAPI.markMessagesAsRead(squad.id).catch(() => {});
+      }
     } catch (error) {
       console.error("Error viewing squad:", error);
       toast.error("Failed to load squad. Please try again.");
@@ -563,7 +568,7 @@ const SquadManager = () => {
                       className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-1.5 h-8 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg"
                       onClick={() => handleViewSquad(squad)}
                     >
-                      <span className="hidden sm:inline">Dashboard</span>
+                      <span className="hidden sm:inline">View Squad</span>
                       <span className="sm:hidden">View</span>
                     </Button>
                   </div>

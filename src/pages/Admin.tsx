@@ -2,10 +2,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, Trophy, Gamepad2 } from "lucide-react";
+import { Settings, Trophy, Gamepad2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SixNationsManager from "@/components/admin/SixNationsManager";
 import AdminMembersManager from "@/components/admin/AdminMembersManager";
+import AdminFeedbackManager from "@/components/admin/AdminFeedbackManager";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -97,7 +98,7 @@ export default function Admin() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="six-nations" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="six-nations" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
               6 Nations
@@ -105,6 +106,10 @@ export default function Admin() {
             <TabsTrigger value="nfl" className="flex items-center gap-2">
               <Gamepad2 className="w-4 h-4" />
               NFL
+            </TabsTrigger>
+            <TabsTrigger value="feedback" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Feedback
             </TabsTrigger>
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
@@ -124,6 +129,10 @@ export default function Admin() {
               </p>
               {/* TODO: Add NFL override components */}
             </div>
+          </TabsContent>
+
+          <TabsContent value="feedback" className="space-y-4">
+            <AdminFeedbackManager />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">

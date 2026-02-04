@@ -3,11 +3,13 @@ import { useAuth } from "@/hooks/use-auth.tsx";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { LogOut, User, Settings, Trophy, Bell, HelpCircle } from "lucide-react";
+import { LogOut, User, Settings, Trophy, Bell, MessageSquare, HelpCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import MyStats from "./MyStats";
 import ProfileSettings from "./ProfileSettings";
 import NotificationSettings from "./NotificationSettings";
+import FeedbackForm from "./FeedbackForm";
+import FAQSheet from "./FAQSheet";
 import { getDisplayName, getInitials } from "@/lib/utils/user";
 
 interface AccountMenuProps {
@@ -20,6 +22,8 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
   const [showMyStats, setShowMyStats] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [showFAQ, setShowFAQ] = useState(false);
 
   if (!user) return null;
 
@@ -109,13 +113,31 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start h-14 text-left font-normal hover:bg-purple-500/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm">
+            <Button
+              onClick={() => setShowFeedbackForm(true)}
+              variant="ghost"
+              className="w-full justify-start h-14 text-left font-normal hover:bg-purple-500/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm"
+            >
               <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-purple-500/20 transition-all duration-200 group-hover:scale-110">
-                <HelpCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-sm font-medium">Help & Support</div>
-                <div className="text-xs text-muted-foreground group-hover:text-foreground/70">Get assistance</div>
+                <div className="text-sm font-medium">Send Feedback</div>
+                <div className="text-xs text-muted-foreground group-hover:text-foreground/70">Help us improve</div>
+              </div>
+            </Button>
+
+            <Button
+              onClick={() => setShowFAQ(true)}
+              variant="ghost"
+              className="w-full justify-start h-14 text-left font-normal hover:bg-amber-500/10 hover:text-foreground rounded-xl group transition-all duration-200 hover:scale-[1.02] hover:shadow-sm"
+            >
+              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center mr-3 group-hover:bg-amber-500/20 transition-all duration-200 group-hover:scale-110">
+                <HelpCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <div className="text-sm font-medium">How to Play & FAQ</div>
+                <div className="text-xs text-muted-foreground group-hover:text-foreground/70">Rules & questions</div>
               </div>
             </Button>
           </div>
@@ -155,6 +177,18 @@ const AccountMenu = ({ open, onOpenChange }: AccountMenuProps) => {
       <NotificationSettings
         open={showNotificationSettings}
         onOpenChange={setShowNotificationSettings}
+      />
+
+      {/* Feedback Form */}
+      <FeedbackForm
+        open={showFeedbackForm}
+        onOpenChange={setShowFeedbackForm}
+      />
+
+      {/* FAQ Sheet */}
+      <FAQSheet
+        open={showFAQ}
+        onOpenChange={setShowFAQ}
       />
     </Sheet>
   );

@@ -25,9 +25,6 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   const { selectedSport, setSelectedSport, hasSportSelection } = useSport();
   const navigate = useNavigate();
 
-  // Debug: Log user object to check isAdmin field
-  console.log('Header user object:', user);
-
   const sportName = selectedSport === 'nfl' ? 'NFL Fantasy' : '6 Nations Rugby';
 
   // Sport-specific colors

@@ -44,20 +44,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     try {
       const supported = isPushNotificationSupported();
 
-      // DEBUG: Log iOS PWA detection
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                    (window.navigator as any).standalone === true;
-      console.log('📱 Device Info:', {
-        isIOS,
-        isPWA,
-        hasServiceWorker: 'serviceWorker' in navigator,
-        hasPushManager: 'PushManager' in window,
-        hasNotification: 'Notification' in window,
-        supported,
-        userAgent: navigator.userAgent
-      });
-
       setIsSupported(supported);
       setPermission(getNotificationPermission());
     } catch (error) {
@@ -104,8 +90,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
           timeoutPromise
         ]) as ServiceWorkerRegistration;
 
-        console.log("📱 Service worker registered:", registration);
-
         // Wait for service worker to be ready (with timeout)
         const readyPromise = navigator.serviceWorker.ready;
         const readyTimeout = new Promise((_, reject) =>
@@ -131,8 +115,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
   // Handle messages from service worker
   const handleServiceWorkerMessage = (event: MessageEvent) => {
-    console.log("💬 Message from service worker:", event.data);
-
     if (event.data?.type === "GET_AUTH_TOKEN") {
       // Service worker is requesting auth token
       const token = localStorage.getItem("auth_token"); // Adjust based on your auth storage
@@ -242,8 +224,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      console.log("📱 Push subscription created:", pushSubscription);
-
       // Send subscription to server
       const subscription = convertPushSubscription(pushSubscription);
       await notificationAPI.subscribe(subscription);
@@ -281,7 +261,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
 
       if (pushSubscription) {
         await pushSubscription.unsubscribe();
-        console.log("📱 Push subscription removed");
       }
 
       // Update status

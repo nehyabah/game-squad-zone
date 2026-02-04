@@ -14,24 +14,19 @@ export function PWAInstallPrompt() {
   const [promptType, setPromptType] = useState<'ios' | 'android' | null>(null);
 
   useEffect(() => {
-    console.log('🔍 PWA Install Prompt: Initializing...');
-
     // Check if already dismissed
     const dismissed = localStorage.getItem('pwa-prompt-dismissed');
     if (dismissed === 'true') {
-      console.log('❌ PWA Install Prompt: Previously dismissed');
       return;
     }
 
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('✅ PWA Install Prompt: Already installed as PWA');
       return;
     }
 
     // Android: Listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('📱 PWA Install Prompt: Android beforeinstallprompt event fired');
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setPromptType('android');
@@ -44,22 +39,10 @@ export function PWAInstallPrompt() {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator as any).standalone;
 
-    console.log('🔍 PWA Install Prompt: isIOS =', isIOS, ', isInStandaloneMode =', isInStandaloneMode);
-
     if (isIOS && !isInStandaloneMode) {
-      console.log('🍎 PWA Install Prompt: Showing iOS prompt in 2 seconds...');
       setTimeout(() => {
         setPromptType('ios');
         setShowPrompt(true);
-        console.log('🍎 PWA Install Prompt: iOS prompt displayed');
-      }, 2000);
-    } else if (!isIOS) {
-      // TEMPORARY: For testing on desktop, show iOS-style prompt
-      console.log('💻 PWA Install Prompt: Desktop - showing test prompt in 2 seconds...');
-      setTimeout(() => {
-        setPromptType('ios');
-        setShowPrompt(true);
-        console.log('💻 PWA Install Prompt: Test prompt displayed');
       }, 2000);
     }
 
@@ -75,7 +58,7 @@ export function PWAInstallPrompt() {
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {
-      console.log('✅ PWA installed');
+      // PWA installed successfully
     }
 
     setDeferredPrompt(null);

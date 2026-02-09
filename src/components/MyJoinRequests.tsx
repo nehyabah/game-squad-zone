@@ -24,28 +24,14 @@ export function MyJoinRequests() {
     if (!isLoading) {
       const previousRequests = previousRequestsRef.current;
 
-      console.log('[MyJoinRequests] Checking for changes:', {
-        previousCount: previousRequests.length,
-        currentCount: requests.length,
-        previousIds: previousRequests.map(r => r.id),
-        currentIds: requests.map(r => r.id),
-      });
-
       // Only check for changes if we have previous data
       if (previousRequests.length > 0) {
         // Check each previous request to see if it's no longer in the pending list
         previousRequests.forEach((prevRequest) => {
           const stillPending = requests.find(r => r.id === prevRequest.id);
 
-          console.log('[MyJoinRequests] Checking request:', {
-            id: prevRequest.id,
-            squadName: prevRequest.squad?.name,
-            stillPending: !!stillPending,
-          });
-
           // If a request is no longer in the pending list, it was approved
           if (!stillPending) {
-            console.log('[MyJoinRequests] Request approved! Showing toast for:', prevRequest.squad?.name);
 
             // Show success notification
             toast.success(

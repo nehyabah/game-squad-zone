@@ -216,6 +216,51 @@ export const adminUsersAPI = {
   },
 };
 
+// Audit Log API
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  performedBy: string;
+  targetType: string;
+  targetId: string;
+  details: Record<string, any> | null;
+  createdAt: string;
+  performedByUser: {
+    id: string;
+    username: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  } | null;
+}
+
+export interface SuspiciousActivityReport {
+  flaggedUsers: {
+    user: { id: string; username: string; email?: string; firstName?: string; lastName?: string };
+    rejectedAttempts: number;
+    entries: AuditLogEntry[];
+  }[];
+  lateSubmissions: AuditLogEntry[];
+  totalRejections: number;
+  totalLateSubmissions: number;
+}
+
+export const auditLogAPI = {
+  getAll: async (filters?: { action?: string; performedBy?: string; limit?: number }): Promise<AuditLogEntry[]> => {
+    const params: Record<string, string> = {};
+    if (filters?.action) params.action = filters.action;
+    if (filters?.performedBy) params.performedBy = filters.performedBy;
+    if (filters?.limit) params.limit = String(filters.limit);
+    const response = await api.get('/six-nations/admin/audit-log', { params });
+    return response.data;
+  },
+
+  getSuspicious: async (): Promise<SuspiciousActivityReport> => {
+    const response = await api.get('/six-nations/admin/suspicious-activity');
+    return response.data;
+  },
+};
+
 // Answers API
 export interface SixNationsUserAnswer {
   id: string;

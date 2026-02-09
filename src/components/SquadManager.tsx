@@ -185,7 +185,6 @@ const SquadManager = () => {
 
   const handleViewSquad = (squad: Squad) => {
     try {
-      console.log("Viewing squad:", squad);
       setSelectedSquad(squad);
       // Clear badge immediately and mark messages as read on server
       if (squad.unreadCount && squad.unreadCount > 0) {

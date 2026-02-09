@@ -3,8 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RoundsManager from "./RoundsManager";
 import MatchesManager from "./MatchesManager";
 import QuestionsManager from "./QuestionsManager";
+import AuditLogViewer from "./AuditLogViewer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, Shield } from "lucide-react";
 import { roundsAPI, matchesAPI, questionsAPI } from "@/lib/api/six-nations";
 import { useToast } from "@/hooks/use-toast";
 
@@ -127,6 +128,10 @@ export default function SixNationsManager() {
           <TabsTrigger value="questions" disabled={matches.length === 0}>
             Questions {questions.length > 0 && `(${questions.length})`}
           </TabsTrigger>
+          <TabsTrigger value="audit-log">
+            <Shield className="h-4 w-4 mr-1" />
+            Audit Log
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rounds" className="mt-6">
@@ -155,6 +160,10 @@ export default function SixNationsManager() {
             setQuestions={setQuestions}
             onRefresh={loadData}
           />
+        </TabsContent>
+
+        <TabsContent value="audit-log" className="mt-6">
+          <AuditLogViewer />
         </TabsContent>
       </Tabs>
     </div>

@@ -151,13 +151,18 @@ export class SixNationsController {
 
   async updateMatchScore(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
+      const adminUserId = (request as any).currentUser?.id;
+      if (!adminUserId) {
+        return reply.status(401).send({ error: "Unauthorized" });
+      }
+
       const { id } = request.params;
       const data = request.body as {
         homeScore: number;
         awayScore: number;
       };
 
-      const match = await this.service.updateMatchScore(id, data.homeScore, data.awayScore);
+      const match = await this.service.updateMatchScore(id, data.homeScore, data.awayScore, adminUserId);
       return reply.send(match);
     } catch (error) {
       console.error("Error updating match score:", error);
@@ -258,12 +263,17 @@ export class SixNationsController {
 
   async setCorrectAnswer(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
+      const adminUserId = (request as any).currentUser?.id;
+      if (!adminUserId) {
+        return reply.status(401).send({ error: "Unauthorized" });
+      }
+
       const { id } = request.params;
       const data = request.body as {
         correctAnswer: string;
       };
 
-      const question = await this.service.setCorrectAnswer(id, data.correctAnswer);
+      const question = await this.service.setCorrectAnswer(id, data.correctAnswer, adminUserId);
       return reply.send(question);
     } catch (error) {
       console.error("Error setting correct answer:", error);
@@ -273,8 +283,13 @@ export class SixNationsController {
 
   async clearCorrectAnswer(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
+      const adminUserId = (request as any).currentUser?.id;
+      if (!adminUserId) {
+        return reply.status(401).send({ error: "Unauthorized" });
+      }
+
       const { id } = request.params;
-      const question = await this.service.clearCorrectAnswer(id);
+      const question = await this.service.clearCorrectAnswer(id, adminUserId);
       return reply.send(question);
     } catch (error) {
       console.error("Error clearing correct answer:", error);
@@ -355,10 +370,22 @@ export class SixNationsController {
         answers: { questionId: string; answer: string }[];
       };
 
-      const answers = await this.service.submitAnswers(userId, data.answers);
-      return reply.status(201).send(answers);
+      const result = await this.service.submitAnswers(userId, data.answers);
+
+      // If result has a 'locked' property, it's a partial success
+      if (result && typeof result === 'object' && 'locked' in result) {
+        return reply.status(207).send(result);
+      }
+
+      return reply.status(201).send(result);
     } catch (error) {
       console.error("Error submitting answers:", error);
+
+      // Handle all-locked error
+      if (error instanceof Error && error.message.includes('All answers rejected')) {
+        return reply.status(403).send({ error: error.message });
+      }
+
       return reply.status(500).send({ error: "Failed to submit answers" });
     }
   }
@@ -401,6 +428,37 @@ export class SixNationsController {
     } catch (error) {
       console.error("Error fetching specific user answers:", error);
       return reply.status(500).send({ error: "Failed to fetch user answers" });
+    }
+  }
+
+  // Audit log
+  async getAuditLog(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { action, performedBy, limit } = request.query as {
+        action?: string;
+        performedBy?: string;
+        limit?: string;
+      };
+
+      const logs = await this.service.getAuditLog({
+        action,
+        performedBy,
+        limit: limit ? parseInt(limit, 10) : undefined,
+      });
+      return reply.send(logs);
+    } catch (error) {
+      console.error("Error fetching audit log:", error);
+      return reply.status(500).send({ error: "Failed to fetch audit log" });
+    }
+  }
+
+  async getSuspiciousActivity(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const result = await this.service.getSuspiciousActivity();
+      return reply.send(result);
+    } catch (error) {
+      console.error("Error fetching suspicious activity:", error);
+      return reply.status(500).send({ error: "Failed to fetch suspicious activity" });
     }
   }
 

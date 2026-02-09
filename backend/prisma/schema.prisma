@@ -350,6 +350,21 @@ model SixNationsAnswer {
   @@index([userId])
 }
 
+model SixNationsAuditLog {
+  id          String   @id @default(uuid())
+  action      String   // "set_correct_answer", "clear_correct_answer", "update_match_score", "answer_submitted", "answer_rejected_locked"
+  performedBy String   // userId of who did the action
+  targetType  String   // "question", "match", "answer"
+  targetId    String   // ID of the affected record
+  details     Json?    // Flexible payload: old/new values, reason, etc.
+  createdAt   DateTime @default(now())
+
+  @@index([action])
+  @@index([performedBy])
+  @@index([targetId])
+  @@index([createdAt])
+}
+
 model Feedback {
   id           String   @id @default(uuid())
   content      String

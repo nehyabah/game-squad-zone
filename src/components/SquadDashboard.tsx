@@ -47,6 +47,7 @@ import type { Squad } from "@/lib/api/squads";
 import type { ChatMessage as APIChatMessage } from "@/lib/api/chat";
 import { getDisplayName, getInitials } from "@/lib/utils/user";
 import { squadsAPI } from "@/lib/api/squads";
+import { leaderboardAPI as sixNationsLeaderboardAPI, SixNationsLeaderboardEntry } from "@/lib/api/six-nations";
 import { MemberPicksModal } from "./MemberPicksModal";
 import { StatisticsTab } from "./Statistics/StatisticsTab";
 import { PendingJoinRequests } from "./PendingJoinRequests";
@@ -111,6 +112,12 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
 
   const currentWeekId = getCurrentWeekIdSync();
   const squadLeaderboard = useSquadLeaderboard(squadId);
+  const squadTotalLeaderboard = useSquadLeaderboard(squadId, undefined, 'total');
+  const [squadLeaderboardTab, setSquadLeaderboardTab] = useState("total");
+
+  // Global Six Nations leaderboard state
+  const [globalSixNationsData, setGlobalSixNationsData] = useState<SixNationsLeaderboardEntry[]>([]);
+  const [globalSixNationsLoading, setGlobalSixNationsLoading] = useState(false);
 
   const {
     messages: chatMessages,
@@ -136,6 +143,17 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   });
 
   const pendingRequestsCount = pendingRequests.length;
+
+  // Load global Six Nations leaderboard (total) when viewing a Six Nations squad
+  useEffect(() => {
+    if (isSixNations) {
+      setGlobalSixNationsLoading(true);
+      sixNationsLeaderboardAPI.get(undefined, 'total')
+        .then(data => setGlobalSixNationsData(data))
+        .catch(err => console.error('Error loading global Six Nations leaderboard:', err))
+        .finally(() => setGlobalSixNationsLoading(false));
+    }
+  }, [isSixNations]);
 
   const [activeTab, setActiveTab] = useState("leaderboard");
   const [newMessage, setNewMessage] = useState("");
@@ -202,26 +220,65 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
     }
   }, [squad?.maxMembers, squad?.name]);
 
+  const sortSixNationsData = (data: typeof squadLeaderboard.data) => {
+    return [...data]
+      .sort((a, b) => {
+        if (b.points !== a.points) return b.points - a.points;
+        return b.wins - a.wins;
+      })
+      .map((member, index) => ({
+        ...member,
+        rank: index + 1,
+      }));
+  };
+
   const memberRanking = useMemo(() => {
     const data = squadLeaderboard.data || [];
-
-    // Sort by points for Six Nations, by winPercentage for NFL
-    if (isSixNations) {
-      return [...data]
-        .sort((a, b) => {
-          // Sort by points descending first
-          if (b.points !== a.points) return b.points - a.points;
-          // Then by wins (correct answers) descending
-          return b.wins - a.wins;
-        })
-        .map((member, index) => ({
-          ...member,
-          rank: index + 1, // Recalculate rank based on sorted order
-        }));
-    }
-
+    if (isSixNations) return sortSixNationsData(data);
     return data;
   }, [squadLeaderboard.data, isSixNations]);
+
+  const memberTotalRanking = useMemo(() => {
+    const data = squadTotalLeaderboard.data || [];
+    if (isSixNations) return sortSixNationsData(data);
+    return data;
+  }, [squadTotalLeaderboard.data, isSixNations]);
+
+  // Transform global Six Nations data to squad ranking format
+  const globalRanking = useMemo(() => {
+    if (!globalSixNationsData.length) return [];
+    return globalSixNationsData
+      .sort((a, b) => {
+        if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
+        return b.correctAnswers - a.correctAnswers;
+      })
+      .map((entry, index) => {
+        const pendingAnswers = entry.totalAnswers - entry.correctAnswers - entry.incorrectAnswers;
+        return {
+          userId: entry.user.id,
+          username: entry.user.username,
+          displayName: entry.user.displayName,
+          firstName: entry.user.firstName,
+          lastName: entry.user.lastName,
+          points: entry.totalPoints,
+          wins: entry.correctAnswers,
+          losses: entry.incorrectAnswers,
+          pushes: pendingAnswers,
+          winPercentage: 0,
+          rank: index + 1,
+          isCurrentUser: user ? entry.user.id === user.id : false,
+        };
+      });
+  }, [globalSixNationsData, user]);
+
+  // For Six Nations squads, switch between current round, total, and global based on tab
+  const activeSquadRanking = isSixNations
+    ? squadLeaderboardTab === 'total'
+      ? memberTotalRanking
+      : squadLeaderboardTab === 'global'
+        ? globalRanking
+        : memberRanking
+    : memberRanking;
 
   if (loading) {
     return (
@@ -856,17 +913,43 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               </div>
               <div className="flex items-center gap-0.5 px-2 py-0.5 bg-muted/50 rounded-full">
                 <span className="text-[10px] font-bold">
-                  {memberRanking.length}
+                  {activeSquadRanking.length}
                 </span>
               </div>
             </div>
+
+            {/* Six Nations Total/Global Tab Selector (mobile) */}
+            {isSixNations && (
+              <div className="flex border-b border-border/50 flex-shrink-0">
+                <button
+                  onClick={() => setSquadLeaderboardTab("total")}
+                  className={`flex-1 text-xs font-semibold py-2 transition-colors ${
+                    squadLeaderboardTab !== "global"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Total
+                </button>
+                <button
+                  onClick={() => setSquadLeaderboardTab("global")}
+                  className={`flex-1 text-xs font-semibold py-2 transition-colors ${
+                    squadLeaderboardTab === "global"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  Global
+                </button>
+              </div>
+            )}
 
             {/* Ultra-compact Leaderboard List */}
             <div
               className="overflow-y-auto"
               style={{ height: "calc(100vh - 240px)" }}
             >
-              {memberRanking.map((member, index) => (
+              {activeSquadRanking.map((member, index) => (
                 <div
                   key={member.userId}
                   className={`flex items-center justify-between px-2 py-2 border-b border-border/20 active:bg-primary/5 transition-colors ${
@@ -1002,21 +1085,57 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                         Squad Leaderboard
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Current season standings
+                        {isSixNations ? 'Tournament standings' : 'Current season standings'}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full">
                     <Users className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium text-muted-foreground">
-                      {memberRanking.length} players
+                      {activeSquadRanking.length} players
                     </span>
                   </div>
                 </div>
 
+                {/* Six Nations Round/Total/Global Tab Selector */}
+                {isSixNations && (
+                  <div className="flex border-b border-border flex-shrink-0">
+                    <button
+                      onClick={() => setSquadLeaderboardTab("round")}
+                      className={`flex-1 text-sm font-semibold py-2.5 transition-colors ${
+                        squadLeaderboardTab === "round"
+                          ? "text-primary border-b-2 border-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Current Round
+                    </button>
+                    <button
+                      onClick={() => setSquadLeaderboardTab("total")}
+                      className={`flex-1 text-sm font-semibold py-2.5 transition-colors ${
+                        squadLeaderboardTab === "total"
+                          ? "text-primary border-b-2 border-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Total
+                    </button>
+                    <button
+                      onClick={() => setSquadLeaderboardTab("global")}
+                      className={`flex-1 text-sm font-semibold py-2.5 transition-colors ${
+                        squadLeaderboardTab === "global"
+                          ? "text-primary border-b-2 border-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Global
+                    </button>
+                  </div>
+                )}
+
                 <div className="overflow-y-auto" style={{ height: "700px" }}>
                   <div className="divide-y divide-border">
-                    {memberRanking.map((member, index) => (
+                    {activeSquadRanking.map((member, index) => (
                       <div
                         key={member.userId}
                         className={`flex items-center justify-between p-2.5 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer ${

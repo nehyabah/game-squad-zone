@@ -156,16 +156,21 @@ const Leaderboard = () => {
   const [sixNationsData, setSixNationsData] = useState<SixNationsLeaderboardEntry[]>([]);
   const [sixNationsLoading, setSixNationsLoading] = useState(false);
   const [sixNationsError, setSixNationsError] = useState<string | null>(null);
+  const [sixNationsTotalData, setSixNationsTotalData] = useState<SixNationsLeaderboardEntry[]>([]);
+  const [sixNationsTotalLoading, setSixNationsTotalLoading] = useState(false);
+  const [sixNationsTotalError, setSixNationsTotalError] = useState<string | null>(null);
+  const [sixNationsTab, setSixNationsTab] = useState("round");
 
   // Get current week ID dynamically
   const currentWeekId = getCurrentWeekIdSync();
   const seasonLeaderboard = useSeasonLeaderboard();
   const weeklyLeaderboard = useWeeklyLeaderboard(currentWeekId);
 
-  // Load Six Nations leaderboard
+  // Load Six Nations leaderboards
   useEffect(() => {
     if (selectedSport === "six-nations") {
       loadSixNationsLeaderboard();
+      loadSixNationsTotalLeaderboard();
     }
   }, [selectedSport]);
 
@@ -174,17 +179,26 @@ const Leaderboard = () => {
     setSixNationsError(null);
     try {
       const data = await leaderboardAPI.get();
-      console.log('🏆 Six Nations Leaderboard Data:', data);
-      console.log('📊 Number of entries:', data.length);
-      if (data.length > 0) {
-        console.log('🎮 First entry:', data[0]);
-      }
       setSixNationsData(data);
     } catch (error) {
       console.error("Error loading Six Nations leaderboard:", error);
       setSixNationsError("Failed to load leaderboard");
     } finally {
       setSixNationsLoading(false);
+    }
+  };
+
+  const loadSixNationsTotalLeaderboard = async () => {
+    setSixNationsTotalLoading(true);
+    setSixNationsTotalError(null);
+    try {
+      const data = await leaderboardAPI.get(undefined, 'total');
+      setSixNationsTotalData(data);
+    } catch (error) {
+      console.error("Error loading Six Nations total leaderboard:", error);
+      setSixNationsTotalError("Failed to load leaderboard");
+    } finally {
+      setSixNationsTotalLoading(false);
     }
   };
 
@@ -203,8 +217,6 @@ const Leaderboard = () => {
   const transformSixNationsData = (
     apiData: SixNationsLeaderboardEntry[]
   ): LeaderboardDisplayEntry[] => {
-    console.log('🔄 Transforming Six Nations data:', apiData.length, 'entries');
-
     // Sort by points descending, then by correct answers descending
     const sortedData = [...apiData].sort((a, b) => {
       if (b.totalPoints !== a.totalPoints) {
@@ -214,13 +226,6 @@ const Leaderboard = () => {
     });
 
     return sortedData.map((entry, index) => {
-      console.log('📝 Transforming entry:', {
-        username: entry.user.username,
-        totalAnswers: entry.totalAnswers,
-        correctAnswers: entry.correctAnswers,
-        incorrectAnswers: entry.incorrectAnswers,
-        totalPoints: entry.totalPoints
-      });
       // Calculate weighted score: average points per answer (more meaningful than W%)
       // This rewards both accuracy AND picking harder questions correctly
       const avgPointsPerAnswer = entry.totalAnswers > 0
@@ -254,6 +259,7 @@ const Leaderboard = () => {
   const weeklyData = transformLeaderboardData(weeklyLeaderboard.data);
   const seasonData = transformLeaderboardData(seasonLeaderboard.data);
   const sixNationsDisplayData = transformSixNationsData(sixNationsData);
+  const sixNationsTotalDisplayData = transformSixNationsData(sixNationsTotalData);
 
   // Show Six Nations leaderboard if viewing Six Nations
   if (selectedSport === "six-nations") {
@@ -268,32 +274,70 @@ const Leaderboard = () => {
           </p>
         </div>
 
-        {sixNationsLoading ? (
-          <div className="flex items-center justify-center p-8">
-            <Loader2 className="w-8 h-8 animate-spin" />
-            <span className="ml-2">Loading leaderboard...</span>
-          </div>
-        ) : sixNationsError ? (
-          <div className="text-center p-8 text-red-600">
-            <p>Error: {sixNationsError}</p>
-            <button
-              onClick={loadSixNationsLeaderboard}
-              className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80"
-            >
-              Retry
-            </button>
-          </div>
-        ) : sixNationsDisplayData.length === 0 ? (
-          <Card className="bg-muted/30 border-border">
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">
-                No scores yet. Be the first to submit your picks!
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <LeaderboardTable data={sixNationsDisplayData} isSixNations={true} />
-        )}
+        <Tabs value={sixNationsTab} onValueChange={setSixNationsTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-sm mx-auto mb-6">
+            <TabsTrigger value="round">Current Round</TabsTrigger>
+            <TabsTrigger value="total">Total</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="round">
+            {sixNationsLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <span className="ml-2">Loading leaderboard...</span>
+              </div>
+            ) : sixNationsError ? (
+              <div className="text-center p-8 text-red-600">
+                <p>Error: {sixNationsError}</p>
+                <button
+                  onClick={loadSixNationsLeaderboard}
+                  className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : sixNationsDisplayData.length === 0 ? (
+              <Card className="bg-muted/30 border-border">
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    No scores yet. Be the first to submit your picks!
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <LeaderboardTable data={sixNationsDisplayData} isSixNations={true} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="total">
+            {sixNationsTotalLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <Loader2 className="w-8 h-8 animate-spin" />
+                <span className="ml-2">Loading leaderboard...</span>
+              </div>
+            ) : sixNationsTotalError ? (
+              <div className="text-center p-8 text-red-600">
+                <p>Error: {sixNationsTotalError}</p>
+                <button
+                  onClick={loadSixNationsTotalLeaderboard}
+                  className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary/80"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : sixNationsTotalDisplayData.length === 0 ? (
+              <Card className="bg-muted/30 border-border">
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">
+                    No scores yet. Be the first to submit your picks!
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <LeaderboardTable data={sixNationsTotalDisplayData} isSixNations={true} />
+            )}
+          </TabsContent>
+        </Tabs>
 
         {/* Points System Info */}
         <Card className="bg-muted/30 border-border">

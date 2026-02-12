@@ -57,9 +57,12 @@ class LeaderboardAPI {
   }
 
   // Get squad leaderboard
-  async getSquadLeaderboard(squadId: string, weekId?: string): Promise<LeaderboardEntry[]> {
-    const params = weekId ? `?weekId=${weekId}` : '';
-    return this.request<LeaderboardEntry[]>(`/api/leaderboards/squad/${squadId}${params}`);
+  async getSquadLeaderboard(squadId: string, weekId?: string, scope?: string): Promise<LeaderboardEntry[]> {
+    const query = new URLSearchParams();
+    if (weekId) query.append('weekId', weekId);
+    if (scope) query.append('scope', scope);
+    const queryString = query.toString();
+    return this.request<LeaderboardEntry[]>(`/api/leaderboards/squad/${squadId}${queryString ? `?${queryString}` : ''}`);
   }
 
   // Get user rank

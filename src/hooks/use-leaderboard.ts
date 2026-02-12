@@ -75,7 +75,7 @@ export function useWeeklyLeaderboard(weekId: string) {
   return { data, loading, error, refetch: fetchData };
 }
 
-export function useSquadLeaderboard(squadId: string, weekId?: string) {
+export function useSquadLeaderboard(squadId: string, weekId?: string, scope?: string) {
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export function useSquadLeaderboard(squadId: string, weekId?: string) {
     try {
       setLoading(true);
       setError(null);
-      const result = await leaderboardAPI.getSquadLeaderboard(squadId, weekId);
+      const result = await leaderboardAPI.getSquadLeaderboard(squadId, weekId, scope);
 
       // Sort by win percentage descending, then by points descending
       const sortedResult = result.sort((a, b) => {
@@ -106,7 +106,7 @@ export function useSquadLeaderboard(squadId: string, weekId?: string) {
 
   useEffect(() => {
     fetchData();
-  }, [squadId, weekId]);
+  }, [squadId, weekId, scope]);
 
   return { data, loading, error, refetch: fetchData };
 }

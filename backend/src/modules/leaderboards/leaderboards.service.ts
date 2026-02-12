@@ -32,8 +32,8 @@ export class LeaderboardService {
   /**
    * Get squad leaderboard
    */
-  async getSquadLeaderboard(squadId: string, weekId?: string): Promise<LeaderboardEntry[]> {
-    return this.repo.fetchSquadLeaderboard(squadId, weekId);
+  async getSquadLeaderboard(squadId: string, weekId?: string, scope?: string): Promise<LeaderboardEntry[]> {
+    return this.repo.fetchSquadLeaderboard(squadId, weekId, scope);
   }
 
   /**

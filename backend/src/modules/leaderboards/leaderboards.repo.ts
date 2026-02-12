@@ -160,7 +160,7 @@ export class LeaderboardRepo {
   /**
    * Get squad leaderboard for a specific squad and week
    */
-  async fetchSquadLeaderboard(squadId: string, weekId?: string): Promise<LeaderboardEntry[]> {
+  async fetchSquadLeaderboard(squadId: string, weekId?: string, scope?: string): Promise<LeaderboardEntry[]> {
     // First get squad to know its sport
     const squad = await this.prisma.squad.findUnique({
       where: { id: squadId },
@@ -171,7 +171,7 @@ export class LeaderboardRepo {
 
     // Handle Six Nations squads differently
     if (sport === 'six-nations') {
-      return this.fetchSixNationsSquadLeaderboard(squadId, weekId);
+      return this.fetchSixNationsSquadLeaderboard(squadId, weekId, scope);
     }
 
     // Get squad members
@@ -272,7 +272,7 @@ export class LeaderboardRepo {
    * Shows cumulative stats across ALL rounds for the tournament
    * Note: weekId parameter is ignored for Six Nations squads (we show all-time stats)
    */
-  private async fetchSixNationsSquadLeaderboard(squadId: string, roundId?: string): Promise<LeaderboardEntry[]> {
+  private async fetchSixNationsSquadLeaderboard(squadId: string, roundId?: string, scope?: string): Promise<LeaderboardEntry[]> {
     // Get squad members
     const squadMembers = await this.prisma.squadMember.findMany({
       where: { squadId },
@@ -292,12 +292,22 @@ export class LeaderboardRepo {
     // Get member user IDs
     const memberUserIds = squadMembers.map(m => m.userId);
 
-    // Get ALL answers for squad members across ALL rounds (not filtered by round)
-    // This shows cumulative tournament stats
+    // Build where clause based on scope
+    const whereClause: any = {
+      userId: { in: memberUserIds }
+    };
+
+    if (scope === 'total') {
+      // No round filter — aggregate across ALL rounds
+    } else if (roundId) {
+      whereClause.question = { match: { roundId } };
+    } else {
+      // Default to active round only
+      whereClause.question = { match: { round: { isActive: true } } };
+    }
+
     const answers = await this.prisma.sixNationsAnswer.findMany({
-      where: {
-        userId: { in: memberUserIds }
-      },
+      where: whereClause,
       include: {
         user: {
           select: {

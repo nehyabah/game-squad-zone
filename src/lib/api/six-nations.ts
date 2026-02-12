@@ -310,8 +310,10 @@ export interface SixNationsLeaderboardEntry {
 }
 
 export const leaderboardAPI = {
-  get: async (roundId?: string): Promise<SixNationsLeaderboardEntry[]> => {
-    const params = roundId ? { roundId } : {};
+  get: async (roundId?: string, scope?: string): Promise<SixNationsLeaderboardEntry[]> => {
+    const params: Record<string, string> = {};
+    if (roundId) params.roundId = roundId;
+    if (scope) params.scope = scope;
     const response = await api.get('/six-nations/leaderboard', { params });
     return response.data;
   },

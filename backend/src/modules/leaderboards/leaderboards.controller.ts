@@ -19,8 +19,8 @@ export class LeaderboardController {
     return this.service.getSeasonLeaderboard(sport);
   }
 
-  async getSquad(squadId: string, weekId?: string) {
-    return this.service.getSquadLeaderboard(squadId, weekId);
+  async getSquad(squadId: string, weekId?: string, scope?: string) {
+    return this.service.getSquadLeaderboard(squadId, weekId, scope);
   }
 
   async getUserRank(userId: string, weekId?: string) {

@@ -142,19 +142,6 @@ export default async function sixNationsRoutes(app: FastifyInstance) {
     return controller.toggleUserAdmin(request, reply);
   });
 
-  // Audit log endpoints
-  app.get("/six-nations/admin/audit-log", {
-    preHandler: [app.auth],
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    return controller.getAuditLog(request, reply);
-  });
-
-  app.get("/six-nations/admin/suspicious-activity", {
-    preHandler: [app.auth],
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
-    return controller.getSuspiciousActivity(request, reply);
-  });
-
   // User answers endpoints
   app.post("/six-nations/answers", {
     preHandler: [app.auth],

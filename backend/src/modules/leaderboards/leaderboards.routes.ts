@@ -56,8 +56,8 @@ export default async function leaderboardRoutes(app: FastifyInstance) {
   app.get('/leaderboards/squad/:squadId', { preHandler: [app.auth] }, async (req, reply) => {
     try {
       const params = req.params as { squadId: string };
-      const query = req.query as { weekId?: string };
-      const data = await controller.getSquad(params.squadId, query.weekId);
+      const query = req.query as { weekId?: string; scope?: string };
+      const data = await controller.getSquad(params.squadId, query.weekId, query.scope);
       return reply.send(data);
     } catch (error) {
       console.error('Error fetching squad leaderboard:', error);

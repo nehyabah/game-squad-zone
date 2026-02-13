@@ -35,6 +35,8 @@ export function buildApp(): FastifyInstance {
   // CORS - CRITICAL: Never use wildcard '*' with credentials mode
   // Use array of allowed origins for production-ready CORS
   const allowedOrigins = [
+    'https://squad-pot.com',
+    'https://www.squad-pot.com',
     'https://www.squadpot.dev',
     'https://squadpot.dev',
     'https://sqpbackend.vercel.app',

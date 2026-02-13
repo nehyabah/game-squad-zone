@@ -240,8 +240,14 @@ export class SixNationsService {
     });
   }
 
-  async updateMatchScore(id: string, homeScore: number, awayScore: number) {
-    return this.prisma.sixNationsMatch.update({
+  async updateMatchScore(id: string, homeScore: number, awayScore: number, performedBy: string) {
+    // Fetch old values for audit log
+    const oldMatch = await this.prisma.sixNationsMatch.findUnique({
+      where: { id },
+      select: { homeScore: true, awayScore: true, homeTeam: true, awayTeam: true },
+    });
+
+    const match = await this.prisma.sixNationsMatch.update({
       where: { id },
       data: {
         homeScore,
@@ -252,6 +258,25 @@ export class SixNationsService {
         round: true,
       },
     });
+
+    await this.prisma.sixNationsAuditLog.create({
+      data: {
+        action: 'update_match_score',
+        performedBy,
+        targetType: 'match',
+        targetId: id,
+        details: {
+          homeTeam: oldMatch?.homeTeam,
+          awayTeam: oldMatch?.awayTeam,
+          oldHomeScore: oldMatch?.homeScore,
+          oldAwayScore: oldMatch?.awayScore,
+          newHomeScore: homeScore,
+          newAwayScore: awayScore,
+        },
+      },
+    });
+
+    return match;
   }
 
   // Questions
@@ -432,7 +457,7 @@ export class SixNationsService {
     });
   }
 
-  async setCorrectAnswer(id: string, correctAnswer: string) {
+  async setCorrectAnswer(id: string, correctAnswer: string, performedBy: string) {
     // Update the question with correct answer
     const question = await this.prisma.sixNationsQuestion.update({
       where: { id },
@@ -449,10 +474,30 @@ export class SixNationsService {
     // Calculate isCorrect for all answers to this question
     await this.calculateAnswerResults(id, correctAnswer);
 
+    await this.prisma.sixNationsAuditLog.create({
+      data: {
+        action: 'set_correct_answer',
+        performedBy,
+        targetType: 'question',
+        targetId: id,
+        details: {
+          questionText: question.questionText,
+          correctAnswer,
+          matchId: question.matchId,
+        },
+      },
+    });
+
     return question;
   }
 
-  async clearCorrectAnswer(id: string) {
+  async clearCorrectAnswer(id: string, performedBy: string) {
+    // Fetch old correct answer for audit log
+    const oldQuestion = await this.prisma.sixNationsQuestion.findUnique({
+      where: { id },
+      select: { correctAnswer: true, questionText: true, matchId: true },
+    });
+
     // Update the question to clear the correct answer
     const question = await this.prisma.sixNationsQuestion.update({
       where: { id },
@@ -470,6 +515,20 @@ export class SixNationsService {
     await this.prisma.sixNationsAnswer.updateMany({
       where: { questionId: id },
       data: { isCorrect: null },
+    });
+
+    await this.prisma.sixNationsAuditLog.create({
+      data: {
+        action: 'clear_correct_answer',
+        performedBy,
+        targetType: 'question',
+        targetId: id,
+        details: {
+          questionText: oldQuestion?.questionText,
+          oldCorrectAnswer: oldQuestion?.correctAnswer,
+          matchId: oldQuestion?.matchId,
+        },
+      },
     });
 
     return question;
@@ -495,44 +554,122 @@ export class SixNationsService {
 
   // Submit user answers
   async submitAnswers(userId: string, answers: { questionId: string; answer: string }[]) {
-    // Use transaction to ensure all answers are saved together
-    const savedAnswers = await this.prisma.$transaction(
-      answers.map(({ questionId, answer }) =>
-        this.prisma.sixNationsAnswer.upsert({
-          where: {
-            questionId_userId: {
+    const LOCK_HOURS = 1;
+    const now = new Date();
+
+    // Fetch all questions with their match dates in one query
+    const questionIds = answers.map(a => a.questionId);
+    const questions = await this.prisma.sixNationsQuestion.findMany({
+      where: { id: { in: questionIds } },
+      include: { match: true },
+    });
+
+    const questionMap = new Map(questions.map(q => [q.id, q]));
+
+    // Split answers into allowed and locked
+    const allowedAnswers: { questionId: string; answer: string }[] = [];
+    const lockedAnswers: { questionId: string; answer: string; matchDate: Date; homeTeam: string; awayTeam: string }[] = [];
+
+    for (const { questionId, answer } of answers) {
+      const question = questionMap.get(questionId);
+      if (!question) continue; // Skip invalid question IDs
+
+      const lockTime = new Date(question.match.matchDate.getTime() - LOCK_HOURS * 60 * 60 * 1000);
+      if (now >= lockTime) {
+        lockedAnswers.push({
+          questionId,
+          answer,
+          matchDate: question.match.matchDate,
+          homeTeam: question.match.homeTeam,
+          awayTeam: question.match.awayTeam,
+        });
+      } else {
+        allowedAnswers.push({ questionId, answer });
+      }
+    }
+
+    // Log locked rejections
+    for (const locked of lockedAnswers) {
+      await this.prisma.sixNationsAuditLog.create({
+        data: {
+          action: 'answer_rejected_locked',
+          performedBy: userId,
+          targetType: 'answer',
+          targetId: locked.questionId,
+          details: {
+            questionId: locked.questionId,
+            answer: locked.answer,
+            matchDate: locked.matchDate.toISOString(),
+            submittedAt: now.toISOString(),
+            reason: `Match ${locked.homeTeam} vs ${locked.awayTeam} locks ${LOCK_HOURS}h before kickoff`,
+          },
+        },
+      });
+    }
+
+    // If all answers are locked, return error
+    if (allowedAnswers.length === 0 && lockedAnswers.length > 0) {
+      throw new Error(
+        `All answers rejected: matches are locked. ${lockedAnswers.map(l => `${l.homeTeam} vs ${l.awayTeam} (kickoff: ${l.matchDate.toISOString()})`).join('; ')}`
+      );
+    }
+
+    // Upsert only allowed answers
+    let savedAnswers: any[] = [];
+    if (allowedAnswers.length > 0) {
+      savedAnswers = await this.prisma.$transaction(
+        allowedAnswers.map(({ questionId, answer }) =>
+          this.prisma.sixNationsAnswer.upsert({
+            where: {
+              questionId_userId: {
+                questionId,
+                userId,
+              },
+            },
+            update: { answer },
+            create: {
               questionId,
               userId,
+              answer,
+              isCorrect: null,
             },
-          },
-          update: {
-            answer,
-            // If correct answer is already set, calculate isCorrect
-            isCorrect: undefined, // Will be updated via separate query
-          },
-          create: {
-            questionId,
-            userId,
-            answer,
-            isCorrect: null,
-          },
-          include: {
-            question: true,
-          },
-        })
-      )
-    );
+            include: {
+              question: { include: { match: true } },
+            },
+          })
+        )
+      );
 
-    // For each answer, if the question has a correct answer set, calculate isCorrect
-    for (const savedAnswer of savedAnswers) {
-      if (savedAnswer.question.correctAnswer) {
-        await this.prisma.sixNationsAnswer.update({
-          where: { id: savedAnswer.id },
+      // Log successful submissions
+      for (const saved of savedAnswers) {
+        await this.prisma.sixNationsAuditLog.create({
           data: {
-            isCorrect: savedAnswer.answer === savedAnswer.question.correctAnswer,
+            action: 'answer_submitted',
+            performedBy: userId,
+            targetType: 'answer',
+            targetId: saved.id,
+            details: {
+              questionId: saved.questionId,
+              matchId: saved.question.matchId,
+              answer: saved.answer,
+              matchDate: saved.question.match.matchDate.toISOString(),
+              submittedAt: now.toISOString(),
+            },
           },
         });
       }
+    }
+
+    // Return result with info about locked answers if any
+    if (lockedAnswers.length > 0) {
+      return {
+        saved: savedAnswers,
+        locked: lockedAnswers.map(l => ({
+          questionId: l.questionId,
+          reason: `Match ${l.homeTeam} vs ${l.awayTeam} is locked (kickoff: ${l.matchDate.toISOString()})`,
+        })),
+        message: `${savedAnswers.length} answer(s) saved, ${lockedAnswers.length} rejected (match locked)`,
+      };
     }
 
     return savedAnswers;
@@ -786,5 +923,100 @@ export class SixNationsService {
         isAdmin: true,
       },
     });
+  }
+
+  // Audit Log
+  async getAuditLog(filters?: { action?: string; performedBy?: string; limit?: number }) {
+    const where: any = {};
+    if (filters?.action) where.action = filters.action;
+    if (filters?.performedBy) where.performedBy = filters.performedBy;
+
+    const entries = await this.prisma.sixNationsAuditLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: filters?.limit || 200,
+    });
+
+    // Manually join user data since there's no relation defined
+    const userIds = [...new Set(entries.map(e => e.performedBy))];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, username: true, email: true, firstName: true, lastName: true },
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    return entries.map(entry => ({
+      ...entry,
+      performedByUser: userMap.get(entry.performedBy) || null,
+    }));
+  }
+
+  async getSuspiciousActivity() {
+    // Find users with rejected-locked answers (attempted to submit after lock)
+    const rejections = await this.prisma.sixNationsAuditLog.findMany({
+      where: { action: 'answer_rejected_locked' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Group by user
+    const userRejections = new Map<string, { count: number; entries: typeof rejections }>();
+    for (const r of rejections) {
+      const existing = userRejections.get(r.performedBy) || { count: 0, entries: [] };
+      existing.count += 1;
+      existing.entries.push(r);
+      userRejections.set(r.performedBy, existing);
+    }
+
+    // Also detect late submissions: answers submitted very close to lock window
+    const lateSubmissions = await this.prisma.sixNationsAuditLog.findMany({
+      where: { action: 'answer_submitted' },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Filter for submissions in the last 2 hours before match
+    const suspiciousLate: typeof lateSubmissions = [];
+    for (const s of lateSubmissions) {
+      const details = s.details as any;
+      if (details?.matchDate && details?.submittedAt) {
+        const matchDate = new Date(details.matchDate);
+        const submittedAt = new Date(details.submittedAt);
+        const hoursBeforeMatch = (matchDate.getTime() - submittedAt.getTime()) / (1000 * 60 * 60);
+        // Flag submissions within 2 hours of match (but still before the 1-hour lock)
+        if (hoursBeforeMatch > 0 && hoursBeforeMatch <= 2) {
+          suspiciousLate.push(s);
+        }
+      }
+    }
+
+    // Enrich with user info
+    const allUserIds = [...new Set([
+      ...rejections.map(r => r.performedBy),
+      ...suspiciousLate.map(s => s.performedBy),
+    ])];
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: allUserIds } },
+      select: { id: true, username: true, email: true, firstName: true, lastName: true },
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+
+    // Build flagged users list
+    const flaggedUsers = Array.from(userRejections.entries()).map(([userId, data]) => ({
+      user: userMap.get(userId) || { id: userId, username: 'unknown' },
+      rejectedAttempts: data.count,
+      entries: data.entries.map(e => ({
+        ...e,
+        performedByUser: userMap.get(e.performedBy) || null,
+      })),
+    }));
+
+    return {
+      flaggedUsers: flaggedUsers.sort((a, b) => b.rejectedAttempts - a.rejectedAttempts),
+      lateSubmissions: suspiciousLate.map(s => ({
+        ...s,
+        performedByUser: userMap.get(s.performedBy) || null,
+      })),
+      totalRejections: rejections.length,
+      totalLateSubmissions: suspiciousLate.length,
+    };
   }
 }

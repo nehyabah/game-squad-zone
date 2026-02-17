@@ -309,6 +309,83 @@ export interface SixNationsLeaderboardEntry {
   totalAnswers: number;
 }
 
+// Six Nations Statistics Types
+export interface SixNationsRoundStats {
+  roundName: string;
+  roundNumber: number;
+  totalCorrect: number;
+  totalScored: number;
+  accuracy: number;
+}
+
+export interface SixNationsSquadStatsData {
+  leader: {
+    id: string;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+    displayName?: string;
+    avatarUrl?: string;
+    totalPoints: number;
+  } | null;
+  squadAccuracy: number;
+  totalCorrect: number;
+  totalAnswered: number;
+  rounds: SixNationsRoundStats[];
+  bestRound: { roundName: string; accuracy: number } | null;
+}
+
+export interface SixNationsPersonalStatsData {
+  totalPoints: number;
+  accuracy: number;
+  correct: number;
+  incorrect: number;
+  pending: number;
+  rounds: {
+    roundName: string;
+    roundNumber: number;
+    points: number;
+    correct: number;
+    incorrect: number;
+    total: number;
+    accuracy: number;
+  }[];
+  bestRound: { roundName: string; accuracy: number } | null;
+  worstRound: { roundName: string; accuracy: number } | null;
+}
+
+export interface SixNationsMemberComparisonData {
+  member1Stats: SixNationsPersonalStatsData;
+  member2Stats: SixNationsPersonalStatsData;
+  headToHead: { member1Wins: number; member2Wins: number };
+  roundComparison: {
+    roundName: string;
+    member1Points: number;
+    member2Points: number;
+    winner: string | null;
+  }[];
+}
+
+// Six Nations Statistics API
+export const sixNationsStatsAPI = {
+  getSquadStats: async (squadId: string): Promise<SixNationsSquadStatsData> => {
+    const response = await api.get(`/six-nations/stats/squad/${squadId}`);
+    return response.data;
+  },
+
+  getPersonalStats: async (userId: string, squadId: string): Promise<SixNationsPersonalStatsData> => {
+    const response = await api.get(`/six-nations/stats/personal/${userId}`, { params: { squadId } });
+    return response.data;
+  },
+
+  getMemberComparison: async (member1Id: string, member2Id: string, squadId: string): Promise<SixNationsMemberComparisonData> => {
+    const response = await api.get('/six-nations/stats/comparison', {
+      params: { member1Id, member2Id, squadId },
+    });
+    return response.data;
+  },
+};
+
 export const leaderboardAPI = {
   get: async (roundId?: string, scope?: string): Promise<SixNationsLeaderboardEntry[]> => {
     const params: Record<string, string> = {};

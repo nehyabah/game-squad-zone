@@ -462,6 +462,61 @@ export class SixNationsController {
     }
   }
 
+  // Six Nations Statistics
+  async getSixNationsSquadStats(request: FastifyRequest<{ Params: { squadId: string } }>, reply: FastifyReply) {
+    try {
+      const { squadId } = request.params;
+      const stats = await this.service.getSixNationsSquadStats(squadId);
+      return reply.send(stats);
+    } catch (error) {
+      console.error("Error fetching six nations squad stats:", error);
+      return reply.status(500).send({ error: "Failed to fetch squad stats" });
+    }
+  }
+
+  async getSixNationsPersonalStats(request: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) {
+    try {
+      const { userId } = request.params;
+      const { squadId } = request.query as { squadId: string };
+
+      if (!squadId) {
+        return reply.status(400).send({ error: "squadId query parameter is required" });
+      }
+
+      const stats = await this.service.getSixNationsPersonalStats(userId, squadId);
+      return reply.send(stats);
+    } catch (error) {
+      console.error("Error fetching six nations personal stats:", error);
+      if (error instanceof Error && error.message.includes('not a member')) {
+        return reply.status(400).send({ error: error.message });
+      }
+      return reply.status(500).send({ error: "Failed to fetch personal stats" });
+    }
+  }
+
+  async getSixNationsMemberComparison(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { member1Id, member2Id, squadId } = request.query as {
+        member1Id: string;
+        member2Id: string;
+        squadId: string;
+      };
+
+      if (!member1Id || !member2Id || !squadId) {
+        return reply.status(400).send({ error: "member1Id, member2Id, and squadId query parameters are required" });
+      }
+
+      const comparison = await this.service.getSixNationsMemberComparison(member1Id, member2Id, squadId);
+      return reply.send(comparison);
+    } catch (error) {
+      console.error("Error fetching six nations member comparison:", error);
+      if (error instanceof Error && error.message.includes('not a member')) {
+        return reply.status(400).send({ error: error.message });
+      }
+      return reply.status(500).send({ error: "Failed to fetch member comparison" });
+    }
+  }
+
   // Leaderboard
   async getLeaderboard(request: FastifyRequest, reply: FastifyReply) {
     try {

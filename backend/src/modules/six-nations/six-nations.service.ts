@@ -951,6 +951,227 @@ export class SixNationsService {
     }));
   }
 
+  // ── Six Nations Statistics ──────────────────────────────────────
+
+  async getSixNationsSquadStats(squadId: string) {
+    // Get all squad members
+    const squadMembers = await this.prisma.squadMember.findMany({
+      where: { squadId },
+      select: { userId: true },
+    });
+    const memberIds = squadMembers.map(m => m.userId);
+
+    if (memberIds.length === 0) {
+      return {
+        leader: null,
+        squadAccuracy: 0,
+        totalCorrect: 0,
+        totalAnswered: 0,
+        rounds: [],
+        bestRound: null,
+      };
+    }
+
+    // Get all answers for squad members across all rounds
+    const answers = await this.prisma.sixNationsAnswer.findMany({
+      where: { userId: { in: memberIds } },
+      include: {
+        question: {
+          include: {
+            match: { include: { round: true } },
+          },
+        },
+        user: {
+          select: { id: true, username: true, firstName: true, lastName: true, displayName: true, avatarUrl: true },
+        },
+      },
+    });
+
+    // Calculate per-user points for squad leader
+    const userPoints = new Map<string, { user: any; totalPoints: number }>();
+    for (const answer of answers) {
+      const existing = userPoints.get(answer.userId) || { user: answer.user, totalPoints: 0 };
+      if (answer.isCorrect === true) {
+        existing.totalPoints += answer.question.points;
+      }
+      userPoints.set(answer.userId, existing);
+    }
+
+    const leader = Array.from(userPoints.values())
+      .sort((a, b) => b.totalPoints - a.totalPoints)[0] || null;
+
+    // Overall squad accuracy
+    const scoredAnswers = answers.filter(a => a.isCorrect !== null);
+    const correctAnswers = answers.filter(a => a.isCorrect === true);
+    const squadAccuracy = scoredAnswers.length > 0
+      ? Math.round((correctAnswers.length / scoredAnswers.length) * 100)
+      : 0;
+
+    // Per-round breakdown
+    const roundMap = new Map<string, { roundName: string; roundNumber: number; totalCorrect: number; totalScored: number }>();
+    for (const answer of answers) {
+      const round = answer.question.match.round;
+      const key = round.id;
+      const existing = roundMap.get(key) || { roundName: round.name, roundNumber: round.roundNumber, totalCorrect: 0, totalScored: 0 };
+      if (answer.isCorrect !== null) {
+        existing.totalScored += 1;
+        if (answer.isCorrect === true) {
+          existing.totalCorrect += 1;
+        }
+      }
+      roundMap.set(key, existing);
+    }
+
+    const rounds = Array.from(roundMap.values())
+      .map(r => ({
+        ...r,
+        accuracy: r.totalScored > 0 ? Math.round((r.totalCorrect / r.totalScored) * 100) : 0,
+      }))
+      .sort((a, b) => a.roundNumber - b.roundNumber);
+
+    const bestRound = rounds.length > 0
+      ? rounds.reduce((best, r) => r.accuracy > best.accuracy ? r : best, rounds[0])
+      : null;
+
+    return {
+      leader: leader ? { ...leader.user, totalPoints: leader.totalPoints } : null,
+      squadAccuracy,
+      totalCorrect: correctAnswers.length,
+      totalAnswered: scoredAnswers.length,
+      rounds,
+      bestRound: bestRound ? { roundName: bestRound.roundName, accuracy: bestRound.accuracy } : null,
+    };
+  }
+
+  async getSixNationsPersonalStats(userId: string, squadId: string) {
+    // Verify user is in squad
+    const membership = await this.prisma.squadMember.findFirst({
+      where: { squadId, userId },
+    });
+    if (!membership) {
+      throw new Error('User is not a member of this squad');
+    }
+
+    // Get all answers for this user
+    const answers = await this.prisma.sixNationsAnswer.findMany({
+      where: { userId },
+      include: {
+        question: {
+          include: {
+            match: { include: { round: true } },
+          },
+        },
+      },
+      orderBy: [
+        { question: { match: { round: { roundNumber: 'asc' } } } },
+        { question: { match: { matchNumber: 'asc' } } },
+        { question: { questionNumber: 'asc' } },
+      ],
+    });
+
+    const scoredAnswers = answers.filter(a => a.isCorrect !== null);
+    const correctAnswers = answers.filter(a => a.isCorrect === true);
+    const incorrectAnswers = answers.filter(a => a.isCorrect === false);
+    const pendingAnswers = answers.filter(a => a.isCorrect === null);
+
+    const totalPoints = correctAnswers.reduce((sum, a) => sum + a.question.points, 0);
+    const accuracy = scoredAnswers.length > 0
+      ? Math.round((correctAnswers.length / scoredAnswers.length) * 100)
+      : 0;
+
+    // Per-round breakdown
+    const roundMap = new Map<string, {
+      roundName: string; roundNumber: number;
+      points: number; correct: number; incorrect: number; total: number;
+    }>();
+    for (const answer of answers) {
+      const round = answer.question.match.round;
+      const key = round.id;
+      const existing = roundMap.get(key) || {
+        roundName: round.name, roundNumber: round.roundNumber,
+        points: 0, correct: 0, incorrect: 0, total: 0,
+      };
+      if (answer.isCorrect !== null) {
+        existing.total += 1;
+        if (answer.isCorrect === true) {
+          existing.correct += 1;
+          existing.points += answer.question.points;
+        } else {
+          existing.incorrect += 1;
+        }
+      }
+      roundMap.set(key, existing);
+    }
+
+    const rounds = Array.from(roundMap.values())
+      .map(r => ({
+        ...r,
+        accuracy: r.total > 0 ? Math.round((r.correct / r.total) * 100) : 0,
+      }))
+      .sort((a, b) => a.roundNumber - b.roundNumber);
+
+    const scoredRounds = rounds.filter(r => r.total > 0);
+    const bestRound = scoredRounds.length > 0
+      ? scoredRounds.reduce((best, r) => r.accuracy > best.accuracy ? r : best, scoredRounds[0])
+      : null;
+    const worstRound = scoredRounds.length > 0
+      ? scoredRounds.reduce((worst, r) => r.accuracy < worst.accuracy ? r : worst, scoredRounds[0])
+      : null;
+
+    return {
+      totalPoints,
+      accuracy,
+      correct: correctAnswers.length,
+      incorrect: incorrectAnswers.length,
+      pending: pendingAnswers.length,
+      rounds,
+      bestRound: bestRound ? { roundName: bestRound.roundName, accuracy: bestRound.accuracy } : null,
+      worstRound: worstRound ? { roundName: worstRound.roundName, accuracy: worstRound.accuracy } : null,
+    };
+  }
+
+  async getSixNationsMemberComparison(member1Id: string, member2Id: string, squadId: string) {
+    const [member1Stats, member2Stats] = await Promise.all([
+      this.getSixNationsPersonalStats(member1Id, squadId),
+      this.getSixNationsPersonalStats(member2Id, squadId),
+    ]);
+
+    // Head-to-head: per-round, who scored more points
+    const allRoundNames = new Set([
+      ...member1Stats.rounds.map(r => r.roundName),
+      ...member2Stats.rounds.map(r => r.roundName),
+    ]);
+
+    let member1Wins = 0;
+    let member2Wins = 0;
+    const roundComparison: { roundName: string; member1Points: number; member2Points: number; winner: string | null }[] = [];
+
+    for (const roundName of allRoundNames) {
+      const m1Round = member1Stats.rounds.find(r => r.roundName === roundName);
+      const m2Round = member2Stats.rounds.find(r => r.roundName === roundName);
+      const m1Points = m1Round?.points || 0;
+      const m2Points = m2Round?.points || 0;
+
+      let winner: string | null = null;
+      if (m1Points > m2Points) {
+        member1Wins += 1;
+        winner = 'member1';
+      } else if (m2Points > m1Points) {
+        member2Wins += 1;
+        winner = 'member2';
+      }
+
+      roundComparison.push({ roundName, member1Points: m1Points, member2Points: m2Points, winner });
+    }
+
+    return {
+      member1Stats,
+      member2Stats,
+      headToHead: { member1Wins, member2Wins },
+      roundComparison,
+    };
+  }
+
   async getSuspiciousActivity() {
     // Find users with rejected-locked answers (attempted to submit after lock)
     const rejections = await this.prisma.sixNationsAuditLog.findMany({

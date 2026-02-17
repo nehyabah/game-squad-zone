@@ -271,7 +271,7 @@ export const SixNationsMemberComparison = ({ squadId }: SixNationsMemberComparis
                     <div className="p-1.5 sm:p-3 bg-muted/50 rounded-lg">
                       <p className="text-[9px] sm:text-xs text-muted-foreground">Record</p>
                       <p className="text-sm sm:text-lg font-bold">
-                        {comparisonData.member1Stats.correct}C - {comparisonData.member1Stats.incorrect}I
+                        {comparisonData.member1Stats.correct}W - {comparisonData.member1Stats.incorrect}L
                       </p>
                     </div>
                   </div>
@@ -322,7 +322,7 @@ export const SixNationsMemberComparison = ({ squadId }: SixNationsMemberComparis
                     <div className="p-1.5 sm:p-3 bg-muted/50 rounded-lg">
                       <p className="text-[9px] sm:text-xs text-muted-foreground">Record</p>
                       <p className="text-sm sm:text-lg font-bold">
-                        {comparisonData.member2Stats.correct}C - {comparisonData.member2Stats.incorrect}I
+                        {comparisonData.member2Stats.correct}W - {comparisonData.member2Stats.incorrect}L
                       </p>
                     </div>
                   </div>

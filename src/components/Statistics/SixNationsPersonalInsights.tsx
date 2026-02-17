@@ -126,7 +126,7 @@ export const SixNationsPersonalInsights = ({ userId, squadId }: SixNationsPerson
                   </div>
                   <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/30">
                     <span className="text-xs sm:text-sm font-semibold text-foreground">
-                      {stats.correct}C - {stats.incorrect}I
+                      {stats.correct}W - {stats.incorrect}L
                     </span>
                   </div>
                   {stats.pending > 0 && (
@@ -224,7 +224,7 @@ export const SixNationsPersonalInsights = ({ userId, squadId }: SixNationsPerson
                       </span>
                     </div>
                     <p className="text-[9px] sm:text-xs text-muted-foreground mt-1">
-                      {round.correct} correct, {round.incorrect} incorrect
+                      {round.correct}W - {round.incorrect}L
                     </p>
                   </div>
                 );

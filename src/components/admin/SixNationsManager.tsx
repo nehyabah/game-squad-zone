@@ -4,8 +4,9 @@ import RoundsManager from "./RoundsManager";
 import MatchesManager from "./MatchesManager";
 import QuestionsManager from "./QuestionsManager";
 import AuditLogViewer from "./AuditLogViewer";
+import EmailNotificationManager from "./EmailNotificationManager";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Info, Shield } from "lucide-react";
+import { Info, Shield, Mail } from "lucide-react";
 import { roundsAPI, matchesAPI, questionsAPI } from "@/lib/api/six-nations";
 import { useToast } from "@/hooks/use-toast";
 
@@ -132,6 +133,10 @@ export default function SixNationsManager() {
             <Shield className="h-4 w-4 mr-1" />
             Audit Log
           </TabsTrigger>
+          <TabsTrigger value="email-notifications">
+            <Mail className="h-4 w-4 mr-1" />
+            Emails
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="rounds" className="mt-6">
@@ -164,6 +169,10 @@ export default function SixNationsManager() {
 
         <TabsContent value="audit-log" className="mt-6">
           <AuditLogViewer />
+        </TabsContent>
+
+        <TabsContent value="email-notifications" className="mt-6">
+          <EmailNotificationManager rounds={rounds} />
         </TabsContent>
       </Tabs>
     </div>

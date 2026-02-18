@@ -318,6 +318,16 @@ export class SixNationsController {
     }
   }
 
+  async getSixNationsUsers(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const users = await this.service.getSixNationsUsers();
+      return reply.send(users);
+    } catch (error) {
+      console.error("Error fetching Six Nations users:", error);
+      return reply.status(500).send({ error: "Failed to fetch users" });
+    }
+  }
+
   async addAdminByEmail(request: FastifyRequest, reply: FastifyReply) {
     try {
       const data = request.body as {

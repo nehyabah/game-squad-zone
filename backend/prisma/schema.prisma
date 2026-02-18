@@ -38,6 +38,7 @@ model User {
   notificationLogs        NotificationLog[]
   squadJoinRequests       SquadJoinRequest[]
   respondedJoinRequests   SquadJoinRequest[]  @relation("JoinRequestResponder")
+  emailUnsubscribed       Boolean             @default(false)
   sixNationsAnswers       SixNationsAnswer[]
 
   @@index([email])
@@ -362,6 +363,26 @@ model SixNationsAuditLog {
   @@index([action])
   @@index([performedBy])
   @@index([targetId])
+  @@index([createdAt])
+}
+
+model SixNationsEmailLog {
+  id              String   @id @default(uuid())
+  type            String   // "round_results" | "picks_reminder" | "custom"
+  subject         String
+  recipientCount  Int
+  successCount    Int      @default(0)
+  failureCount    Int      @default(0)
+  sentBy          String   // userId of admin who sent
+  roundId         String?  // optional, for round-related emails
+  details         Json?    // flexible payload: recipient list, errors, etc.
+  status          String   @default("pending") // "pending" | "sending" | "completed" | "partial_failure" | "failed"
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+
+  @@index([type])
+  @@index([sentBy])
+  @@index([status])
   @@index([createdAt])
 }
 

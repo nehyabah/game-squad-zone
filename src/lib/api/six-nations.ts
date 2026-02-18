@@ -205,6 +205,11 @@ export const adminUsersAPI = {
     return response.data;
   },
 
+  getSixNationsUsers: async (): Promise<User[]> => {
+    const response = await api.get('/six-nations/admin/six-nations-users');
+    return response.data;
+  },
+
   addByEmail: async (email: string): Promise<User> => {
     const response = await api.post('/six-nations/admin/users/by-email', { email });
     return response.data;

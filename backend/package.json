@@ -26,6 +26,7 @@
     "postbuild:azure": "echo 'Build complete for Azure'"
   },
   "dependencies": {
+    "@azure/communication-email": "^1.1.0",
     "@fastify/cookie": "^8.3.0",
     "@fastify/cors": "^8.5.0",
     "@fastify/error": "^4.2.0",

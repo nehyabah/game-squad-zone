@@ -132,6 +132,12 @@ export default async function sixNationsRoutes(app: FastifyInstance) {
     return controller.getAllUsers(request, reply);
   });
 
+  app.get("/six-nations/admin/six-nations-users", {
+    preHandler: [app.auth],
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    return controller.getSixNationsUsers(request, reply);
+  });
+
   app.post("/six-nations/admin/users/by-email", {
     preHandler: [app.auth],
   }, async (request: FastifyRequest, reply: FastifyReply) => {
@@ -243,7 +249,8 @@ export default async function sixNationsRoutes(app: FastifyInstance) {
       return reply.send(result);
     } catch (error: any) {
       console.error("Error sending round results email:", error);
-      return reply.status(500).send({ error: error.message || "Failed to send round results email" });
+      const status = error.message?.includes("No recipients") || error.message?.includes("not found") ? 400 : 500;
+      return reply.status(status).send({ error: error.message || "Failed to send round results email" });
     }
   });
 
@@ -268,7 +275,8 @@ export default async function sixNationsRoutes(app: FastifyInstance) {
       return reply.send(result);
     } catch (error: any) {
       console.error("Error sending picks reminder email:", error);
-      return reply.status(500).send({ error: error.message || "Failed to send picks reminder email" });
+      const status = error.message?.includes("No recipients") || error.message?.includes("not found") ? 400 : 500;
+      return reply.status(status).send({ error: error.message || "Failed to send picks reminder email" });
     }
   });
 
@@ -297,7 +305,8 @@ export default async function sixNationsRoutes(app: FastifyInstance) {
       return reply.send(result);
     } catch (error: any) {
       console.error("Error sending custom email:", error);
-      return reply.status(500).send({ error: error.message || "Failed to send custom email" });
+      const status = error.message?.includes("No recipients") || error.message?.includes("not found") ? 400 : 500;
+      return reply.status(status).send({ error: error.message || "Failed to send custom email" });
     }
   });
 

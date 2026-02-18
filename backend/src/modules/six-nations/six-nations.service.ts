@@ -867,7 +867,7 @@ export class SixNationsService {
   }
 
   async getAllUsers() {
-    // Return all users with their admin status
+    // Return all users (for user management)
     return this.prisma.user.findMany({
       select: {
         id: true,
@@ -878,6 +878,30 @@ export class SixNationsService {
         isAdmin: true,
       },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getSixNationsUsers() {
+    // Only return subscribed users who are in a Six Nations squad (for email picker)
+    return this.prisma.user.findMany({
+      where: {
+        emailUnsubscribed: false,
+        squadMembers: {
+          some: {
+            squad: { sport: "six-nations" },
+          },
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
+        isAdmin: true,
+      },
+      orderBy: { username: 'asc' },
     });
   }
 

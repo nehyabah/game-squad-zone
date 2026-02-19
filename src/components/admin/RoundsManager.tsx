@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit, Trash2, Check } from "lucide-react";
+import { Plus, Edit, Trash2, Check, ChevronDown, ChevronRight, Archive } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Round } from "./SixNationsManager";
 import { roundsAPI } from "@/lib/api/six-nations";
@@ -26,6 +26,8 @@ interface RoundsManagerProps {
 
 export default function RoundsManager({ rounds, setRounds, onRoundCreated, onRefresh }: RoundsManagerProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showPast, setShowPast] = useState(false);
+  const now = new Date();
   const [newRound, setNewRound] = useState({
     roundNumber: 1,
     name: "",
@@ -101,6 +103,40 @@ export default function RoundsManager({ rounds, setRounds, onRoundCreated, onRef
       });
     }
   };
+
+  const pastRounds = rounds.filter(r => !r.isActive && new Date(r.endDate) < now);
+  const currentRounds = rounds.filter(r => r.isActive || new Date(r.endDate) >= now);
+
+  const RoundCard = ({ round }: { round: Round }) => (
+    <Card className={round.isActive ? "border-green-500" : ""}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              {round.name}
+              {round.isActive && (
+                <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">Active</span>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Round {round.roundNumber} • {new Date(round.startDate).toLocaleDateString()} - {new Date(round.endDate).toLocaleDateString()}
+            </CardDescription>
+          </div>
+          <div className="flex gap-2">
+            {!round.isActive && (
+              <Button size="sm" variant="outline" onClick={() => handleActivateRound(round.id)}>
+                <Check className="w-4 h-4 mr-2" />
+                Activate
+              </Button>
+            )}
+            <Button size="sm" variant="destructive" onClick={() => handleDeleteRound(round.id)}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+    </Card>
+  );
 
   return (
     <div className="space-y-4">
@@ -196,46 +232,27 @@ export default function RoundsManager({ rounds, setRounds, onRoundCreated, onRef
             </CardContent>
           </Card>
         ) : (
-          rounds.map((round) => (
-            <Card key={round.id} className={round.isActive ? "border-green-500" : ""}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {round.name}
-                      {round.isActive && (
-                        <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">
-                          Active
-                        </span>
-                      )}
-                    </CardTitle>
-                    <CardDescription>
-                      Round {round.roundNumber} • {new Date(round.startDate).toLocaleDateString()} - {new Date(round.endDate).toLocaleDateString()}
-                    </CardDescription>
+          <>
+            {currentRounds.map(round => <RoundCard key={round.id} round={round} />)}
+
+            {pastRounds.length > 0 && (
+              <div>
+                <button
+                  onClick={() => setShowPast(v => !v)}
+                  className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2 w-full"
+                >
+                  {showPast ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  <Archive className="w-4 h-4" />
+                  Past rounds ({pastRounds.length})
+                </button>
+                {showPast && (
+                  <div className="grid gap-4 mt-2 opacity-75">
+                    {pastRounds.map(round => <RoundCard key={round.id} round={round} />)}
                   </div>
-                  <div className="flex gap-2">
-                    {!round.isActive && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleActivateRound(round.id)}
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Activate
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteRound(round.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-          ))
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

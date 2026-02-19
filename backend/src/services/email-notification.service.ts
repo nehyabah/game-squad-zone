@@ -96,10 +96,15 @@ export class EmailNotificationService {
     }
   }
 
-  async unsubscribeUser(token: string): Promise<{ success: boolean; message: string }> {
+  async unsubscribeUser(
+    token: string,
+  ): Promise<{ success: boolean; message: string }> {
     const userId = this.verifyUnsubscribeToken(token);
     if (!userId) {
-      return { success: false, message: "Invalid or expired unsubscribe link." };
+      return {
+        success: false,
+        message: "Invalid or expired unsubscribe link.",
+      };
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -116,7 +121,11 @@ export class EmailNotificationService {
       data: { emailUnsubscribed: true },
     });
 
-    return { success: true, message: "You've been unsubscribed. You won't receive any more emails from SquadPot." };
+    return {
+      success: true,
+      message:
+        "You've been unsubscribed. You won't receive any more emails from SquadPot.",
+    };
   }
 
   buildUnsubscribeHtml(success: boolean, message: string): string {
@@ -156,7 +165,7 @@ export class EmailNotificationService {
   private ensureClient(): EmailClient {
     if (!this.emailClient) {
       throw new Error(
-        "Email service not configured. Set AZURE_COMMUNICATION_CONNECTION_STRING env var."
+        "Email service not configured. Set AZURE_COMMUNICATION_CONNECTION_STRING env var.",
       );
     }
     return this.emailClient;
@@ -167,14 +176,22 @@ export class EmailNotificationService {
   async getRecipients(
     filter: RecipientFilter,
     roundId?: string,
-    specificUserIds?: string[]
+    specificUserIds?: string[],
   ): Promise<Recipient[]> {
     if (filter === "specific" && specificUserIds?.length) {
       return this.prisma.user.findMany({
-        where: { id: { in: specificUserIds }, status: "active", emailUnsubscribed: false },
+        where: {
+          id: { in: specificUserIds },
+          status: "active",
+          emailUnsubscribed: false,
+        },
         select: {
-          id: true, email: true, username: true,
-          displayName: true, firstName: true, lastName: true,
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          firstName: true,
+          lastName: true,
         },
       });
     }
@@ -192,8 +209,12 @@ export class EmailNotificationService {
       const allUsers = await this.prisma.user.findMany({
         where: { status: "active", emailUnsubscribed: false },
         select: {
-          id: true, email: true, username: true,
-          displayName: true, firstName: true, lastName: true,
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          firstName: true,
+          lastName: true,
           sixNationsAnswers: {
             where: { questionId: { in: questionIds } },
             select: { id: true },
@@ -214,8 +235,12 @@ export class EmailNotificationService {
           sixNationsAnswers: { some: {} },
         },
         select: {
-          id: true, email: true, username: true,
-          displayName: true, firstName: true, lastName: true,
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          firstName: true,
+          lastName: true,
         },
       });
     }
@@ -228,8 +253,12 @@ export class EmailNotificationService {
         sixNationsAnswers: { some: {} },
       },
       select: {
-        id: true, email: true, username: true,
-        displayName: true, firstName: true, lastName: true,
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        firstName: true,
+        lastName: true,
       },
     });
   }
@@ -240,7 +269,7 @@ export class EmailNotificationService {
     roundId: string,
     sentBy: string,
     filter?: RecipientFilter,
-    specificUserIds?: string[]
+    specificUserIds?: string[],
   ): Promise<SendResult> {
     const round = await this.prisma.sixNationsRound.findUnique({
       where: { id: roundId },
@@ -253,8 +282,12 @@ export class EmailNotificationService {
                   include: {
                     user: {
                       select: {
-                        id: true, email: true, username: true,
-                        displayName: true, firstName: true, lastName: true,
+                        id: true,
+                        email: true,
+                        username: true,
+                        displayName: true,
+                        firstName: true,
+                        lastName: true,
                       },
                     },
                   },
@@ -270,7 +303,12 @@ export class EmailNotificationService {
 
     const userScores = new Map<
       string,
-      { user: Recipient; totalPoints: number; correctAnswers: number; totalAnswers: number }
+      {
+        user: Recipient;
+        totalPoints: number;
+        correctAnswers: number;
+        totalAnswers: number;
+      }
     >();
 
     for (const match of round.matches) {
@@ -292,57 +330,141 @@ export class EmailNotificationService {
       }
     }
 
-    const sorted = Array.from(userScores.values()).sort(
-      (a, b) => b.totalPoints - a.totalPoints
-    );
+    // Fetch ALL Six Nations users for global rank (including non-submitters who score 0)
+    const allSixNationsUsers = await this.prisma.user.findMany({
+      where: { squadMembers: { some: { squad: { sport: "six-nations" } } } },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        displayName: true,
+        firstName: true,
+        lastName: true,
+      },
+    });
 
-    const ranked = sorted.map((entry, i) => ({ ...entry, rank: i + 1 }));
+    const globalSorted = allSixNationsUsers
+      .map((u) => userScores.get(u.id) ?? { user: u as Recipient, totalPoints: 0, correctAnswers: 0, totalAnswers: 0 })
+      .sort((a, b) =>
+        b.totalPoints !== a.totalPoints
+          ? b.totalPoints - a.totalPoints
+          : b.correctAnswers - a.correctAnswers,
+      );
 
-    let filteredRanked = ranked;
+    const globalRanked = globalSorted.map((entry, i) => ({ ...entry, globalRank: i + 1 }));
+    const globalTotal = globalRanked.length;
+    const globalRankMap = new Map(globalRanked.map((e) => [e.user.id, e.globalRank]));
+
+    // Determine email recipients
+    let recipientIds: Set<string>;
     if (filter && filter !== "all") {
       const allowedRecipients = await this.getRecipients(filter, roundId, specificUserIds);
-      const allowedIds = new Set(allowedRecipients.map((r) => r.id));
-      filteredRanked = ranked.filter((entry) => allowedIds.has(entry.user.id));
+      recipientIds = new Set(allowedRecipients.map((r) => r.id));
+    } else {
+      recipientIds = new Set(Array.from(userScores.keys()));
     }
 
-    if (filteredRanked.length === 0) throw new Error("No recipients match the filter");
+    const filteredEntries = globalRanked.filter((e) => recipientIds.has(e.user.id));
+
+    if (filteredEntries.length === 0)
+      throw new Error("No recipients match the filter");
+
+    // Squad rank from actual SquadMember table
+    const filteredUserIds = filteredEntries.map((e) => e.user.id);
+    const squadMemberships = await this.prisma.squadMember.findMany({
+      where: { userId: { in: filteredUserIds }, squad: { sport: "six-nations" } },
+      select: {
+        userId: true,
+        squad: {
+          select: { name: true, members: { select: { userId: true } } },
+        },
+      },
+    });
+
+    const userSquadMembersMap = new Map<string, string[]>();
+    const userSquadNameMap = new Map<string, string>();
+    for (const sm of squadMemberships) {
+      const memberIds = sm.squad.members.map((m) => m.userId);
+      const existing = userSquadMembersMap.get(sm.userId);
+      if (!existing || memberIds.length > existing.length) {
+        userSquadMembersMap.set(sm.userId, memberIds);
+        userSquadNameMap.set(sm.userId, sm.squad.name);
+      }
+    }
+
+    const squadRankMap = new Map<string, number>();
+    const squadTotalMap = new Map<string, number>();
+    for (const entry of filteredEntries) {
+      const memberIds = userSquadMembersMap.get(entry.user.id) ?? [];
+      if (memberIds.length === 0) {
+        squadRankMap.set(entry.user.id, entry.globalRank);
+        squadTotalMap.set(entry.user.id, globalTotal);
+        continue;
+      }
+      const squadEntries = memberIds
+        .map((id) => ({
+          userId: id,
+          totalPoints: userScores.get(id)?.totalPoints ?? 0,
+          correctAnswers: userScores.get(id)?.correctAnswers ?? 0,
+        }))
+        .sort((a, b) =>
+          b.totalPoints !== a.totalPoints
+            ? b.totalPoints - a.totalPoints
+            : b.correctAnswers - a.correctAnswers,
+        );
+      const rankIdx = squadEntries.findIndex((e) => e.userId === entry.user.id);
+      squadRankMap.set(entry.user.id, rankIdx === -1 ? memberIds.length : rankIdx + 1);
+      squadTotalMap.set(entry.user.id, memberIds.length);
+    }
 
     const log = await this.prisma.sixNationsEmailLog.create({
       data: {
         type: "round_results",
         subject: `Your ${round.name} results`,
-        recipientCount: ranked.length,
+        recipientCount: filteredEntries.length,
         sentBy,
         roundId,
         status: "sending",
       },
     });
 
-    const recipients = filteredRanked.map((entry) => {
-      const name = entry.user.displayName || entry.user.firstName || entry.user.username;
-      const rankSuffix = entry.rank === 1 ? "st" : entry.rank === 2 ? "nd" : entry.rank === 3 ? "rd" : "th";
-      const accuracy = entry.totalAnswers > 0 ? Math.round((entry.correctAnswers / entry.totalAnswers) * 100) : 0;
+    const rankSuffix = (r: number) =>
+      r === 1 ? "st" : r === 2 ? "nd" : r === 3 ? "rd" : "th";
+
+    const recipients = filteredEntries.map((entry) => {
+      const name =
+        entry.user.displayName || entry.user.firstName || entry.user.username;
+      const globalRank = globalRankMap.get(entry.user.id) ?? globalTotal;
+      const squadRank = squadRankMap.get(entry.user.id) ?? globalTotal;
+      const squadTotal = squadTotalMap.get(entry.user.id) ?? globalTotal;
+      const squadName = userSquadNameMap.get(entry.user.id);
+      const subjectEmoji =
+        squadRank === 1 ? "🏆 " : squadRank === 2 ? "🥈 " : squadRank === 3 ? "🥉 " : "";
+      const accuracy =
+        entry.totalAnswers > 0
+          ? Math.round((entry.correctAnswers / entry.totalAnswers) * 100)
+          : 0;
       const unsubUrl = this.getUnsubscribeUrl(entry.user.id);
-      const subjectEmoji = entry.rank === 1 ? "🏆 " : entry.rank === 2 ? "🥈 " : entry.rank === 3 ? "🥉 " : "";
       return {
         recipient: entry.user,
         subject: `${subjectEmoji}Your ${round.name} results`,
         html: this.buildRoundResultsHtml(
           round.name,
-          entry.rank,
-          ranked.length,
+          squadRank, squadTotal, squadName,
+          globalRank, globalTotal,
           entry.totalPoints,
           entry.correctAnswers,
           entry.totalAnswers,
           name,
-          entry.user.id
+          entry.user.id,
         ),
         plainText: [
           `Hi ${name},`,
           ``,
           `${round.name} results are in!`,
           ``,
-          `Your rank: ${entry.rank}${rankSuffix} of ${filteredRanked.length} players`,
+          `Squad rank: ${squadRank}${rankSuffix(squadRank)} of ${squadTotal}${squadName ? ` (${squadName})` : ""}`,
+          `Global rank: ${globalRank}${rankSuffix(globalRank)} of ${globalTotal}`,
           `Points: ${entry.totalPoints}`,
           `Correct: ${entry.correctAnswers}/${entry.totalAnswers} (${accuracy}%)`,
           ``,
@@ -370,13 +492,13 @@ export class EmailNotificationService {
     await this.createAuditEntry(sentBy, "send_round_results", log.id, {
       roundId,
       roundName: round.name,
-      recipientCount: ranked.length,
+      recipientCount: filteredEntries.length,
       successCount: result.successCount,
     });
 
     return {
       logId: log.id,
-      recipientCount: ranked.length,
+      recipientCount: filteredEntries.length,
       successCount: result.successCount,
       failureCount: result.failureCount,
       status: this.computeStatus(result),
@@ -389,15 +511,20 @@ export class EmailNotificationService {
     roundId: string,
     filter: RecipientFilter,
     sentBy: string,
-    specificUserIds?: string[]
+    specificUserIds?: string[],
   ): Promise<SendResult> {
     const round = await this.prisma.sixNationsRound.findUnique({
       where: { id: roundId },
     });
     if (!round) throw new Error("Round not found");
 
-    const recipients = await this.getRecipients(filter, roundId, specificUserIds);
-    if (recipients.length === 0) throw new Error("No recipients match the filter");
+    const recipients = await this.getRecipients(
+      filter,
+      roundId,
+      specificUserIds,
+    );
+    if (recipients.length === 0)
+      throw new Error("No recipients match the filter");
 
     const subject = `Your ${round.name} picks are ready`;
 
@@ -413,8 +540,13 @@ export class EmailNotificationService {
     });
 
     const deadlineDate = new Date(round.endDate);
-    const deadlineDay = deadlineDate.toLocaleDateString("en-GB", { weekday: "long" });
-    const deadlineDate2 = deadlineDate.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+    const deadlineDay = deadlineDate.toLocaleDateString("en-GB", {
+      weekday: "long",
+    });
+    const deadlineDate2 = deadlineDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+    });
 
     const emails = recipients.map((r) => {
       const name = r.displayName || r.firstName || r.username;
@@ -422,7 +554,12 @@ export class EmailNotificationService {
       return {
         recipient: r,
         subject,
-        html: this.buildPicksReminderHtml(round.name, round.endDate.toISOString(), name, r.id),
+        html: this.buildPicksReminderHtml(
+          round.name,
+          round.endDate.toISOString(),
+          name,
+          r.id,
+        ),
         plainText: [
           `Hi ${name},`,
           ``,
@@ -477,10 +614,15 @@ export class EmailNotificationService {
     filter: RecipientFilter,
     sentBy: string,
     roundId?: string,
-    specificUserIds?: string[]
+    specificUserIds?: string[],
   ): Promise<SendResult> {
-    const recipients = await this.getRecipients(filter, roundId, specificUserIds);
-    if (recipients.length === 0) throw new Error("No recipients match the filter");
+    const recipients = await this.getRecipients(
+      filter,
+      roundId,
+      specificUserIds,
+    );
+    if (recipients.length === 0)
+      throw new Error("No recipients match the filter");
 
     const log = await this.prisma.sixNationsEmailLog.create({
       data: {
@@ -508,7 +650,9 @@ export class EmailNotificationService {
         plainText: [
           `Hi ${name},`,
           ``,
-          personalizedBody.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, ""),
+          personalizedBody
+            .replace(/<br\s*\/?>/gi, "\n")
+            .replace(/<[^>]+>/g, ""),
           ``,
           `-- SquadPot · Six Nations Picks`,
           `To unsubscribe: ${unsubUrl}`,
@@ -577,7 +721,7 @@ export class EmailNotificationService {
     subject: string,
     html: string,
     userId?: string,
-    plainText?: string
+    plainText?: string,
   ): Promise<void> {
     const client = this.ensureClient();
 
@@ -606,7 +750,12 @@ export class EmailNotificationService {
   // ── Private: Batch Send ───────────────────────────────────────────────
 
   private async sendBatch(
-    emails: { recipient: Recipient; subject: string; html: string; plainText?: string }[]
+    emails: {
+      recipient: Recipient;
+      subject: string;
+      html: string;
+      plainText?: string;
+    }[],
   ): Promise<{ successCount: number; failureCount: number; errors: string[] }> {
     const BATCH_SIZE = 10;
     let successCount = 0;
@@ -617,8 +766,14 @@ export class EmailNotificationService {
       const batch = emails.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map((e) =>
-          this.sendSingleEmail(e.recipient.email, e.subject, e.html, e.recipient.id, e.plainText)
-        )
+          this.sendSingleEmail(
+            e.recipient.email,
+            e.subject,
+            e.html,
+            e.recipient.id,
+            e.plainText,
+          ),
+        ),
       );
 
       for (let j = 0; j < results.length; j++) {
@@ -627,7 +782,9 @@ export class EmailNotificationService {
         } else {
           failureCount++;
           const reason = (results[j] as PromiseRejectedResult).reason;
-          errors.push(`${batch[j].recipient.email}: ${reason?.message || "Unknown error"}`);
+          errors.push(
+            `${batch[j].recipient.email}: ${reason?.message || "Unknown error"}`,
+          );
         }
       }
 
@@ -639,7 +796,10 @@ export class EmailNotificationService {
     return { successCount, failureCount, errors };
   }
 
-  private computeStatus(result: { successCount: number; failureCount: number }): string {
+  private computeStatus(result: {
+    successCount: number;
+    failureCount: number;
+  }): string {
     if (result.failureCount === 0) return "completed";
     if (result.successCount === 0) return "failed";
     return "partial_failure";
@@ -649,7 +809,7 @@ export class EmailNotificationService {
     performedBy: string,
     action: string,
     logId: string,
-    details: Record<string, any>
+    details: Record<string, any>,
   ) {
     await this.prisma.sixNationsAuditLog.create({
       data: {
@@ -670,7 +830,11 @@ export class EmailNotificationService {
     return process.env.EMAIL_APP_URL || process.env.FRONTEND_URL || "#";
   }
 
-  private baseWrapper(content: string, userId?: string, roundContext?: string): string {
+  private baseWrapper(
+    content: string,
+    userId?: string,
+    roundContext?: string,
+  ): string {
     const unsubLink = userId
       ? `<a href="${this.getUnsubscribeUrl(userId)}" style="color:${T.gray2};font-size:12px;text-decoration:none;">Unsubscribe</a>`
       : "";
@@ -761,43 +925,63 @@ export class EmailNotificationService {
 
   private buildRoundResultsHtml(
     roundName: string,
-    rank: number,
-    totalPlayers: number,
+    squadRank: number,
+    squadTotal: number,
+    squadName: string | undefined,
+    globalRank: number,
+    globalTotal: number,
     totalPoints: number,
     correctAnswers: number,
     totalAnswers: number,
     name: string,
-    userId?: string
+    userId?: string,
   ): string {
-    const rankSuffix = rank === 1 ? "st" : rank === 2 ? "nd" : rank === 3 ? "rd" : "th";
-    const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
-    const rankEmoji = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "🏅";
-    const greeting = rank <= 3 ? `Brilliant work, ${name}! ${rankEmoji}` : `Nice effort, ${name}.`;
+    const rankSuffix = (r: number) =>
+      r === 1 ? "st" : r === 2 ? "nd" : r === 3 ? "rd" : "th";
+    const accuracy =
+      totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+    const rankEmoji =
+      squadRank === 1 ? "🥇" : squadRank === 2 ? "🥈" : squadRank === 3 ? "🥉" : "🏅";
+    const greeting =
+      squadRank <= 3
+        ? `Brilliant work, ${name}! ${rankEmoji}`
+        : `Nice effort, ${name}.`;
 
-    const confettiRow = rank === 1
-      ? `<p style="text-align:center;font-size:26px;letter-spacing:6px;margin:0 0 20px;line-height:1;">&#127882; &#127881; &#127881; &#127882;</p>`
-      : rank <= 3
-      ? `<p style="text-align:center;font-size:22px;letter-spacing:4px;margin:0 0 20px;line-height:1;">&#127881; &#10024; &#127881;</p>`
-      : `<p style="text-align:center;font-size:20px;letter-spacing:4px;margin:0 0 20px;line-height:1;">&#10024; &#10024; &#10024;</p>`;
+    const confettiRow =
+      squadRank === 1
+        ? `<p style="text-align:center;font-size:26px;letter-spacing:6px;margin:0 0 20px;line-height:1;">&#127882; &#127881; &#127881; &#127882;</p>`
+        : squadRank <= 3
+          ? `<p style="text-align:center;font-size:22px;letter-spacing:4px;margin:0 0 20px;line-height:1;">&#127881; &#10024; &#127881;</p>`
+          : `<p style="text-align:center;font-size:20px;letter-spacing:4px;margin:0 0 20px;line-height:1;">&#10024; &#10024; &#10024;</p>`;
 
-    const rankBg     = rank === 1 ? "#fffbeb" : T.greenLight;
-    const rankBorder = rank === 1 ? "#fde68a" : T.greenBorder;
-    const rankLabel  = rank === 1 ? "#92400e" : "#15803d";
+    const squadBg = squadRank === 1 ? "#fffbeb" : T.greenLight;
+    const squadBorder = squadRank === 1 ? "#fde68a" : T.greenBorder;
+    const squadLabel = squadRank === 1 ? "#92400e" : "#15803d";
 
-    return this.baseWrapper(`
+    return this.baseWrapper(
+      `
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:${T.green};letter-spacing:0.08em;text-transform:uppercase;">Results</p>
       <h1 class="e1" style="margin:0 0 8px;font-size:26px;font-weight:700;color:${T.black};letter-spacing:-0.02em;line-height:1.25;">${greeting}</h1>
       <p style="margin:0 0 24px;font-size:15px;color:${T.gray1};line-height:1.6;">${roundName} is done. Here's how you ranked against the squad this round.</p>
 
       ${confettiRow}
 
-      <!-- Rank block -->
+      <!-- Dual rank blocks: Squad (left) + Global (right) -->
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
         <tr>
-          <td class="ep" align="center" style="background-color:${rankBg};border:1px solid ${rankBorder};border-radius:12px;padding:28px 24px;">
-            <p style="margin:0 0 6px;font-size:11px;font-weight:600;color:${rankLabel};letter-spacing:0.08em;text-transform:uppercase;">Your Rank</p>
-            <p class="er" style="margin:0;font-size:58px;font-weight:800;color:${T.black};letter-spacing:-0.04em;line-height:1;">${rank}<sup style="font-size:20px;font-weight:600;color:${T.gray1};vertical-align:super;line-height:0;">${rankSuffix}</sup></p>
-            <p style="margin:8px 0 0;font-size:13px;color:${T.gray1};">of ${totalPlayers} players</p>
+          <!-- Squad rank -->
+          <td width="48%" class="ep" align="center" style="background-color:${squadBg};border:1px solid ${squadBorder};border-radius:12px;padding:20px 10px;vertical-align:top;">
+            <p style="margin:0 0 4px;font-size:10px;font-weight:600;color:${squadLabel};letter-spacing:0.08em;text-transform:uppercase;">Squad Rank</p>
+            <p class="er" style="margin:0;font-size:46px;font-weight:800;color:${T.black};letter-spacing:-0.04em;line-height:1;">${squadRank}<sup style="font-size:16px;font-weight:600;color:${T.gray1};vertical-align:super;line-height:0;">${rankSuffix(squadRank)}</sup></p>
+            <p style="margin:6px 0 0;font-size:12px;color:${T.gray1};">of ${squadTotal} players</p>
+            ${squadName ? `<p style="margin:4px 0 0;font-size:11px;font-weight:500;color:${squadLabel};letter-spacing:0.02em;">${squadName}</p>` : ""}
+          </td>
+          <td width="4%"></td>
+          <!-- Global rank -->
+          <td width="48%" class="ep" align="center" style="background-color:${T.gray4};border:1px solid ${T.gray3};border-radius:12px;padding:20px 10px;vertical-align:top;">
+            <p style="margin:0 0 4px;font-size:10px;font-weight:600;color:${T.gray1};letter-spacing:0.08em;text-transform:uppercase;">Global Rank</p>
+            <p class="er" style="margin:0;font-size:46px;font-weight:800;color:${T.black};letter-spacing:-0.04em;line-height:1;">${globalRank}<sup style="font-size:16px;font-weight:600;color:${T.gray1};vertical-align:super;line-height:0;">${rankSuffix(globalRank)}</sup></p>
+            <p style="margin:6px 0 0;font-size:12px;color:${T.gray1};">of ${globalTotal} players</p>
           </td>
         </tr>
       </table>
@@ -832,20 +1016,27 @@ export class EmailNotificationService {
           </td>
         </tr>
       </table>
-    `, userId, roundName);
+    `,
+      userId,
+      roundName,
+    );
   }
 
   private buildPicksReminderHtml(
     roundName: string,
     deadline: string,
     name: string,
-    userId?: string
+    userId?: string,
   ): string {
     const deadlineDate = new Date(deadline);
     const day = deadlineDate.toLocaleDateString("en-GB", { weekday: "long" });
-    const date = deadlineDate.toLocaleDateString("en-GB", { day: "numeric", month: "long" });
+    const date = deadlineDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+    });
 
-    return this.baseWrapper(`
+    return this.baseWrapper(
+      `
       <p style="margin:0 0 4px;font-size:11px;font-weight:600;color:${T.green};letter-spacing:0.08em;text-transform:uppercase;">&#127945; Picks Now Open</p>
       <h1 class="e1" style="margin:0 0 8px;font-size:26px;font-weight:700;color:${T.black};letter-spacing:-0.02em;line-height:1.25;">${roundName}</h1>
       <p style="margin:0 0 28px;font-size:15px;color:${T.gray1};line-height:1.6;">Hi ${name}, this round is open for predictions. Submit your picks before the first match kicks off.</p>
@@ -870,22 +1061,28 @@ export class EmailNotificationService {
           </td>
         </tr>
       </table>
-    `, userId, `${roundName} &middot; Open`);
+    `,
+      userId,
+      `${roundName} &middot; Open`,
+    );
   }
 
   private buildCustomHtml(
     subject: string,
     body: string,
     name: string,
-    userId?: string
+    userId?: string,
   ): string {
     const htmlBody = body.replace(/\n/g, "<br>");
 
-    return this.baseWrapper(`
+    return this.baseWrapper(
+      `
       <h1 style="margin:0 0 20px;font-size:26px;font-weight:700;color:${T.black};letter-spacing:-0.02em;line-height:1.25;">Hey ${name},</h1>
       <div style="color:${T.gray1};font-size:16px;line-height:1.7;letter-spacing:-0.01em;">
         ${htmlBody}
       </div>
-    `, userId);
+    `,
+      userId,
+    );
   }
 }

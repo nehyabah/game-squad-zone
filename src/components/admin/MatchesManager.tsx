@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Edit, Trash2, CheckCircle } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, ChevronDown, ChevronRight, Archive } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Round, Match } from "./SixNationsManager";
 import { TEAM_NAMES, getTeamFlagClass, TeamFlag } from "@/lib/utils/sixNations.tsx";
@@ -35,6 +35,7 @@ interface MatchesManagerProps {
 
 export default function MatchesManager({ rounds, matches, setMatches, onMatchCreated, onRefresh }: MatchesManagerProps) {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [scoreDialogOpen, setScoreDialogOpen] = useState<string | null>(null);
   const [editScores, setEditScores] = useState<{ homeScore: number; awayScore: number }>({ homeScore: 0, awayScore: 0 });
@@ -320,7 +321,8 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
             </CardContent>
           </Card>
         ) : (
-          matches.map((match) => (
+          <>
+          {matches.filter(m => !m.completed).map((match) => (
             <Card key={match.id} className={match.completed ? "border-green-500" : ""}>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -420,7 +422,62 @@ export default function MatchesManager({ rounds, matches, setMatches, onMatchCre
                 </div>
               </CardHeader>
             </Card>
-          ))
+          ))}
+
+          {/* Completed matches — collapsible archive */}
+          {matches.some(m => m.completed) && (
+            <div>
+              <button
+                onClick={() => setShowCompleted(v => !v)}
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2 w-full"
+              >
+                {showCompleted ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                <Archive className="w-4 h-4" />
+                Completed matches ({matches.filter(m => m.completed).length})
+              </button>
+              {showCompleted && (
+                <div className="grid gap-4 mt-2">
+                  {matches.filter(m => m.completed).map((match) => (
+                    <Card key={match.id} className="border-green-500 opacity-75">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="flex items-center gap-2 flex-wrap">
+                              <TeamFlag teamName={match.homeTeam} className="text-2xl" />
+                              <span className="text-lg font-bold">{match.homeTeam}</span>
+                              {match.homeScore !== null && (
+                                <span className="text-2xl font-black text-primary">{match.homeScore}</span>
+                              )}
+                              <span className="text-muted-foreground font-normal">vs</span>
+                              {match.awayScore !== null && (
+                                <span className="text-2xl font-black text-primary">{match.awayScore}</span>
+                              )}
+                              <TeamFlag teamName={match.awayTeam} className="text-2xl" />
+                              <span className="text-lg font-bold">{match.awayTeam}</span>
+                              <CheckCircle className="w-5 h-5 text-green-500 ml-2" />
+                            </CardTitle>
+                            <CardDescription>
+                              {match.roundName} • Match {match.matchNumber} • {new Date(match.matchDate).toLocaleString()} • {match.venue}
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => openEditDialog(match)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDeleteMatch(match.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          </>
         )}
       </div>
 

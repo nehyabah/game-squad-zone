@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, CheckCircle, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, X, ChevronDown, ChevronRight, Archive } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Match, Question } from "./SixNationsManager";
@@ -43,6 +43,7 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [openMatches, setOpenMatches] = useState<Record<string, boolean>>({});
+  const [showAnsweredByMatch, setShowAnsweredByMatch] = useState<Record<string, boolean>>({});
   const [newQuestion, setNewQuestion] = useState({
     matchId: "",
     questionNumber: 1,
@@ -56,6 +57,14 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
   // Toggle match collapse state
   const toggleMatch = (matchId: string) => {
     setOpenMatches(prev => ({
+      ...prev,
+      [matchId]: !prev[matchId]
+    }));
+  };
+
+  // Toggle answered questions visibility per match
+  const toggleAnswered = (matchId: string) => {
+    setShowAnsweredByMatch(prev => ({
       ...prev,
       [matchId]: !prev[matchId]
     }));
@@ -642,104 +651,132 @@ export default function QuestionsManager({ matches, questions, setQuestions, onR
 
                   {/* Questions for this match */}
                   <CollapsibleContent>
-                    <div className="grid gap-3 pl-4">
-                    {matchQuestions.map((question) => (
-                      <Card key={question.id} className={question.correctAnswer ? "border-green-500" : ""}>
-                        <CardHeader>
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1">
-                              <CardTitle className="flex items-center gap-2 mb-2">
-                                <span>Q{question.questionNumber}</span>
-                                <Badge variant={question.questionType === "yes_no" ? "secondary" : "default"}>
-                                  {question.questionType === "yes_no" ? "Yes/No" : "Multiple Choice"}
-                                </Badge>
-                                <Badge variant="outline">{question.points} pt{question.points > 1 ? "s" : ""}</Badge>
-                                {question.correctAnswer && (
-                                  <CheckCircle className="w-5 h-5 text-green-500" />
+                    {(() => {
+                      const pendingQs = matchQuestions.filter(q => !q.correctAnswer);
+                      const answeredQs = matchQuestions.filter(q => !!q.correctAnswer);
+                      const showAnswered = showAnsweredByMatch[matchId] ?? false;
+
+                      const renderQuestion = (question: Question) => (
+                        <Card key={question.id} className={question.correctAnswer ? "border-green-500" : ""}>
+                          <CardHeader>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <CardTitle className="flex items-center gap-2 mb-2">
+                                  <span>Q{question.questionNumber}</span>
+                                  <Badge variant={question.questionType === "yes_no" ? "secondary" : "default"}>
+                                    {question.questionType === "yes_no" ? "Yes/No" : "Multiple Choice"}
+                                  </Badge>
+                                  <Badge variant="outline">{question.points} pt{question.points > 1 ? "s" : ""}</Badge>
+                                  {question.correctAnswer && (
+                                    <CheckCircle className="w-5 h-5 text-green-500" />
+                                  )}
+                                </CardTitle>
+                                <CardDescription className="text-base text-foreground mb-3">
+                                  {question.questionText}
+                                </CardDescription>
+
+                                {question.questionType === "multiple_choice" && question.options && (
+                                  <div className="space-y-1 mt-2">
+                                    {question.options.map((option, index) => (
+                                      <button
+                                        key={index}
+                                        onClick={() => handleSetCorrectAnswer(question.id, option)}
+                                        className={`w-full text-left text-sm px-3 py-2 rounded border transition-colors cursor-pointer ${
+                                          question.correctAnswer === option
+                                            ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
+                                            : "bg-muted/50 hover:bg-muted hover:border-primary/50"
+                                        }`}
+                                      >
+                                        {option}
+                                      </button>
+                                    ))}
+                                  </div>
                                 )}
-                              </CardTitle>
-                            <CardDescription className="text-base text-foreground mb-3">
-                              {question.questionText}
-                            </CardDescription>
 
-                    {question.questionType === "multiple_choice" && question.options && (
-                      <div className="space-y-1 mt-2">
-                        {question.options.map((option, index) => (
-                          <button
-                            key={index}
-                            onClick={() => handleSetCorrectAnswer(question.id, option)}
-                            className={`w-full text-left text-sm px-3 py-2 rounded border transition-colors cursor-pointer ${
-                              question.correctAnswer === option
-                                ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
-                                : "bg-muted/50 hover:bg-muted hover:border-primary/50"
-                            }`}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                                {question.questionType === "yes_no" && (
+                                  <div className="flex gap-2 mt-2">
+                                    <button
+                                      onClick={() => handleSetCorrectAnswer(question.id, "Yes")}
+                                      className={`text-sm px-4 py-2 rounded border transition-colors cursor-pointer ${
+                                        question.correctAnswer === "Yes"
+                                          ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
+                                          : "bg-muted/50 hover:bg-muted hover:border-primary/50"
+                                      }`}
+                                    >
+                                      Yes
+                                    </button>
+                                    <button
+                                      onClick={() => handleSetCorrectAnswer(question.id, "No")}
+                                      className={`text-sm px-4 py-2 rounded border transition-colors cursor-pointer ${
+                                        question.correctAnswer === "No"
+                                          ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
+                                          : "bg-muted/50 hover:bg-muted hover:border-primary/50"
+                                      }`}
+                                    >
+                                      No
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
 
-                    {question.questionType === "yes_no" && (
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => handleSetCorrectAnswer(question.id, "Yes")}
-                          className={`text-sm px-4 py-2 rounded border transition-colors cursor-pointer ${
-                            question.correctAnswer === "Yes"
-                              ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
-                              : "bg-muted/50 hover:bg-muted hover:border-primary/50"
-                          }`}
-                        >
-                          Yes
-                        </button>
-                        <button
-                          onClick={() => handleSetCorrectAnswer(question.id, "No")}
-                          className={`text-sm px-4 py-2 rounded border transition-colors cursor-pointer ${
-                            question.correctAnswer === "No"
-                              ? "bg-green-500/10 border-green-500 text-green-700 dark:text-green-400 font-semibold"
-                              : "bg-muted/50 hover:bg-muted hover:border-primary/50"
-                          }`}
-                        >
-                          No
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => openEditDialog(question)}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit Question
+                                </Button>
+                                {question.correctAnswer && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700"
+                                    onClick={() => handleClearCorrectAnswer(question.id)}
+                                  >
+                                    <X className="w-4 h-4 mr-2" />
+                                    Clear Answer
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteQuestion(question.id)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardHeader>
+                        </Card>
+                      );
 
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openEditDialog(question)}
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Question
-                    </Button>
-                    {question.correctAnswer && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-orange-600 border-orange-300 hover:bg-orange-50 hover:text-orange-700"
-                        onClick={() => handleClearCorrectAnswer(question.id)}
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Clear Answer
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteQuestion(question.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-                    ))}
-                  </div>
-                </CollapsibleContent>
+                      return (
+                        <div className="grid gap-3 pl-4">
+                          {pendingQs.map(renderQuestion)}
+
+                          {answeredQs.length > 0 && (
+                            <div>
+                              <button
+                                onClick={() => toggleAnswered(matchId)}
+                                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-1 w-full"
+                              >
+                                {showAnswered ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                <Archive className="w-4 h-4" />
+                                Answered ({answeredQs.length})
+                              </button>
+                              {showAnswered && (
+                                <div className="grid gap-3 mt-2 opacity-75">
+                                  {answeredQs.map(renderQuestion)}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </CollapsibleContent>
               </Collapsible>
             );
           });

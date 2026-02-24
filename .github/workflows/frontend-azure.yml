@@ -42,7 +42,7 @@ jobs:
 
       - name: 🔧 Set API URL
         run: |
-          echo "VITE_API_URL=https://squadpot-backend-production.up.railway.app" > .env.production
+          echo "VITE_API_URL=https://squadpot-backend.greenpebble-cb3440ac.northeurope.azurecontainerapps.io" > .env.production
 
       - name: 🏗️ Build Frontend
         run: npm run build

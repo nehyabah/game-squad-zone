@@ -1,0 +1,57 @@
+# .github/workflows/backend-azure.yml
+name: 🚀 Backend - Build & Deploy to Azure Container Apps
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-azure.yml"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: 🏗️ Build & Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 🏗️ Build & Push to ACR
+        run: |
+          az acr build \
+            --registry squadpotacr \
+            --image game-squad-backend:${{ github.sha }} \
+            --image game-squad-backend:latest \
+            ./backend
+
+      - name: 🚀 Deploy to Container Apps
+        run: |
+          az containerapp update \
+            --name squadpot-backend \
+            --resource-group SquadPot-Main \
+            --image squadpotacr.azurecr.io/game-squad-backend:${{ github.sha }}
+
+      - name: 🏥 Health check
+        run: |
+          sleep 30
+          for i in {1..5}; do
+            echo "🩺 Health check attempt $i/5"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 \
+              "https://squadpot-backend.greenpebble-cb3440ac.northeurope.azurecontainerapps.io/api/six-nations/rounds")
+            if [ "$STATUS" = "401" ]; then
+              echo "✅ Backend is live! (401 = auth working correctly)"
+              exit 0
+            else
+              echo "⚠️ Got $STATUS, waiting 20 seconds..."
+              sleep 20
+            fi
+          done
+          echo "❌ Health check failed after 5 attempts"
+          exit 1

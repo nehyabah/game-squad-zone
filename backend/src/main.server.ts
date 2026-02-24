@@ -1,7 +1,7 @@
 import { buildApp } from "./app";
 import "dotenv/config";
 
-const PORT = process.env.PORT || 3001; // TESTING: Use 3001 for testing
+const PORT = process.env.PORT || 3001;
 
 async function main() {
   // Build the Fastify app with all routes and plugins

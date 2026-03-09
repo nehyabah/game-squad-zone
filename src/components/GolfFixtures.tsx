@@ -326,7 +326,11 @@ export default function GolfFixtures() {
               <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             </button>
           )}
-          <GolfLeaderboard />
+          <GolfLeaderboard
+            tournId={tournament?.tournId ?? ""}
+            tournamentName={tournament?.name}
+            tournamentDates={tournament ? { start: tournament.startDate, end: tournament.endDate } : undefined}
+          />
         </TabsContent>
 
         {/* ── GROUPS / PICKS TAB ── */}

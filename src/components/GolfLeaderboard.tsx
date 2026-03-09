@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { golfAPI, GolfTournament, GolfPlayer } from "@/lib/api/golf";
+import { golfAPI, GolfPlayer } from "@/lib/api/golf";
 import { getPlayerCountryCode } from "@/lib/golf-player-countries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Trophy, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -115,54 +114,39 @@ function MobileRow({ player, idx }: { player: GolfPlayer; idx: number }) {
   );
 }
 
-export default function GolfLeaderboard() {
-  const [tournaments, setTournaments] = useState<GolfTournament[]>([]);
-  const [selectedTournId, setSelectedTournId] = useState<string>("");
+interface GolfLeaderboardProps {
+  tournId: string;
+  tournamentName?: string;
+  tournamentDates?: { start: string; end: string };
+}
+
+export default function GolfLeaderboard({ tournId, tournamentName, tournamentDates }: GolfLeaderboardProps) {
   const [players, setPlayers] = useState<GolfPlayer[]>([]);
   const [tournamentStatus, setTournamentStatus] = useState<string>("");
   const [roundId, setRoundId] = useState<number>(0);
-  const [loadingSchedule, setLoadingSchedule] = useState(true);
-  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    golfAPI.getSchedule()
-      .then((data) => {
-        const tourn = data.schedule || [];
-        setTournaments(tourn);
-        const today = new Date();
-        const sorted = [...tourn].sort((a, b) =>
-          Math.abs(new Date(a.date.end).getTime() - today.getTime()) -
-          Math.abs(new Date(b.date.end).getTime() - today.getTime())
-        );
-        if (sorted.length > 0) setSelectedTournId(sorted[0].tournId);
-      })
-      .catch(() => setError("Failed to load tournament schedule"))
-      .finally(() => setLoadingSchedule(false));
-  }, []);
-
-  useEffect(() => {
-    if (!selectedTournId) return;
-    setLoadingLeaderboard(true);
+    if (!tournId) return;
+    setLoading(true);
     setPlayers([]);
     setError("");
-    golfAPI.getLeaderboard(selectedTournId)
+    golfAPI.getLeaderboard(tournId)
       .then((data) => {
         setPlayers(data.leaderboardRows || []);
         setTournamentStatus(data.status || "");
         setRoundId(data.roundId || 0);
       })
       .catch(() => setError("No leaderboard data available for this tournament yet"))
-      .finally(() => setLoadingLeaderboard(false));
-  }, [selectedTournId]);
+      .finally(() => setLoading(false));
+  }, [tournId]);
 
-  const selectedTournament = tournaments.find((t) => t.tournId === selectedTournId);
-
-  if (loadingSchedule) {
+  if (!tournId) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
-        <span className="text-muted-foreground">Loading tournaments...</span>
+      <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        Loading leaderboard…
       </div>
     );
   }
@@ -173,12 +157,11 @@ export default function GolfLeaderboard() {
       {/* Tournament header card */}
       <Card>
         <CardContent className="p-3 sm:p-5">
-          {/* Tournament name + status */}
-          <div className="flex items-start justify-between gap-3 mb-2">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <Trophy className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <h2 className="text-sm sm:text-base font-bold leading-tight truncate">
-                {selectedTournament?.name ?? "Select Tournament"}
+                {tournamentName ?? "Live Leaderboard"}
               </h2>
             </div>
             {tournamentStatus && (
@@ -191,35 +174,24 @@ export default function GolfLeaderboard() {
               </Badge>
             )}
           </div>
-
-          {/* Date + round */}
-          {selectedTournament && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-3">
-              <Calendar className="w-3 h-3" />
-              {formatDate(selectedTournament.date.start)} – {formatDate(selectedTournament.date.end)}
+          {(tournamentDates || roundId > 0) && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+              {tournamentDates && (
+                <>
+                  <Calendar className="w-3 h-3" />
+                  {formatDate(tournamentDates.start)} – {formatDate(tournamentDates.end)}
+                </>
+              )}
               {roundId > 0 && <><span>·</span><span>Round {roundId}</span></>}
             </p>
           )}
-
-          <Select value={selectedTournId} onValueChange={setSelectedTournId}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select tournament" />
-            </SelectTrigger>
-            <SelectContent className="w-[var(--radix-select-trigger-width)]">
-              {tournaments.map((t) => (
-                <SelectItem key={t.tournId} value={t.tournId}>
-                  {t.name} ({formatDate(t.date.start)})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </CardContent>
       </Card>
 
       {/* Leaderboard */}
       <Card className="overflow-hidden">
         <CardContent className="p-0">
-          {loadingLeaderboard ? (
+          {loading ? (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-6 h-6 animate-spin text-primary mr-2" />
               <span className="text-muted-foreground">Loading leaderboard...</span>

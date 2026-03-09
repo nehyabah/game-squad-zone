@@ -238,6 +238,20 @@ const GameSelection = () => {
     }
   };
 
+  // NFL 2024–25 season has ended
+  return (
+    <div className="max-w-2xl mx-auto flex flex-col items-center text-center py-16 px-6 gap-4">
+      <div className="text-6xl">🏈</div>
+      <h2 className="text-2xl font-bold text-foreground">NFL Season Ended</h2>
+      <p className="text-muted-foreground">
+        The 2024–25 NFL season has concluded. Final standings and picks are locked in.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        Check back in the autumn for the 2025–26 season.
+      </p>
+    </div>
+  );
+
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">

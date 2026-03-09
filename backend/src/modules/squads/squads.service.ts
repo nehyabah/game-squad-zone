@@ -14,7 +14,7 @@ interface SquadCreateData {
   potEnabled?: boolean;
   potAmount?: number;
   potDeadline?: string;
-  sport?: 'nfl' | 'six-nations';
+  sport?: 'nfl' | 'six-nations' | 'golf';
 }
 
 interface SquadUpdateData {

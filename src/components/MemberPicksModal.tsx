@@ -9,6 +9,17 @@ import WeekSelector from "./WeekSelector";
 import { roundsAPI, answersAPI, type SixNationsRound, type SixNationsUserAnswer, type SixNationsMatch } from "@/lib/api/six-nations";
 import { cn } from "@/lib/utils";
 import { TeamFlag } from "@/lib/utils/sixNations";
+import { golfPicksUserAPI } from "@/lib/api/golf-picks";
+import { golfAPI, type GolfPlayer } from "@/lib/api/golf";
+import { getPlayerCountryCode } from "@/lib/golf-player-countries";
+
+interface GolfPickDisplay {
+  groupNumber: number;
+  playerId: string;
+  firstName: string;
+  lastName: string;
+  stat: GolfPlayer | null;
+}
 
 interface MemberPicksModalProps {
   isOpen: boolean;
@@ -16,9 +27,10 @@ interface MemberPicksModalProps {
   userId: string;
   displayName: string;
   sport?: string;
+  squadId?: string;
 }
 
-export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport = 'nfl' }: MemberPicksModalProps) {
+export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport = 'nfl', squadId }: MemberPicksModalProps) {
   // NFL state
   const [currentWeekPicks, setCurrentWeekPicks] = useState<PickSet | null>(null);
   const [selectedWeek, setSelectedWeek] = useState<string>(getCurrentWeekIdSync());
@@ -30,6 +42,12 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
   const [sixNationsAnswers, setSixNationsAnswers] = useState<SixNationsUserAnswer[]>([]);
   const [cachedRounds, setCachedRounds] = useState<Map<string, SixNationsUserAnswer[]>>(new Map());
 
+  // Golf state
+  const [golfPicks, setGolfPicks] = useState<GolfPickDisplay[]>([]);
+  const [golfTournamentName, setGolfTournamentName] = useState("");
+  const [golfHasLeaderboard, setGolfHasLeaderboard] = useState(false);
+  const [expandedGolfPick, setExpandedGolfPick] = useState<number | null>(null);
+
   // Common state
   const [isLoading, setIsLoading] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -38,6 +56,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
   const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
 
   const isSixNations = sport === 'six-nations';
+  const isGolf = sport === 'golf';
 
   const toggleMatchCollapse = (matchId: string) => {
     setExpandedMatches(prev => {
@@ -51,10 +70,52 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
     });
   };
 
+  const loadGolfPicks = async () => {
+    if (!squadId) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await golfPicksUserAPI.getSquadLeaderboard(squadId);
+      setGolfTournamentName(data.tournament.name);
+
+      const member = data.members.find((m) => m.userId === userId);
+      if (!member || member.picks.length === 0) {
+        setGolfPicks([]);
+        return;
+      }
+
+      // Try to load live leaderboard
+      let statsMap = new Map<string, GolfPlayer>();
+      try {
+        const lb = await golfAPI.getLeaderboard(data.tournament.tournId, data.tournament.year);
+        lb.leaderboardRows.forEach((p) => statsMap.set(p.playerId, p));
+        setGolfHasLeaderboard(lb.leaderboardRows.length > 0);
+      } catch {
+        // No leaderboard yet
+      }
+
+      setGolfPicks(
+        member.picks.map((p) => ({
+          groupNumber: p.groupNumber,
+          playerId: p.playerId,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          stat: statsMap.get(p.playerId) ?? null,
+        }))
+      );
+    } catch {
+      setError("Failed to load golf picks");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Initialize when modal opens
   useEffect(() => {
     if (isOpen && userId) {
-      if (isSixNations) {
+      if (isGolf) {
+        loadGolfPicks();
+      } else if (isSixNations) {
         loadSixNationsRounds();
       } else {
         const isWeekChange = hasInitialized;
@@ -91,6 +152,10 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
       setCachedWeeks(new Map());
       setCachedRounds(new Map());
       setExpandedMatches(new Set());
+      setGolfPicks([]);
+      setGolfTournamentName("");
+      setGolfHasLeaderboard(false);
+      setExpandedGolfPick(null);
     }
   }, [isOpen]);
 
@@ -327,8 +392,8 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
         </DialogHeader>
 
         <div className="flex flex-col h-full overflow-hidden">
-          {/* Week/Round Selector */}
-          <div className="border-b border-border/10 py-2 sm:py-4 bg-gradient-to-r from-emerald-50/30 via-teal-50/20 to-emerald-50/30">
+          {/* Week/Round Selector — hidden for golf */}
+          {!isGolf && <div className="border-b border-border/10 py-2 sm:py-4 bg-gradient-to-r from-emerald-50/30 via-teal-50/20 to-emerald-50/30">
             {isSixNations ? (
               <div className="px-3 sm:px-6">
                 <div className="flex items-center justify-between gap-2 bg-secondary/30 rounded-lg px-3 py-2">
@@ -385,21 +450,237 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                 compact={true}
               />
             )}
-          </div>
+          </div>}
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto overscroll-contain bg-gradient-to-b from-transparent via-muted/5 to-transparent" style={{ maxHeight: 'calc(90vh - 180px)' }}>
-            {console.log('🎨 Render state:', {
-              isSixNations,
-              isLoading,
-              isTransitioning,
-              error,
-              sixNationsAnswersCount: sixNationsAnswers.length,
-              currentWeekPicksExists: !!currentWeekPicks,
-              selectedRound,
-              selectedWeek
-            })}
-            {isLoading ? (
+
+            {/* ── Golf Branch ─────────────────────────────── */}
+            {isGolf && (
+              isLoading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-green-200/40 blur-xl rounded-full" />
+                    <Loader2 className="relative w-8 h-8 animate-spin text-green-600" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground/80">Loading picks…</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Fetching tournament data</p>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-14 px-6 gap-3">
+                  <div className="p-3 bg-red-100 rounded-full">
+                    <XCircle className="w-7 h-7 text-red-500" />
+                  </div>
+                  <p className="text-red-500 font-medium text-sm text-center">{error}</p>
+                </div>
+              ) : golfPicks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-14 px-6 gap-3">
+                  <div className="p-3 bg-muted/30 rounded-full">
+                    <Minus className="w-7 h-7 text-muted-foreground" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-foreground/80">No picks submitted yet</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">This player hasn't made their selections</p>
+                  </div>
+                </div>
+              ) : (() => {
+                const golfScoreColor = (score: string | undefined) => {
+                  if (!score || score === "E" || score === "—") return "";
+                  if (score.startsWith("-")) return "text-red-500";
+                  if (score.startsWith("+")) return "text-blue-500";
+                  return "";
+                };
+                const golfScoreBg = (score: string | undefined) => {
+                  if (!score || score === "E" || score === "—") return "bg-slate-100 text-slate-700";
+                  if (score.startsWith("-")) return "bg-red-50 text-red-600 border border-red-200";
+                  if (score.startsWith("+")) return "bg-blue-50 text-blue-600 border border-blue-200";
+                  return "bg-slate-100 text-slate-700";
+                };
+                const totalScore = golfPicks
+                  .filter(p => p.stat)
+                  .reduce((sum, p) => {
+                    const n = parseInt(p.stat!.total, 10);
+                    return sum + (isNaN(n) ? 0 : n);
+                  }, 0);
+                const totalStr = totalScore === 0 ? "E" : totalScore > 0 ? `+${totalScore}` : `${totalScore}`;
+
+                return (
+                  <>
+                    {/* ── Summary strip ─────────────────────── */}
+                    <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-border/10 bg-gradient-to-r from-green-50/50 via-emerald-50/30 to-green-50/50">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-[10px] sm:text-xs text-muted-foreground font-medium uppercase tracking-wider">Tournament</span>
+                          <span className="text-xs sm:text-sm font-bold text-foreground truncate">{golfTournamentName}</span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge variant="outline" className="text-[10px] sm:text-xs font-medium border-emerald-200 bg-emerald-50 text-emerald-700 px-2 py-0.5">
+                            {golfPicks.length}/5 picks
+                          </Badge>
+                          {golfHasLeaderboard && (
+                            <div className={cn(
+                              "flex items-center justify-center min-w-[48px] h-8 rounded-lg px-2.5 text-sm font-black tabular-nums",
+                              golfScoreBg(totalStr)
+                            )}>
+                              {totalStr}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ── Pick cards ───────────────────────── */}
+                    <div className="p-3 sm:p-5 space-y-2.5">
+                      {golfPicks.map((pick, idx) => {
+                        const cc = getPlayerCountryCode(pick.playerId, pick.firstName, pick.lastName);
+                        const hasStat = !!pick.stat && golfHasLeaderboard;
+                        const isCut = golfHasLeaderboard && !pick.stat;
+                        const isExpanded = expandedGolfPick === pick.groupNumber;
+                        const hasRounds = hasStat && pick.stat!.rounds && pick.stat!.rounds.length > 0;
+
+                        return (
+                          <div key={pick.groupNumber} className="overflow-hidden rounded-2xl border transition-all"
+                            style={{ borderColor: hasStat && pick.stat!.total.startsWith("-") ? "rgba(252,165,165,0.5)" : hasStat && pick.stat!.total.startsWith("+") ? "rgba(147,197,253,0.5)" : "rgba(0,0,0,0.08)" }}
+                          >
+                            {/* Main row — tappable */}
+                            <button
+                              onClick={() => hasRounds && setExpandedGolfPick(isExpanded ? null : pick.groupNumber)}
+                              disabled={!hasRounds}
+                              className={cn(
+                                "w-full flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3.5 text-left transition-colors",
+                                hasStat && pick.stat!.total.startsWith("-")
+                                  ? "bg-gradient-to-r from-red-50/60 via-red-50/40 to-red-50/60"
+                                  : hasStat && pick.stat!.total.startsWith("+")
+                                  ? "bg-gradient-to-r from-blue-50/60 via-blue-50/40 to-blue-50/60"
+                                  : "bg-gradient-to-r from-muted/20 via-background/60 to-muted/20",
+                                hasRounds && "active:opacity-80"
+                              )}
+                            >
+                              {/* Flag + Name */}
+                              <div className="flex-1 min-w-0 flex items-center gap-2">
+                                {cc ? (
+                                  <img
+                                    src={`https://flagcdn.com/24x18/${cc}.png`}
+                                    width={16} height={12}
+                                    alt={cc.toUpperCase()}
+                                    className="rounded-sm flex-shrink-0 object-cover shadow-sm"
+                                  />
+                                ) : (
+                                  <span className="w-4 h-3 inline-block rounded-sm bg-muted/50 flex-shrink-0" />
+                                )}
+                                <div className="min-w-0">
+                                  <p className="text-xs sm:text-sm font-bold text-foreground truncate leading-tight">
+                                    {pick.firstName} {pick.lastName}
+                                  </p>
+                                  {hasRounds && (
+                                    <p className="text-[10px] text-muted-foreground font-medium">
+                                      {isExpanded ? "tap to collapse" : "tap for rounds"}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Right side: score + position + chevron */}
+                              {hasStat ? (
+                                <div className="flex-shrink-0 flex items-center gap-2">
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    <div className={cn(
+                                      "text-base sm:text-lg font-black tabular-nums leading-none",
+                                      golfScoreColor(pick.stat!.total)
+                                    )}>
+                                      {pick.stat!.total}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">
+                                        #{pick.stat!.position}
+                                      </span>
+                                      {pick.stat!.thru === "F" ? (
+                                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1 py-0.5 rounded">F</span>
+                                      ) : pick.stat!.thru ? (
+                                        <span className="text-[9px] text-muted-foreground">T{pick.stat!.thru}</span>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                  {hasRounds && (
+                                    <ChevronDown className={cn(
+                                      "w-4 h-4 text-muted-foreground transition-transform flex-shrink-0",
+                                      isExpanded && "rotate-180"
+                                    )} />
+                                  )}
+                                </div>
+                              ) : isCut ? (
+                                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg flex-shrink-0">
+                                  CUT/WD
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground flex-shrink-0">Pre-tournament</span>
+                              )}
+                            </button>
+
+                            {/* Expanded rounds breakdown */}
+                            {isExpanded && hasRounds && (
+                              <div className="border-t border-border/20 bg-background/60 px-3 py-3 sm:px-4">
+                                <div className="grid grid-cols-4 gap-1.5">
+                                  {pick.stat!.rounds.map((r) => {
+                                    const isUnder = r.scoreToPar.startsWith("-");
+                                    const isOver = r.scoreToPar.startsWith("+");
+                                    return (
+                                      <div
+                                        key={r.roundId}
+                                        className={cn(
+                                          "flex flex-col items-center py-2 px-1 rounded-xl border",
+                                          isUnder ? "bg-red-50 border-red-200/60" :
+                                          isOver  ? "bg-blue-50 border-blue-200/60" :
+                                                    "bg-muted/30 border-border/30"
+                                        )}
+                                      >
+                                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
+                                          R{r.roundId}
+                                        </span>
+                                        <span className="text-sm sm:text-base font-black tabular-nums leading-none text-foreground">
+                                          {r.strokes}
+                                        </span>
+                                        <span className={cn(
+                                          "text-[10px] font-bold mt-0.5 tabular-nums",
+                                          isUnder ? "text-red-500" : isOver ? "text-blue-500" : "text-muted-foreground"
+                                        )}>
+                                          {r.scoreToPar === "0" ? "E" : r.scoreToPar}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                {/* Today's round if in progress */}
+                                {pick.stat!.currentRoundScore && pick.stat!.currentRoundScore !== "—" && pick.stat!.thru !== "F" && (
+                                  <div className="mt-2 flex items-center justify-between px-1">
+                                    <span className="text-[10px] text-muted-foreground font-medium">Today (in progress)</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[10px] text-muted-foreground">Thru {pick.stat!.thru}</span>
+                                      <span className={cn(
+                                        "text-xs font-bold tabular-nums",
+                                        golfScoreColor(pick.stat!.currentRoundScore)
+                                      )}>
+                                        {pick.stat!.currentRoundScore}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()
+            )}
+
+            {/* ── NFL / Six Nations Branch ─────────────────── */}
+            {!isGolf && (
+              isLoading ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-4 sm:px-6">
                 <div className="relative mb-3 sm:mb-4">
                   <div className="absolute inset-0 bg-violet-200/40 blur-xl rounded-full"></div>
@@ -806,7 +1087,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                 </>
                 )}
               </div>
-            )}
+            ))}
           </div>
         </div>
       </DialogContent>

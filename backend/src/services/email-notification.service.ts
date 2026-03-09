@@ -539,7 +539,7 @@ export class EmailNotificationService {
       },
     });
 
-    const deadlineDate = new Date(round.endDate);
+    const deadlineDate = new Date(round.startDate);
     const deadlineDay = deadlineDate.toLocaleDateString("en-GB", {
       weekday: "long",
     });
@@ -556,7 +556,7 @@ export class EmailNotificationService {
         subject,
         html: this.buildPicksReminderHtml(
           round.name,
-          round.endDate.toISOString(),
+          round.startDate.toISOString(),
           name,
           r.id,
         ),

@@ -7,13 +7,16 @@ import { useAuth } from "@/hooks/use-auth.tsx";
 const LoginPage = () => {
   const { login, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const handleLogin = () => {
-    login(); // This will redirect to OAuth provider
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    login();
   };
 
   const features = [
@@ -218,14 +221,14 @@ const LoginPage = () => {
               {/* Compact Login Button */}
               <Button
                 onClick={handleLogin}
-                disabled={loading}
+                disabled={loading || isLoggingIn}
                 className="relative w-full h-14 lg:h-16 text-base lg:text-lg font-bold bg-gradient-to-r from-primary via-blue-600 to-purple-600 hover:from-primary/90 hover:via-blue-600/90 hover:to-purple-600/90 shadow-2xl hover:shadow-primary/25 transition-all duration-500 rounded-xl lg:rounded-2xl group overflow-hidden"
                 size="lg"
               >
                 {/* Button glow effect */}
                 <div className="absolute inset-0 bg-gradient-to-r from-primary via-blue-600 to-purple-600 opacity-0 group-hover:opacity-20 blur-xl transition-opacity duration-500" />
                 <div className="relative flex items-center justify-center gap-2 lg:gap-3">
-                  {loading ? (
+                  {loading || isLoggingIn ? (
                     <>
                       <div className="w-5 h-5 lg:w-6 lg:h-6 border-3 border-current border-t-transparent rounded-full animate-spin" />
                       <span>Connecting...</span>

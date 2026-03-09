@@ -7,7 +7,7 @@ export default function SportSelectionScreen() {
 
   const handleSportSelect = (sport: Sport) => {
     setSelectedSport(sport);
-    const path = sport === 'nfl' ? '/nfl' : '/six-nations';
+    const path = sport === 'nfl' ? '/nfl' : sport === 'six-nations' ? '/six-nations' : '/golf';
     navigate(path);
   };
 
@@ -31,7 +31,7 @@ export default function SportSelectionScreen() {
         </div>
 
         {/* Sport Logos */}
-        <div className="grid grid-cols-2 gap-6 sm:gap-10 max-w-3xl w-full">
+        <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-4xl w-full">
           {/* NFL */}
           <button
             onClick={() => handleSportSelect("nfl")}
@@ -96,6 +96,36 @@ export default function SportSelectionScreen() {
             <div className="mt-4 sm:mt-6">
               <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-green-400 transition-colors duration-300" style={{ fontFamily: "'Orbitron', sans-serif" }}>
                 6 NATIONS
+              </h2>
+            </div>
+          </button>
+
+          {/* Golf */}
+          <button
+            onClick={() => handleSportSelect("golf")}
+            className="group relative focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-2xl"
+          >
+            {/* Animated glow on hover */}
+            <div className="absolute -inset-4 bg-gradient-to-br from-amber-500/0 via-yellow-500/0 to-amber-500/0 group-hover:from-amber-500/20 group-hover:via-yellow-500/10 group-hover:to-amber-500/20 blur-2xl transition-all duration-700 rounded-3xl"></div>
+
+            {/* Logo container */}
+            <div className="relative aspect-square w-full bg-slate-900/50 backdrop-blur-xl rounded-2xl sm:rounded-3xl border border-slate-800 group-hover:border-amber-500/50 transition-all duration-500 overflow-hidden group-active:scale-95">
+              {/* Subtle grid pattern */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
+
+              {/* Gradient overlay on hover */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 to-yellow-500/0 group-hover:from-amber-500/10 group-hover:to-yellow-500/10 transition-all duration-500"></div>
+
+              {/* Icon */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-6xl sm:text-7xl group-hover:scale-105 transition-transform duration-500">⛳</span>
+              </div>
+            </div>
+
+            {/* Label */}
+            <div className="mt-4 sm:mt-6">
+              <h2 className="text-xl sm:text-2xl font-black text-white group-hover:text-amber-400 transition-colors duration-300" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+                GOLF
               </h2>
             </div>
           </button>

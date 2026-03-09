@@ -1,7 +1,7 @@
 // API client for squads
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-export type Sport = 'nfl' | 'six-nations';
+export type Sport = 'nfl' | 'six-nations' | 'golf';
 
 export interface Squad {
   id: string;

@@ -49,6 +49,7 @@ import { getDisplayName, getInitials } from "@/lib/utils/user";
 import { squadsAPI } from "@/lib/api/squads";
 import { leaderboardAPI as sixNationsLeaderboardAPI, SixNationsLeaderboardEntry } from "@/lib/api/six-nations";
 import { MemberPicksModal } from "./MemberPicksModal";
+import GolfSquadLeaderboard from "./GolfSquadLeaderboard";
 import { StatisticsTab } from "./Statistics/StatisticsTab";
 import { SixNationsStatisticsTab } from "./Statistics/SixNationsStatisticsTab";
 import { PendingJoinRequests } from "./PendingJoinRequests";
@@ -133,6 +134,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const currentUserMember = squad?.members?.find(m => m.userId === user?.id);
   const isAdminOrOwner = currentUserMember?.role === 'owner' || currentUserMember?.role === 'admin';
   const isSixNations = squad?.sport === 'six-nations';
+  const isGolf = squad?.sport === 'golf';
 
   // Fetch pending join requests count for notification badge
   const { data: pendingRequests = [] } = useQuery({
@@ -891,6 +893,12 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
           <div className="flex-1 overflow-y-auto px-2 py-2">
             {isSixNations ? (
               <SixNationsStatisticsTab squadId={squadId} userId={user?.id || ""} />
+            ) : isGolf ? (
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-3">
+                <div className="text-4xl">⛳</div>
+                <p className="font-semibold text-foreground">No statistics yet</p>
+                <p className="text-sm text-muted-foreground">Golf squad statistics will be available after the tournament.</p>
+              </div>
             ) : (
               <StatisticsTab squadId={squadId} userId={user?.id || ""} />
             )}
@@ -952,7 +960,16 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               className="overflow-y-auto"
               style={{ height: "calc(100vh - 240px)" }}
             >
-              {activeSquadRanking.map((member, index) => (
+              {/* Golf squad — show golf-specific leaderboard */}
+              {isGolf && (
+                <GolfSquadLeaderboard
+                  squadId={squadId}
+                  onMemberClick={(userId, displayName) => setSelectedMember({ userId, displayName })}
+                />
+              )}
+
+              {/* NFL / Six Nations — show existing pick-based leaderboard */}
+              {!isGolf && activeSquadRanking.map((member, index) => (
                 <div
                   key={member.userId}
                   className={`flex items-center justify-between px-2 py-2 border-b border-border/20 active:bg-primary/5 transition-colors ${
@@ -1372,6 +1389,12 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               <div className="overflow-y-auto pr-2" style={{ maxHeight: "700px" }}>
                 {isSixNations ? (
                   <SixNationsStatisticsTab squadId={squadId} userId={user?.id || ""} />
+                ) : isGolf ? (
+                  <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-3">
+                    <div className="text-4xl">⛳</div>
+                    <p className="font-semibold text-foreground">No statistics yet</p>
+                    <p className="text-sm text-muted-foreground">Golf squad statistics will be available after the tournament.</p>
+                  </div>
                 ) : (
                   <StatisticsTab squadId={squadId} userId={user?.id || ""} />
                 )}
@@ -1588,6 +1611,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
         userId={selectedMember?.userId || ""}
         displayName={selectedMember?.displayName || ""}
         sport={squad?.sport}
+        squadId={squadId}
       />
 
       <Dialog open={showLeaveModal} onOpenChange={setShowLeaveModal}>

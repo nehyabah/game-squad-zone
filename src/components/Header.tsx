@@ -25,23 +25,25 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   const { selectedSport, setSelectedSport, hasSportSelection } = useSport();
   const navigate = useNavigate();
 
-  const sportName = selectedSport === 'nfl' ? 'NFL Fantasy' : '6 Nations Rugby';
+  const sportName = selectedSport === 'nfl' ? 'NFL Fantasy' : selectedSport === 'six-nations' ? '6 Nations Rugby' : 'Golf';
 
   // Sport-specific colors
-  const sportColors = {
+  const sportColors: Record<Sport, string> = {
     nfl: 'from-blue-500/10 to-purple-500/10 border-blue-500/20',
-    'six-nations': 'from-green-500/10 to-emerald-500/10 border-green-500/20'
+    'six-nations': 'from-green-500/10 to-emerald-500/10 border-green-500/20',
+    golf: 'from-amber-500/10 to-yellow-500/10 border-amber-500/20',
   };
 
   // Sport-specific logos
-  const sportLogos = {
+  const sportLogos: Record<Sport, string> = {
     nfl: '/android/android-launchericon-192-192.png',
-    'six-nations': '/rugbylogo.png'
+    'six-nations': '/rugbylogo.png',
+    golf: '',
   };
 
   const handleSportChange = (sport: Sport) => {
     setSelectedSport(sport);
-    const path = sport === 'nfl' ? '/nfl' : '/six-nations';
+    const path = sport === 'nfl' ? '/nfl' : sport === 'six-nations' ? '/six-nations' : '/golf';
     navigate(path);
   };
 
@@ -54,7 +56,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <img
-            src={hasSportSelection ? sportLogos[selectedSport] : '/android/android-launchericon-192-192.png'}
+            src={hasSportSelection && selectedSport !== 'golf' ? sportLogos[selectedSport] : '/android/android-launchericon-192-192.png'}
             alt="SquadPot"
             className="w-10 h-10 sm:w-12 sm:h-12"
           />
@@ -159,6 +161,27 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                         </span>
                         {selectedSport === 'six-nations' && (
                           <span className="text-emerald-600 dark:text-emerald-400 font-bold">✓</span>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleSportChange('golf')}
+                        className={cn(
+                          "flex items-center gap-3 py-3 cursor-pointer transition-all duration-200 rounded-md",
+                          "hover:bg-amber-400/10 hover:scale-[1.02] focus:bg-amber-400/10 focus:text-foreground",
+                          selectedSport === 'golf' && "bg-amber-400/15 border-l-2 border-amber-500"
+                        )}
+                      >
+                        <div className="relative w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                          <span className="text-2xl">⛳</span>
+                        </div>
+                        <span className={cn(
+                          "flex-1 font-medium transition-colors duration-200",
+                          selectedSport === 'golf' ? "text-amber-600 dark:text-amber-400" : "group-hover:text-amber-600 dark:group-hover:text-amber-400"
+                        )}>
+                          Golf
+                        </span>
+                        {selectedSport === 'golf' && (
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">✓</span>
                         )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

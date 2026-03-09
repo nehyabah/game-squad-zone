@@ -37,10 +37,6 @@ export function useSquads() {
       const squadData = { ...data, sport: selectedSport };
       const newSquad = await squadsAPI.createSquad(squadData);
       setSquads(prev => [...prev, newSquad]);
-      toast({
-        title: 'Success',
-        description: `Squad "${data.name}" created successfully!`,
-      });
       return newSquad;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create squad';

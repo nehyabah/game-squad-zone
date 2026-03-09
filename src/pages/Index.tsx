@@ -11,6 +11,8 @@ import Header from "@/components/Header";
 import SquadManagerWithConditionalTabs from "@/components/SquadManagerWithConditionalTabs";
 import GameSelection from "@/components/GameSelection";
 import SixNationsQuestionPicker from "@/components/SixNationsQuestionPicker";
+import GolfFixtures from "@/components/GolfFixtures";
+import GolfPicksPicker from "@/components/GolfPicksPicker";
 import MyPicks from "@/components/MyPicks";
 import MySixNationsPicks from "@/components/MySixNationsPicks";
 import TeamLogosBanner from "@/components/TeamLogosBanner";
@@ -80,7 +82,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
     }
 
     if (hasSportSelection && !routeSport) {
-      const path = selectedSport === "nfl" ? "/nfl" : "/six-nations";
+      const path = selectedSport === "nfl" ? "/nfl" : selectedSport === "six-nations" ? "/six-nations" : "/golf";
       navigate(path, { replace: true });
     }
   }, [hasSportSelection, selectedSport, routeSport, navigate]);
@@ -184,9 +186,9 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
   };
 
   // Handle sport selection
-  const handleSportChange = async (sport: "nfl" | "six-nations") => {
+  const handleSportChange = async (sport: "nfl" | "six-nations" | "golf") => {
     // Show loading screen
-    setLoadingSportName(sport === "nfl" ? "NFL" : "Six Nations");
+    setLoadingSportName(sport === "nfl" ? "NFL" : sport === "six-nations" ? "Six Nations" : "Golf");
     setSwitchingSport(true);
     setShowSportSelector(false);
 
@@ -196,7 +198,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
     // Switch sport and navigate
     setSelectedSport(sport);
     setActiveTab("fixtures");
-    const path = sport === "nfl" ? "/nfl" : "/six-nations";
+    const path = sport === "nfl" ? "/nfl" : sport === "six-nations" ? "/six-nations" : "/golf";
     navigate(path);
 
     // Hide loading screen
@@ -243,8 +245,8 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-24 sm:pb-8">
-        {/* Welcome Message and Team Logos Banner - Only on Fixtures tab */}
-        {activeTab === "fixtures" && (
+        {/* Welcome Message and Team Logos Banner - Only on Fixtures tab, not for golf */}
+        {activeTab === "fixtures" && selectedSport !== "golf" && (
           <>
             <div className="text-center mb-4 sm:mb-8">
               <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
@@ -524,6 +526,8 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
           <TabsContent value="fixtures" className="space-y-8">
             {selectedSport === "six-nations" ? (
               <SixNationsQuestionPicker />
+            ) : selectedSport === "golf" ? (
+              <GolfFixtures />
             ) : (
               <GameSelection />
             )}
@@ -539,6 +543,8 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
           <TabsContent value="games" className="space-y-8">
             {selectedSport === "six-nations" ? (
               <MySixNationsPicks />
+            ) : selectedSport === "golf" ? (
+              <GolfPicksPicker />
             ) : (
               <MyPicks onEditPicks={() => handleTabChange("fixtures")} />
             )}
@@ -571,15 +577,15 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
 
               {/* The Logo Container */}
               <div className="relative h-32 w-32 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl animate-float">
-                <img
-                  src={
-                    loadingSportName === "NFL"
-                      ? "/nfl-logo.png"
-                      : "/6Nations.png"
-                  }
-                  alt={loadingSportName}
-                  className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-                />
+                {loadingSportName === "Golf" ? (
+                  <span className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">⛳</span>
+                ) : (
+                  <img
+                    src={loadingSportName === "NFL" ? "/nfl-logo.png" : "/6Nations.png"}
+                    alt={loadingSportName}
+                    className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                  />
+                )}
               </div>
             </div>
 
@@ -653,7 +659,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
 
       {/* Sport Selector Modal - Compact Design */}
       <Dialog open={showSportSelector} onOpenChange={setShowSportSelector}>
-        <DialogContent className="sm:max-w-md p-4 sm:p-6 border-none bg-gradient-to-br from-background via-background to-primary/5 backdrop-blur-xl shadow-2xl">
+        <DialogContent className="sm:max-w-lg p-4 sm:p-6 border-none bg-gradient-to-br from-background via-background to-primary/5 backdrop-blur-xl shadow-2xl">
           <DialogHeader className="space-y-1 sm:space-y-2">
             <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-sm">
@@ -666,11 +672,11 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-2 gap-2 sm:gap-3 py-3 sm:py-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 py-3 sm:py-4">
             {/* NFL Card */}
             <button
               onClick={() => handleSportChange("nfl")}
-              className={`group relative flex flex-col items-center justify-center p-4 sm:p-5 rounded-xl transition-all duration-300 ${
+              className={`group relative flex flex-col items-center justify-center p-3 sm:p-5 rounded-xl transition-all duration-300 ${
                 selectedSport === "nfl"
                   ? "bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-2 ring-primary/50"
                   : "bg-gradient-to-br from-muted/50 to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:shadow-md border border-border/50"
@@ -698,7 +704,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
 
               {/* Sport name */}
               <span
-                className={`font-bold text-sm sm:text-base transition-all duration-300 ${
+                className={`font-bold text-xs sm:text-sm transition-all duration-300 ${
                   selectedSport === "nfl"
                     ? "text-primary"
                     : "text-foreground group-hover:text-primary"
@@ -708,7 +714,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
               </span>
 
               {/* Description */}
-              <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 text-center">
+              <span className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 text-center">
                 American Football
               </span>
             </button>
@@ -716,7 +722,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
             {/* Six Nations Card */}
             <button
               onClick={() => handleSportChange("six-nations")}
-              className={`group relative flex flex-col items-center justify-center p-4 sm:p-5 rounded-xl transition-all duration-300 ${
+              className={`group relative flex flex-col items-center justify-center p-3 sm:p-5 rounded-xl transition-all duration-300 ${
                 selectedSport === "six-nations"
                   ? "bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-2 ring-primary/50"
                   : "bg-gradient-to-br from-muted/50 to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:shadow-md border border-border/50"
@@ -744,7 +750,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
 
               {/* Sport name */}
               <span
-                className={`font-bold text-sm sm:text-base transition-all duration-300 ${
+                className={`font-bold text-xs sm:text-sm transition-all duration-300 ${
                   selectedSport === "six-nations"
                     ? "text-primary"
                     : "text-foreground group-hover:text-primary"
@@ -754,8 +760,50 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
               </span>
 
               {/* Description */}
-              <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 text-center">
+              <span className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 text-center">
                 Rugby Union
+              </span>
+            </button>
+
+            {/* Golf Card */}
+            <button
+              onClick={() => handleSportChange("golf")}
+              className={`group relative flex flex-col items-center justify-center p-3 sm:p-5 rounded-xl transition-all duration-300 ${
+                selectedSport === "golf"
+                  ? "bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-2 ring-primary/50"
+                  : "bg-gradient-to-br from-muted/50 to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:shadow-md border border-border/50"
+              }`}
+            >
+              {/* Active indicator */}
+              {selectedSport === "golf" && (
+                <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-2 h-2 bg-primary rounded-full shadow-lg"></div>
+              )}
+
+              {/* Logo */}
+              <div
+                className={`relative mb-2 sm:mb-3 transition-all duration-300 ${
+                  selectedSport === "golf"
+                    ? "scale-105"
+                    : "group-hover:scale-105"
+                }`}
+              >
+                <span className="text-4xl sm:text-5xl">⛳</span>
+              </div>
+
+              {/* Sport name */}
+              <span
+                className={`font-bold text-xs sm:text-sm transition-all duration-300 ${
+                  selectedSport === "golf"
+                    ? "text-primary"
+                    : "text-foreground group-hover:text-primary"
+                }`}
+              >
+                Golf
+              </span>
+
+              {/* Description */}
+              <span className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 text-center">
+                Coming Soon
               </span>
             </button>
           </div>

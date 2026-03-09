@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import SixNationsManager from "@/components/admin/SixNationsManager";
 import AdminMembersManager from "@/components/admin/AdminMembersManager";
 import AdminFeedbackManager from "@/components/admin/AdminFeedbackManager";
+import GolfPicksManager from "@/components/admin/GolfPicksManager";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -98,7 +99,7 @@ export default function Admin() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="six-nations" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="six-nations" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
               6 Nations
@@ -106,6 +107,10 @@ export default function Admin() {
             <TabsTrigger value="nfl" className="flex items-center gap-2">
               <Gamepad2 className="w-4 h-4" />
               NFL
+            </TabsTrigger>
+            <TabsTrigger value="golf" className="flex items-center gap-2">
+              ⛳
+              Golf
             </TabsTrigger>
             <TabsTrigger value="feedback" className="flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
@@ -129,6 +134,10 @@ export default function Admin() {
               </p>
               {/* TODO: Add NFL override components */}
             </div>
+          </TabsContent>
+
+          <TabsContent value="golf" className="space-y-4">
+            <GolfPicksManager />
           </TabsContent>
 
           <TabsContent value="feedback" className="space-y-4">

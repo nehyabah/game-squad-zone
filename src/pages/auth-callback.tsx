@@ -41,10 +41,8 @@ const AuthCallback = () => {
             const data = await res.json();
             if (data?.accessToken) {
               authAPI.setToken(data.accessToken);
-              // Force a small delay to ensure token is saved
-              await new Promise(resolve => setTimeout(resolve, 100));
-              // Navigate with React Router to maintain state
-              navigate('/auth/success', { replace: true });
+              // Hard redirect so AuthProvider re-initialises with the new token
+              window.location.replace('/');
               return;
             }
 

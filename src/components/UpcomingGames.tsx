@@ -53,6 +53,19 @@ const UpcomingGames = () => {
     return `${sign}${adjustedSpread}`;
   };
 
+  // NFL 2024–25 season has ended
+  return (
+    <Card>
+      <CardContent className="flex flex-col items-center text-center py-12 px-6 gap-3">
+        <div className="text-5xl">🏈</div>
+        <p className="font-bold text-foreground">NFL Season Ended</p>
+        <p className="text-sm text-muted-foreground">
+          The 2024–25 season has concluded. Check back in autumn for 2025–26.
+        </p>
+      </CardContent>
+    </Card>
+  );
+
   if (isLoading) {
     return (
       <Card>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type Sport = 'nfl' | 'six-nations';
+export type Sport = 'nfl' | 'six-nations' | 'golf';
 
 interface SportContextType {
   selectedSport: Sport;

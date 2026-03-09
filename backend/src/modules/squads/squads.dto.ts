@@ -6,7 +6,7 @@ import { createSquadSchema, joinSquadSchema } from './squads.schema';
  */
 
 // Sport type
-export type Sport = 'nfl' | 'six-nations';
+export type Sport = 'nfl' | 'six-nations' | 'golf';
 
 // Zod-based types for runtime validation
 export type CreateSquadInput = z.infer<typeof createSquadSchema>;

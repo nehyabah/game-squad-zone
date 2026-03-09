@@ -40,6 +40,7 @@ model User {
   respondedJoinRequests   SquadJoinRequest[]  @relation("JoinRequestResponder")
   emailUnsubscribed       Boolean             @default(false)
   sixNationsAnswers       SixNationsAnswer[]
+  golfPicks               GolfPick[]
 
   @@index([email])
   @@index([username])
@@ -399,6 +400,61 @@ model Feedback {
   @@index([status])
   @@index([category])
   @@index([createdAt])
+}
+
+// ====================
+// Golf Picks Models
+// ====================
+
+model GolfTournamentSetup {
+  id        String            @id @default(uuid())
+  tournId   String
+  year      Int
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean           @default(false)
+  isLocked  Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  groups    GolfGroupPlayer[]
+  picks     GolfPick[]
+
+  @@index([isActive])
+  @@index([tournId, year])
+}
+
+model GolfGroupPlayer {
+  id           String              @id @default(uuid())
+  tournamentId String
+  groupNumber  Int
+  playerId     String
+  firstName    String
+  lastName     String
+  createdAt    DateTime            @default(now())
+  tournament   GolfTournamentSetup @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  picks        GolfPick[]
+
+  @@unique([tournamentId, groupNumber, playerId])
+  @@index([tournamentId])
+}
+
+model GolfPick {
+  id            String              @id @default(uuid())
+  tournamentId  String
+  userId        String
+  groupNumber   Int
+  groupPlayerId String
+  score         Float?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  tournament    GolfTournamentSetup @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupPlayer   GolfGroupPlayer     @relation(fields: [groupPlayerId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId, groupNumber])
+  @@index([tournamentId])
+  @@index([userId])
 }
 
 // Enums converted to strings for compatibility

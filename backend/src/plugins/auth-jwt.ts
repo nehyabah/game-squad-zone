@@ -7,7 +7,7 @@ declare module "fastify" {
     auth: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
   interface FastifyRequest {
-    currentUser?: { id: string; email: string; emailVerified: boolean }; // Changed from 'user' to 'currentUser'
+    currentUser?: { id: string; email: string; emailVerified: boolean; isAdmin: boolean }; // Changed from 'user' to 'currentUser'
   }
 }
 
@@ -42,7 +42,7 @@ export default fp(async (app) => {
       // Check user's email verification status in database
       const user = await app.prisma.user.findUnique({
         where: { id: payload.sub },
-        select: { id: true, email: true, emailVerified: true, status: true }
+        select: { id: true, email: true, emailVerified: true, status: true, isAdmin: true }
       });
 
       if (!user) {
@@ -70,7 +70,8 @@ export default fp(async (app) => {
       req.currentUser = { 
         id: user.id, 
         email: user.email, 
-        emailVerified: user.emailVerified 
+        emailVerified: user.emailVerified,
+        isAdmin: user.isAdmin
       };
     } catch (error) {
       console.error('[Auth] Token verification failed:', error);

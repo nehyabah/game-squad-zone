@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Loader2, Lock, Unlock, Plus, Trash2, Trophy, Zap, Search, Users,
-  CheckCircle2, AlertCircle, UserPlus,
+  CheckCircle2, AlertCircle, UserPlus, RefreshCw,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -356,6 +356,7 @@ export default function GolfPicksManager() {
   const [groups, setGroups] = useState<Record<number, GolfGroupPlayer[]>>({});
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [assignSheetOpen, setAssignSheetOpen] = useState(false);
+  const [refreshingScores, setRefreshingScores] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
 
   const loadTournaments = useCallback(async () => {
@@ -470,6 +471,19 @@ export default function GolfPicksManager() {
       toast({ title: "Error", description: "Failed to remove player", variant: "destructive" });
     } finally {
       setRemoving(null);
+    }
+  }
+
+  async function handleRefreshScores() {
+    if (!activeTournament) return;
+    setRefreshingScores(true);
+    try {
+      const { updated } = await golfPicksAdminAPI.refreshScores(activeTournament.id);
+      toast({ title: "Scores refreshed", description: `${updated} picks updated from live leaderboard.` });
+    } catch {
+      toast({ title: "Error", description: "Failed to refresh scores", variant: "destructive" });
+    } finally {
+      setRefreshingScores(false);
     }
   }
 
@@ -603,13 +617,27 @@ export default function GolfPicksManager() {
                     ? <Badge variant="destructive">Locked</Badge>
                     : <Badge className="bg-green-500 text-white">Open</Badge>}
                 </div>
-                <Button
-                  onClick={() => setAssignSheetOpen(true)}
-                  className="gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Assign Players
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefreshScores}
+                    disabled={refreshingScores}
+                    className="gap-1.5"
+                  >
+                    {refreshingScores
+                      ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      : <RefreshCw className="w-3.5 h-3.5" />}
+                    Refresh Scores
+                  </Button>
+                  <Button
+                    onClick={() => setAssignSheetOpen(true)}
+                    className="gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Assign Players
+                  </Button>
+                </div>
               </div>
 
               {groupsLoading ? (

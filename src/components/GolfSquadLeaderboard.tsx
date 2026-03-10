@@ -73,12 +73,24 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
           // No leaderboard yet
         }
 
+        // Use DB scores if all picks have been scored, otherwise fall back to live leaderboard
+        const hasDbScores = data.members.every((m) =>
+          m.picks.length === 0 || m.picks.every((p) => p.score !== null)
+        );
+
         const built = data.members.map((m) => {
-          const scores = m.picks
-            .map((p) => statsMap.get(p.playerId))
-            .filter((s): s is GolfPlayer => s !== null)
-            .map((s) => parseScore(s.total));
-          const totalScore = scores.reduce((a, b) => a + b, 0);
+          let totalScore: number;
+          if (hasDbScores) {
+            totalScore = m.picks.reduce((sum, p) => sum + (p.score ?? 0), 0);
+          } else {
+            totalScore = m.picks
+              .map((p) => statsMap.get(p.playerId))
+              .filter((s): s is GolfPlayer => s !== undefined)
+              .reduce((sum, s) => {
+                const isCut = s.status === "cut" || s.status === "C";
+                return sum + parseScore(s.total) + (isCut ? 10 : 0);
+              }, 0);
+          }
 
           return {
             userId: m.userId,

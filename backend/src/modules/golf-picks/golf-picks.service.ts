@@ -1,5 +1,37 @@
 // src/modules/golf-picks/golf-picks.service.ts
 import { PrismaClient } from "@prisma/client";
+import https from "https";
+
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "d1183719e6msh532ead7af6fa213p15c074jsn709877193329";
+const RAPIDAPI_HOST = "live-golf-data.p.rapidapi.com";
+
+function fetchGolfApi(path: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: RAPIDAPI_HOST,
+        path,
+        method: "GET",
+        headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": RAPIDAPI_KEY },
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => {
+          try { resolve(JSON.parse(data)); } catch { reject(new Error("Invalid JSON from golf API")); }
+        });
+      }
+    );
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+function parseScoreStr(score: string | undefined): number {
+  if (!score || score === "E") return 0;
+  const n = parseInt(score, 10);
+  return isNaN(n) ? 0 : n;
+}
 
 export class GolfPicksService {
   constructor(private prisma: PrismaClient) {}
@@ -161,6 +193,7 @@ export class GolfPicksService {
           playerId: p.groupPlayer.playerId,
           firstName: p.groupPlayer.firstName,
           lastName: p.groupPlayer.lastName,
+          score: p.score,
         })),
     }));
 
@@ -194,6 +227,37 @@ export class GolfPicksService {
       },
       orderBy: [{ userId: "asc" }, { groupNumber: "asc" }],
     });
+  }
+
+  async refreshScores(tournamentId: string): Promise<{ updated: number }> {
+    const tournament = await this.prisma.golfTournamentSetup.findUnique({
+      where: { id: tournamentId },
+      include: { picks: { include: { groupPlayer: true } } },
+    });
+    if (!tournament) throw new Error("Tournament not found");
+
+    const leaderboardData = await fetchGolfApi(
+      `/leaderboard?orgId=1&tournId=${tournament.tournId}&year=${tournament.year}`
+    );
+
+    const statsMap = new Map<string, any>();
+    for (const p of leaderboardData.leaderboardRows ?? []) {
+      statsMap.set(p.playerId, p);
+    }
+
+    let updated = 0;
+    await Promise.all(
+      tournament.picks.map(async (pick) => {
+        const player = statsMap.get(pick.groupPlayer.playerId);
+        if (!player) return;
+        const isCut = player.status === "cut" || player.status === "C";
+        const score = parseScoreStr(player.total) + (isCut ? 10 : 0);
+        await this.prisma.golfPick.update({ where: { id: pick.id }, data: { score } });
+        updated++;
+      })
+    );
+
+    return { updated };
   }
 
   async upsertPicks(

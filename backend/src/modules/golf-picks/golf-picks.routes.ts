@@ -67,6 +67,17 @@ export default async function golfPicksRoutes(app: FastifyInstance) {
     }
   );
 
+  app.post(
+    "/golf-picks/admin/tournament/:id/refresh-scores",
+    { preHandler: [app.auth] },
+    async (
+      request: FastifyRequest<{ Params: { id: string } }>,
+      reply: FastifyReply
+    ) => {
+      return controller.refreshScores(request, reply);
+    }
+  );
+
   app.get(
     "/golf-picks/admin/tournament/:id/picks",
     { preHandler: [app.auth] },

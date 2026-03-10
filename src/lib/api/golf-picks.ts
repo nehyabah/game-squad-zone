@@ -107,6 +107,13 @@ export const golfPicksAdminAPI = {
     );
   },
 
+  async refreshScores(tournamentId: string): Promise<{ updated: number }> {
+    const { data } = await api.post(
+      `/golf-picks/admin/tournament/${tournamentId}/refresh-scores`
+    );
+    return data;
+  },
+
   async getAllPicks(tournamentId: string): Promise<AdminPickEntry[]> {
     const { data } = await api.get(
       `/golf-picks/admin/tournament/${tournamentId}/picks`
@@ -130,7 +137,7 @@ export const golfPicksUserAPI = {
       username: string;
       displayName: string | null;
       avatarUrl: string | null;
-      picks: { groupNumber: number; playerId: string; firstName: string; lastName: string }[];
+      picks: { groupNumber: number; playerId: string; firstName: string; lastName: string; score: number | null }[];
     }[];
   }> {
     const { data } = await api.get(`/golf-picks/squad/${squadId}`);

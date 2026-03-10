@@ -148,6 +148,26 @@ export class GolfPicksController {
     }
   }
 
+  async refreshScores(
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) {
+    const user = (request as any).currentUser;
+    if (!user?.isAdmin) return reply.status(403).send({ error: "Admin required" });
+
+    try {
+      const { id } = request.params;
+      const result = await this.service.refreshScores(id);
+      return reply.send(result);
+    } catch (error: any) {
+      console.error("Error refreshing golf scores:", error);
+      if (error.message === "Tournament not found") {
+        return reply.status(404).send({ error: error.message });
+      }
+      return reply.status(500).send({ error: "Failed to refresh scores" });
+    }
+  }
+
   async getSquadPicks(
     request: FastifyRequest<{ Params: { squadId: string } }>,
     reply: FastifyReply

@@ -29,6 +29,7 @@ import { syncGamesOnStartup } from "./startup/sync-games";
 import { AutoScoringService } from "./services/auto-scoring.service";
 import { GameSyncService } from "./services/game-sync.service";
 import { PickLockingService } from "./services/pick-locking.service";
+import { GolfScoringService } from "./services/golf-scoring.service";
 
 export function buildApp(): FastifyInstance {
   const app = Fastify({ logger: true });
@@ -715,6 +716,10 @@ export function buildApp(): FastifyInstance {
 
     // Start Saturday pick locking (every hour)
     pickLocking.startPickLockingScheduler();
+
+    // Start golf score refresh (every 20 min, Thu–Sun during tournament hours)
+    const golfScoring = new GolfScoringService(app.prisma);
+    golfScoring.startScheduler(20);
 
     // Run initial checks
     autoScoring.processCompletedGames();

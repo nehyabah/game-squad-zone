@@ -206,7 +206,7 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
                 {noPicks ? (
                   <span className="text-muted-foreground/50">No picks</span>
                 ) : member.picksHidden ? (
-                  <span className="text-muted-foreground/60">🔒 Picks hidden until locked</span>
+                  <span className="text-muted-foreground/60">🔒 Revealed when tournament starts</span>
                 ) : (
                   <span>{member.picksSubmitted} pick{member.picksSubmitted !== 1 ? "s" : ""} · tap to view</span>
                 )}

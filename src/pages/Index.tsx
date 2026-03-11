@@ -577,15 +577,12 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
 
               {/* The Logo Container */}
               <div className="relative h-32 w-32 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl animate-float">
-                {loadingSportName === "Golf" ? (
-                  <span className="text-6xl drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">⛳</span>
-                ) : (
-                  <img
-                    src={loadingSportName === "NFL" ? "/nfl-logo.png" : "/6Nations.png"}
-                    alt={loadingSportName}
-                    className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-                  />
-                )}
+                <img
+                  src={loadingSportName === "NFL" ? "/nfl-logo.png" : loadingSportName === "Golf" ? "/golf.svg" : "/6Nations.png"}
+                  alt={loadingSportName}
+                  className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                  style={loadingSportName === "Golf" ? { filter: "invert(1)" } : undefined}
+                />
               </div>
             </div>
 

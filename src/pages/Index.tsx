@@ -787,7 +787,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
                     : "group-hover:scale-105"
                 }`}
               >
-                <span className="text-4xl sm:text-5xl">⛳</span>
+                <img src="/golf.svg" alt="Golf" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
               </div>
 
               {/* Sport name */}
@@ -801,10 +801,6 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
                 Golf
               </span>
 
-              {/* Description */}
-              <span className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 text-center">
-                Coming Soon
-              </span>
             </button>
           </div>
 

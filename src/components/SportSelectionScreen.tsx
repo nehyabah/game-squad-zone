@@ -117,8 +117,12 @@ export default function SportSelectionScreen() {
               <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 to-yellow-500/0 group-hover:from-amber-500/10 group-hover:to-yellow-500/10 transition-all duration-500"></div>
 
               {/* Icon */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-6xl sm:text-7xl group-hover:scale-105 transition-transform duration-500">⛳</span>
+              <div className="absolute inset-0 flex items-center justify-center p-8 sm:p-12">
+                <img
+                  src="/golf.svg"
+                  alt="Golf"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                />
               </div>
             </div>
 

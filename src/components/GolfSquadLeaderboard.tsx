@@ -39,6 +39,8 @@ interface MemberRow {
   displayName: string | null;
   avatarUrl: string | null;
   picks: { groupNumber: number; playerId: string; firstName: string; lastName: string }[];
+  picksSubmitted: number;
+  picksHidden: boolean;
   totalScore: number;
   rank: number;
   isCurrentUser: boolean;
@@ -73,14 +75,19 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
           // No leaderboard yet
         }
 
+        const isLocked = data.tournament.isLocked;
+
         // Use DB scores if all picks have been scored, otherwise fall back to live leaderboard
         const hasDbScores = data.members.every((m) =>
           m.picks.length === 0 || m.picks.every((p) => p.score !== null)
         );
 
         const built = data.members.map((m) => {
+          const picksHidden = !isLocked && m.userId !== user?.id;
           let totalScore: number;
-          if (hasDbScores) {
+          if (picksHidden) {
+            totalScore = 0;
+          } else if (hasDbScores) {
             totalScore = m.picks.reduce((sum, p) => sum + (p.score ?? 0), 0);
           } else {
             totalScore = m.picks
@@ -98,17 +105,24 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
             displayName: m.displayName,
             avatarUrl: m.avatarUrl,
             picks: m.picks,
+            picksSubmitted: m.picksSubmitted,
+            picksHidden,
             totalScore,
             isCurrentUser: m.userId === user?.id,
           };
         });
 
         const sorted = [...built].sort((a, b) => {
-          if (a.picks.length === 0 && b.picks.length === 0) return 0;
-          if (a.picks.length === 0) return 1;
-          if (b.picks.length === 0) return -1;
+          // No picks at all → bottom
+          if (a.picksSubmitted === 0 && b.picksSubmitted === 0) return 0;
+          if (a.picksSubmitted === 0) return 1;
+          if (b.picksSubmitted === 0) return -1;
+          // Picks hidden (not locked yet) → can't rank fairly, keep original order
+          if (a.picksHidden && b.picksHidden) return 0;
+          if (a.picksHidden) return 1;
+          if (b.picksHidden) return -1;
           if (a.totalScore !== b.totalScore) return a.totalScore - b.totalScore;
-          return b.picks.length - a.picks.length;
+          return b.picksSubmitted - a.picksSubmitted;
         });
 
         setRows(sorted.map((m, i) => ({ ...m, rank: i + 1 })));
@@ -145,7 +159,7 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
       </div>
 
       {rows.map((member, index) => {
-        const noPicks = member.picks.length === 0;
+        const noPicks = member.picksSubmitted === 0;
         const totalStr =
           member.totalScore === 0 ? "E"
           : member.totalScore > 0 ? `+${member.totalScore}`
@@ -154,11 +168,11 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
         return (
           <button
             key={member.userId}
-            onClick={() => !noPicks && onMemberClick?.(
+            onClick={() => !noPicks && !member.picksHidden && onMemberClick?.(
               member.userId,
               member.displayName || member.username
             )}
-            disabled={noPicks}
+            disabled={noPicks || member.picksHidden}
             className={cn(
               "w-full flex items-center gap-2 px-2 py-2.5 border-b border-border/20 text-left transition-colors",
               member.isCurrentUser && "bg-primary/10 border-l-2 border-l-primary",
@@ -191,8 +205,10 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
               <div className="text-[10px] text-muted-foreground">
                 {noPicks ? (
                   <span className="text-muted-foreground/50">No picks</span>
+                ) : member.picksHidden ? (
+                  <span className="text-muted-foreground/60">🔒 Picks hidden until locked</span>
                 ) : (
-                  <span>{member.picks.length} pick{member.picks.length !== 1 ? "s" : ""} · tap to view</span>
+                  <span>{member.picksSubmitted} pick{member.picksSubmitted !== 1 ? "s" : ""} · tap to view</span>
                 )}
               </div>
             </div>
@@ -200,12 +216,14 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
             {/* Score */}
             {!noPicks && (
               <div className="text-right flex-shrink-0">
-                {hasLeaderboard ? (
+                {member.picksHidden ? (
+                  <span className="text-[10px] text-muted-foreground">{member.picksSubmitted}/5</span>
+                ) : hasLeaderboard ? (
                   <span className={cn("text-xs font-bold tabular-nums", scoreColor(totalStr))}>
                     {totalStr}
                   </span>
                 ) : (
-                  <span className="text-[10px] text-muted-foreground">{member.picks.length}/5</span>
+                  <span className="text-[10px] text-muted-foreground">{member.picksSubmitted}/5</span>
                 )}
               </div>
             )}

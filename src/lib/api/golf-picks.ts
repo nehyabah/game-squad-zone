@@ -137,6 +137,7 @@ export const golfPicksUserAPI = {
       username: string;
       displayName: string | null;
       avatarUrl: string | null;
+      picksSubmitted: number;
       picks: { groupNumber: number; playerId: string; firstName: string; lastName: string; score: number | null }[];
     }[];
   }> {

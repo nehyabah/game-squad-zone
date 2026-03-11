@@ -177,7 +177,7 @@ export class GolfPicksController {
 
     try {
       const { squadId } = request.params;
-      const data = await this.service.getSquadGolfPicks(squadId);
+      const data = await this.service.getSquadGolfPicks(squadId, user.id);
       if (!data) return reply.status(404).send({ error: "No active tournament" });
       return reply.send(data);
     } catch (error) {

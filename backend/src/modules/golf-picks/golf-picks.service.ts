@@ -161,7 +161,7 @@ export class GolfPicksService {
     };
   }
 
-  async getSquadGolfPicks(squadId: string) {
+  async getSquadGolfPicks(squadId: string, requestingUserId: string) {
     const tournament = await this.prisma.golfTournamentSetup.findFirst({
       where: { isActive: true },
     });
@@ -181,21 +181,29 @@ export class GolfPicksService {
       orderBy: [{ userId: "asc" }, { groupNumber: "asc" }],
     });
 
-    const members = squadMembers.map((m) => ({
-      userId: m.userId,
-      username: m.user.username,
-      displayName: m.user.displayName,
-      avatarUrl: m.user.avatarUrl,
-      picks: picks
-        .filter((p) => p.userId === m.userId)
-        .map((p) => ({
-          groupNumber: p.groupNumber,
-          playerId: p.groupPlayer.playerId,
-          firstName: p.groupPlayer.firstName,
-          lastName: p.groupPlayer.lastName,
-          score: p.score,
-        })),
-    }));
+    const members = squadMembers.map((m) => {
+      const memberPicks = picks.filter((p) => p.userId === m.userId);
+      // Hide other members' picks until tournament is locked
+      const isOwnPicks = m.userId === requestingUserId;
+      const revealPicks = tournament.isLocked || isOwnPicks;
+
+      return {
+        userId: m.userId,
+        username: m.user.username,
+        displayName: m.user.displayName,
+        avatarUrl: m.user.avatarUrl,
+        picksSubmitted: memberPicks.length,
+        picks: revealPicks
+          ? memberPicks.map((p) => ({
+              groupNumber: p.groupNumber,
+              playerId: p.groupPlayer.playerId,
+              firstName: p.groupPlayer.firstName,
+              lastName: p.groupPlayer.lastName,
+              score: p.score,
+            }))
+          : [],
+      };
+    });
 
     return {
       tournament: {

@@ -122,6 +122,7 @@ export default function SportSelectionScreen() {
                   src="/golf.svg"
                   alt="Golf"
                   className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                  style={{ filter: 'invert(1)' }}
                 />
               </div>
             </div>

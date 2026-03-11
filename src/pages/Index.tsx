@@ -787,7 +787,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
                     : "group-hover:scale-105"
                 }`}
               >
-                <img src="/golf.svg" alt="Golf" className="w-10 h-10 sm:w-12 sm:h-12 object-contain" />
+                <img src="/golf.svg" alt="Golf" className="w-10 h-10 sm:w-12 sm:h-12 object-contain dark:invert" />
               </div>
 
               {/* Sport name */}

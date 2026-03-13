@@ -50,8 +50,10 @@ export default async function golfRoutes(app: FastifyInstance) {
     const y = year || new Date().getFullYear();
     try {
       const data = await fetchGolfApi(`/leaderboard?orgId=1&tournId=${tournId}&year=${y}`);
+      console.log(`⛳ Golf leaderboard [tournId=${tournId} year=${y}] status=${data?.status} rows=${data?.leaderboardRows?.length ?? 0}`);
       return data;
     } catch (err: any) {
+      console.error(`⛳ Golf leaderboard fetch failed [tournId=${tournId} year=${y}]:`, err.message);
       return reply.status(500).send({ error: "Failed to fetch golf leaderboard", details: err.message });
     }
   });

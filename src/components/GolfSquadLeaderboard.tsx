@@ -60,10 +60,12 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
 
   useEffect(() => {
     if (!squadId) return;
-    setLoading(true);
 
-    golfPicksUserAPI.getSquadLeaderboard(squadId)
-      .then(async (data) => {
+    async function fetchData(isInitial: boolean) {
+      if (isInitial) setLoading(true);
+
+      try {
+        const data = await golfPicksUserAPI.getSquadLeaderboard(squadId);
         setTournamentName(data.tournament.name);
 
         let statsMap = new Map<string, GolfPlayer>();
@@ -126,9 +128,16 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
         });
 
         setRows(sorted.map((m, i) => ({ ...m, rank: i + 1 })));
-      })
-      .catch(() => setRows([]))
-      .finally(() => setLoading(false));
+      } catch {
+        if (isInitial) setRows([]);
+      } finally {
+        if (isInitial) setLoading(false);
+      }
+    }
+
+    fetchData(true);
+    const interval = setInterval(() => fetchData(false), 60_000);
+    return () => clearInterval(interval);
   }, [squadId, user?.id]);
 
   if (loading) {

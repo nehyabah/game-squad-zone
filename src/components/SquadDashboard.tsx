@@ -1103,16 +1103,18 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                         Squad Leaderboard
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {isSixNations ? 'Tournament standings' : 'Current season standings'}
+                        {isSixNations ? 'Tournament standings' : isGolf ? 'Tournament standings' : 'Current season standings'}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {activeSquadRanking.length} players
-                    </span>
-                  </div>
+                  {!isGolf && (
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {activeSquadRanking.length} players
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Six Nations Round/Total/Global Tab Selector */}
@@ -1152,8 +1154,16 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                 )}
 
                 <div className="overflow-y-auto" style={{ height: "700px" }}>
+                  {/* Golf squad — show golf-specific leaderboard */}
+                  {isGolf && (
+                    <GolfSquadLeaderboard
+                      squadId={squadId}
+                      onMemberClick={(userId, displayName) => setSelectedMember({ userId, displayName })}
+                    />
+                  )}
+
                   <div className="divide-y divide-border">
-                    {activeSquadRanking.map((member, index) => (
+                    {!isGolf && activeSquadRanking.map((member, index) => (
                       <div
                         key={member.userId}
                         className={`flex items-center justify-between p-2.5 sm:p-4 hover:bg-muted/50 transition-colors cursor-pointer ${

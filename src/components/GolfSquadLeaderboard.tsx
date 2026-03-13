@@ -57,6 +57,7 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
   const [tournamentName, setTournamentName] = useState("");
   const [loading, setLoading] = useState(true);
   const [hasLeaderboard, setHasLeaderboard] = useState(false);
+  const [hasDbScores, setHasDbScores] = useState(false);
 
   useEffect(() => {
     if (!squadId) return;
@@ -80,16 +81,15 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
         const isLocked = data.tournament.isLocked;
 
         // Use DB scores if all picks have been scored, otherwise fall back to live leaderboard
-        const hasDbScores = data.members.every((m) =>
-          m.picks.length === 0 || m.picks.every((p) => p.score !== null)
-        );
+        const dbScoresReady = data.members.some((m) => m.picks.some((p) => p.score !== null));
+        setHasDbScores(dbScoresReady);
 
         const built = data.members.map((m) => {
           const picksHidden = !isLocked && m.userId !== user?.id;
           let totalScore: number;
           if (picksHidden) {
             totalScore = 0;
-          } else if (hasDbScores) {
+          } else if (dbScoresReady) {
             totalScore = m.picks.reduce((sum, p) => sum + (p.score ?? 0), 0);
           } else {
             totalScore = m.picks
@@ -162,7 +162,7 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
       {/* Header */}
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-border/40">
         <span className="text-[10px] text-muted-foreground font-medium truncate">{tournamentName}</span>
-        {hasLeaderboard && (
+        {(hasLeaderboard || hasDbScores) && (
           <span className="text-[10px] text-muted-foreground flex-shrink-0">Total</span>
         )}
       </div>
@@ -227,7 +227,7 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
               <div className="text-right flex-shrink-0">
                 {member.picksHidden ? (
                   <span className="text-[10px] text-muted-foreground">{member.picksSubmitted}/5</span>
-                ) : hasLeaderboard ? (
+                ) : (hasLeaderboard || hasDbScores) ? (
                   <span className={cn("text-xs font-bold tabular-nums", scoreColor(totalStr))}>
                     {totalStr}
                   </span>

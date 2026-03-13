@@ -19,6 +19,7 @@ interface GolfPickDisplay {
   firstName: string;
   lastName: string;
   stat: GolfPlayer | null;
+  dbScore: number | null;
 }
 
 interface MemberPicksModalProps {
@@ -101,6 +102,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
           firstName: p.firstName,
           lastName: p.lastName,
           stat: statsMap.get(p.playerId) ?? null,
+          dbScore: p.score,
         }))
       );
     } catch {
@@ -498,12 +500,17 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                   if (score.startsWith("+")) return "bg-blue-50 text-blue-600 border border-blue-200";
                   return "bg-slate-100 text-slate-700";
                 };
-                const totalScore = golfPicks
+                const liveTotal = golfPicks
                   .filter(p => p.stat)
                   .reduce((sum, p) => {
                     const n = parseInt(p.stat!.total, 10);
                     return sum + (isNaN(n) ? 0 : n);
                   }, 0);
+                const dbTotal = golfPicks.every(p => p.dbScore !== null)
+                  ? golfPicks.reduce((sum, p) => sum + (p.dbScore ?? 0), 0)
+                  : null;
+                const totalScore = golfHasLeaderboard ? liveTotal : (dbTotal ?? 0);
+                const hasAnyScore = golfHasLeaderboard || dbTotal !== null;
                 const totalStr = totalScore === 0 ? "E" : totalScore > 0 ? `+${totalScore}` : `${totalScore}`;
 
                 return (
@@ -519,7 +526,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                           <Badge variant="outline" className="text-[10px] sm:text-xs font-medium border-emerald-200 bg-emerald-50 text-emerald-700 px-2 py-0.5">
                             {golfPicks.length}/5 picks
                           </Badge>
-                          {golfHasLeaderboard && (
+                          {hasAnyScore && (
                             <div className={cn(
                               "flex items-center justify-center min-w-[48px] h-8 rounded-lg px-2.5 text-sm font-black tabular-nums",
                               golfScoreBg(totalStr)
@@ -537,6 +544,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                         const cc = getPlayerCountryCode(pick.playerId, pick.firstName, pick.lastName);
                         const hasStat = !!pick.stat && golfHasLeaderboard;
                         const isCut = golfHasLeaderboard && !pick.stat;
+                        const dbScoreStr = pick.dbScore === null ? null : pick.dbScore === 0 ? "E" : pick.dbScore > 0 ? `+${pick.dbScore}` : `${pick.dbScore}`;
                         const isExpanded = expandedGolfPick === pick.groupNumber;
                         const hasRounds = hasStat && pick.stat!.rounds && pick.stat!.rounds.length > 0;
 
@@ -613,6 +621,10 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                               ) : isCut ? (
                                 <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-lg flex-shrink-0">
                                   CUT/WD
+                                </span>
+                              ) : dbScoreStr !== null ? (
+                                <span className={cn("text-base font-black tabular-nums flex-shrink-0", golfScoreColor(dbScoreStr))}>
+                                  {dbScoreStr}
                                 </span>
                               ) : (
                                 <span className="text-[10px] text-muted-foreground flex-shrink-0">Pre-tournament</span>

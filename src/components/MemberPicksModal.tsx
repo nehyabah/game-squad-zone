@@ -500,17 +500,12 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                   if (score.startsWith("+")) return "bg-blue-50 text-blue-600 border border-blue-200";
                   return "bg-slate-100 text-slate-700";
                 };
-                const liveTotal = golfPicks
+                const totalScore = golfPicks
                   .filter(p => p.stat)
                   .reduce((sum, p) => {
                     const n = parseInt(p.stat!.total, 10);
                     return sum + (isNaN(n) ? 0 : n);
                   }, 0);
-                const dbTotal = golfPicks.every(p => p.dbScore !== null)
-                  ? golfPicks.reduce((sum, p) => sum + (p.dbScore ?? 0), 0)
-                  : null;
-                const totalScore = golfHasLeaderboard ? liveTotal : (dbTotal ?? 0);
-                const hasAnyScore = golfHasLeaderboard || dbTotal !== null;
                 const totalStr = totalScore === 0 ? "E" : totalScore > 0 ? `+${totalScore}` : `${totalScore}`;
 
                 return (
@@ -526,7 +521,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                           <Badge variant="outline" className="text-[10px] sm:text-xs font-medium border-emerald-200 bg-emerald-50 text-emerald-700 px-2 py-0.5">
                             {golfPicks.length}/5 picks
                           </Badge>
-                          {hasAnyScore && (
+                          {golfHasLeaderboard && (
                             <div className={cn(
                               "flex items-center justify-center min-w-[48px] h-8 rounded-lg px-2.5 text-sm font-black tabular-nums",
                               golfScoreBg(totalStr)

@@ -30,6 +30,15 @@ function scoreColor(score: string | undefined) {
   return "";
 }
 
+function adjustedTotal(total: string | undefined, isCut: boolean): string {
+  if (!isCut) return total ?? "—";
+  if (!total || total === "E" || total === "—") return "+10";
+  const n = parseInt(total, 10);
+  if (isNaN(n)) return total;
+  const adj = n + 10;
+  return adj > 0 ? `+${adj}` : adj === 0 ? "E" : `${adj}`;
+}
+
 function positionStyle(pos: string) {
   if (pos === "1") return "bg-amber-400 text-white";
   if (pos === "T2" || pos === "2") return "bg-slate-400 text-white";
@@ -103,9 +112,12 @@ function PlayerStatsDialog({
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Total</p>
-                <span className={cn("text-xl font-black tabular-nums", scoreColor(s.total))}>
-                  {s.total}
+                <span className={cn("text-xl font-black tabular-nums", scoreColor(adjustedTotal(s.total, isCut)))}>
+                  {adjustedTotal(s.total, isCut)}
                 </span>
+                {isCut && (
+                  <p className="text-[9px] text-orange-500 font-semibold mt-0.5">+10 CUT</p>
+                )}
               </div>
               <div className="text-center">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">Today</p>
@@ -209,10 +221,12 @@ function MobilePickRow({ p, idx, hasStats, onClick }: { p: PickedPlayer; idx: nu
 
         {/* Total + Thru */}
         <div className="flex flex-col items-end flex-shrink-0">
-          <span className={cn("text-base font-black tabular-nums leading-none", scoreColor(s?.total))}>
-            {s?.total ?? "—"}
+          <span className={cn("text-base font-black tabular-nums leading-none", scoreColor(adjustedTotal(s?.total, isCut)))}>
+            {s ? adjustedTotal(s.total, isCut) : "—"}
           </span>
-          {s && (
+          {isCut ? (
+            <span className="text-[9px] text-orange-500 font-semibold mt-0.5">+10 CUT</span>
+          ) : s && (
             <span className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
               {s.thru === "F" ? "Final" : s.thru ? `Thru ${s.thru}` : ""}
             </span>
@@ -473,8 +487,15 @@ export default function GolfPicksPicker() {
                           </span>
                         </td>
 
-                        <td className={cn("px-2 py-2.5 text-center tabular-nums font-bold", scoreColor(s?.total))}>
-                          {s?.total ?? "—"}
+                        <td className="px-2 py-2.5 text-center tabular-nums">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className={cn("font-bold", scoreColor(adjustedTotal(s?.total, isCut)))}>
+                              {s ? adjustedTotal(s.total, isCut) : "—"}
+                            </span>
+                            {isCut && (
+                              <span className="text-[9px] text-orange-500 font-semibold">+10 CUT</span>
+                            )}
+                          </div>
                         </td>
 
                         {hasStats && (

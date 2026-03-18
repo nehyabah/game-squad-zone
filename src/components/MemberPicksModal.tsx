@@ -500,11 +500,20 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                   if (score.startsWith("+")) return "bg-blue-50 text-blue-600 border border-blue-200";
                   return "bg-slate-100 text-slate-700";
                 };
+                const adjustedTotal = (total: string | undefined, isCut: boolean): string => {
+                  if (!isCut) return total ?? "—";
+                  if (!total || total === "E" || total === "—") return "+10";
+                  const n = parseInt(total, 10);
+                  if (isNaN(n)) return total;
+                  const adj = n + 10;
+                  return adj > 0 ? `+${adj}` : adj === 0 ? "E" : `${adj}`;
+                };
                 const totalScore = golfPicks
                   .filter(p => p.stat)
                   .reduce((sum, p) => {
                     const n = parseInt(p.stat!.total, 10);
-                    return sum + (isNaN(n) ? 0 : n);
+                    const isPickCut = p.stat!.status === "cut" || p.stat!.status === "C";
+                    return sum + (isNaN(n) ? 0 : n) + (isPickCut ? 10 : 0);
                   }, 0);
                 const totalStr = totalScore === 0 ? "E" : totalScore > 0 ? `+${totalScore}` : `${totalScore}`;
 
@@ -539,13 +548,14 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                         const cc = getPlayerCountryCode(pick.playerId, pick.firstName, pick.lastName);
                         const hasStat = !!pick.stat && golfHasLeaderboard;
                         const isCut = golfHasLeaderboard && !pick.stat;
+                        const isPickCut = hasStat && (pick.stat!.status === "cut" || pick.stat!.status === "C");
                         const dbScoreStr = pick.dbScore === null ? null : pick.dbScore === 0 ? "E" : pick.dbScore > 0 ? `+${pick.dbScore}` : `${pick.dbScore}`;
                         const isExpanded = expandedGolfPick === pick.groupNumber;
                         const hasRounds = hasStat && pick.stat!.rounds && pick.stat!.rounds.length > 0;
 
                         return (
                           <div key={pick.groupNumber} className="overflow-hidden rounded-2xl border transition-all"
-                            style={{ borderColor: hasStat && pick.stat!.total.startsWith("-") ? "rgba(252,165,165,0.5)" : hasStat && pick.stat!.total.startsWith("+") ? "rgba(147,197,253,0.5)" : "rgba(0,0,0,0.08)" }}
+                            style={{ borderColor: hasStat && adjustedTotal(pick.stat!.total, isPickCut).startsWith("-") ? "rgba(252,165,165,0.5)" : hasStat && adjustedTotal(pick.stat!.total, isPickCut).startsWith("+") ? "rgba(147,197,253,0.5)" : "rgba(0,0,0,0.08)" }}
                           >
                             {/* Main row — tappable */}
                             <button
@@ -553,9 +563,9 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                               disabled={!hasRounds}
                               className={cn(
                                 "w-full flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3.5 text-left transition-colors",
-                                hasStat && pick.stat!.total.startsWith("-")
+                                hasStat && adjustedTotal(pick.stat!.total, isPickCut).startsWith("-")
                                   ? "bg-gradient-to-r from-red-50/60 via-red-50/40 to-red-50/60"
-                                  : hasStat && pick.stat!.total.startsWith("+")
+                                  : hasStat && adjustedTotal(pick.stat!.total, isPickCut).startsWith("+")
                                   ? "bg-gradient-to-r from-blue-50/60 via-blue-50/40 to-blue-50/60"
                                   : "bg-gradient-to-r from-muted/20 via-background/60 to-muted/20",
                                 hasRounds && "active:opacity-80"
@@ -591,19 +601,25 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                                   <div className="flex flex-col items-end gap-0.5">
                                     <div className={cn(
                                       "text-base sm:text-lg font-black tabular-nums leading-none",
-                                      golfScoreColor(pick.stat!.total)
+                                      golfScoreColor(adjustedTotal(pick.stat!.total, isPickCut))
                                     )}>
-                                      {pick.stat!.total}
+                                      {adjustedTotal(pick.stat!.total, isPickCut)}
                                     </div>
                                     <div className="flex items-center gap-1">
-                                      <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">
-                                        #{pick.stat!.position}
-                                      </span>
-                                      {pick.stat!.thru === "F" ? (
-                                        <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1 py-0.5 rounded">F</span>
-                                      ) : pick.stat!.thru ? (
-                                        <span className="text-[9px] text-muted-foreground">T{pick.stat!.thru}</span>
-                                      ) : null}
+                                      {isPickCut ? (
+                                        <span className="text-[9px] font-semibold text-orange-500">+10 CUT</span>
+                                      ) : (
+                                        <>
+                                          <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">
+                                            #{pick.stat!.position}
+                                          </span>
+                                          {pick.stat!.thru === "F" ? (
+                                            <span className="text-[9px] font-bold text-emerald-600 bg-emerald-100 px-1 py-0.5 rounded">F</span>
+                                          ) : pick.stat!.thru ? (
+                                            <span className="text-[9px] text-muted-foreground">T{pick.stat!.thru}</span>
+                                          ) : null}
+                                        </>
+                                      )}
                                     </div>
                                   </div>
                                   {hasRounds && (

@@ -2,7 +2,7 @@
 import { PrismaClient } from "@prisma/client";
 import https from "https";
 
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "e9c731d341msh111df50d5cffe56p1892bbjsnf5ceca154179";
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "d1183719e6msh532ead7af6fa213p15c074jsn709877193329";
 const RAPIDAPI_HOST = "live-golf-data.p.rapidapi.com";
 
 function fetchGolfApi(path: string): Promise<any> {

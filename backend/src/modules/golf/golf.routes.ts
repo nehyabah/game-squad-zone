@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import https from "https";
 
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "e9c731d341msh111df50d5cffe56p1892bbjsnf5ceca154179";
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || "d1183719e6msh532ead7af6fa213p15c074jsn709877193329";
 const RAPIDAPI_HOST = "live-golf-data.p.rapidapi.com";
 
 function fetchGolfApi(path: string): Promise<any> {
@@ -29,6 +29,22 @@ function fetchGolfApi(path: string): Promise<any> {
     req.on("error", reject);
     req.end();
   });
+}
+
+// MongoDB Extended JSON uses {"$numberInt":"1"} etc — flatten to plain JS values
+function normalizeMongo(val: any): any {
+  if (val === null || val === undefined) return val;
+  if (Array.isArray(val)) return val.map(normalizeMongo);
+  if (typeof val === "object") {
+    if ("$numberInt" in val)  return parseInt(val["$numberInt"], 10);
+    if ("$numberLong" in val) return parseInt(val["$numberLong"], 10);
+    if ("$numberDouble" in val) return parseFloat(val["$numberDouble"]);
+    if ("$date" in val) return new Date(normalizeMongo(val["$date"])).toISOString();
+    const out: any = {};
+    for (const k of Object.keys(val)) out[k] = normalizeMongo(val[k]);
+    return out;
+  }
+  return val;
 }
 
 export default async function golfRoutes(app: FastifyInstance) {

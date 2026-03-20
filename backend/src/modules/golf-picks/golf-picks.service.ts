@@ -259,7 +259,7 @@ export class GolfPicksService {
         const player = statsMap.get(pick.groupPlayer.playerId);
         if (!player) return;
         const isCut = player.status === "cut" || player.status === "C";
-        const score = parseScoreStr(player.total) + (isCut ? 10 : 0);
+        const score = parseScoreStr(player.total) + (isCut ? 2 : 0);
         await this.prisma.golfPick.update({ where: { id: pick.id }, data: { score } });
         updated++;
       })

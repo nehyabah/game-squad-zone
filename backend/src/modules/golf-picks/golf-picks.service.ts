@@ -200,6 +200,7 @@ export class GolfPicksService {
               firstName: p.groupPlayer.firstName,
               lastName: p.groupPlayer.lastName,
               score: p.score,
+              isCut: p.isCut,
             }))
           : [],
       };
@@ -260,7 +261,7 @@ export class GolfPicksService {
         if (!player) return;
         const isCut = player.status === "cut" || player.status === "C";
         const score = parseScoreStr(player.total) + (isCut ? 2 : 0);
-        await this.prisma.golfPick.update({ where: { id: pick.id }, data: { score } });
+        await this.prisma.golfPick.update({ where: { id: pick.id }, data: { score, isCut } });
         updated++;
       })
     );

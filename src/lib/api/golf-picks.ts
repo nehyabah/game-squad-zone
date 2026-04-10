@@ -138,7 +138,7 @@ export const golfPicksUserAPI = {
       displayName: string | null;
       avatarUrl: string | null;
       picksSubmitted: number;
-      picks: { groupNumber: number; playerId: string; firstName: string; lastName: string; score: number | null }[];
+      picks: { groupNumber: number; playerId: string; firstName: string; lastName: string; score: number | null; isCut: boolean }[];
     }[];
   }> {
     const { data } = await api.get(`/golf-picks/squad/${squadId}`);

@@ -446,6 +446,7 @@ model GolfPick {
   groupNumber   Int
   groupPlayerId String
   score         Float?
+  isCut         Boolean             @default(false)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   tournament    GolfTournamentSetup @relation(fields: [tournamentId], references: [id], onDelete: Cascade)

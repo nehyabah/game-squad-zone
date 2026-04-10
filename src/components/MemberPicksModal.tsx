@@ -20,6 +20,7 @@ interface GolfPickDisplay {
   lastName: string;
   stat: GolfPlayer | null;
   dbScore: number | null;
+  dbIsCut: boolean;
 }
 
 interface MemberPicksModalProps {
@@ -103,6 +104,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
           lastName: p.lastName,
           stat: statsMap.get(p.playerId) ?? null,
           dbScore: p.score,
+          dbIsCut: p.isCut,
         }))
       );
     } catch {
@@ -508,13 +510,16 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                   const adj = n + 2;
                   return adj > 0 ? `+${adj}` : adj === 0 ? "E" : `${adj}`;
                 };
-                const totalScore = golfPicks
-                  .filter(p => p.stat)
-                  .reduce((sum, p) => {
-                    const n = parseInt(p.stat!.total, 10);
-                    const isPickCut = p.stat!.status === "cut" || p.stat!.status === "C";
-                    return sum + (isNaN(n) ? 0 : n) + (isPickCut ? 2 : 0);
-                  }, 0);
+                const dbScoresReady = golfPicks.some(p => p.dbScore !== null);
+                const totalScore = dbScoresReady
+                  ? golfPicks.reduce((sum, p) => sum + (p.dbScore ?? 0), 0)
+                  : golfPicks
+                      .filter(p => p.stat)
+                      .reduce((sum, p) => {
+                        const n = parseInt(p.stat!.total, 10);
+                        const isPickCut = p.stat!.status === "cut" || p.stat!.status === "C";
+                        return sum + (isNaN(n) ? 0 : n) + (isPickCut ? 2 : 0);
+                      }, 0);
                 const totalStr = totalScore === 0 ? "E" : totalScore > 0 ? `+${totalScore}` : `${totalScore}`;
 
                 return (
@@ -549,6 +554,8 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                         const hasStat = !!pick.stat && golfHasLeaderboard;
                         const isCut = golfHasLeaderboard && !pick.stat;
                         const isPickCut = hasStat && (pick.stat!.status === "cut" || pick.stat!.status === "C");
+                        // Fall back to the stored DB cut flag when live stats aren't available
+                        const effectivelyCut = isPickCut || isCut || (!hasStat && pick.dbIsCut);
                         const dbScoreStr = pick.dbScore === null ? null : pick.dbScore === 0 ? "E" : pick.dbScore > 0 ? `+${pick.dbScore}` : `${pick.dbScore}`;
                         const isExpanded = expandedGolfPick === pick.groupNumber;
                         const hasRounds = hasStat && pick.stat!.rounds && pick.stat!.rounds.length > 0;
@@ -634,9 +641,14 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                                   CUT/WD
                                 </span>
                               ) : dbScoreStr !== null ? (
-                                <span className={cn("text-base font-black tabular-nums flex-shrink-0", golfScoreColor(dbScoreStr))}>
-                                  {dbScoreStr}
-                                </span>
+                                <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                                  <span className={cn("text-base font-black tabular-nums leading-none", golfScoreColor(dbScoreStr))}>
+                                    {dbScoreStr}
+                                  </span>
+                                  {pick.dbIsCut && (
+                                    <span className="text-[9px] font-semibold text-orange-500">+2 CUT</span>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-[10px] text-muted-foreground flex-shrink-0">Pre-tournament</span>
                               )}

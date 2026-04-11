@@ -504,7 +504,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                 };
                 const adjustedTotal = (total: string | undefined, isCut: boolean): string => {
                   if (!isCut) return total ?? "—";
-                  if (!total || total === "E" || total === "—") return "+2";
+                  if (!total || total === "E" || total === "—") return "+5";
                   const n = parseInt(total, 10);
                   if (isNaN(n)) return total;
                   const adj = n + 5;

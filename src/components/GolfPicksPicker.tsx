@@ -32,10 +32,10 @@ function scoreColor(score: string | undefined) {
 
 function adjustedTotal(total: string | undefined, isCut: boolean): string {
   if (!isCut) return total ?? "—";
-  if (!total || total === "E" || total === "—") return "+2";
+  if (!total || total === "E" || total === "—") return "+5";
   const n = parseInt(total, 10);
   if (isNaN(n)) return total;
-  const adj = n + 2;
+  const adj = n + 5;
   return adj > 0 ? `+${adj}` : adj === 0 ? "E" : `${adj}`;
 }
 
@@ -116,7 +116,7 @@ function PlayerStatsDialog({
                   {adjustedTotal(s.total, isCut)}
                 </span>
                 {isCut && (
-                  <p className="text-[9px] text-orange-500 font-semibold mt-0.5">+2 CUT</p>
+                  <p className="text-[9px] text-orange-500 font-semibold mt-0.5">+5 CUT</p>
                 )}
               </div>
               <div className="text-center">
@@ -225,7 +225,7 @@ function MobilePickRow({ p, idx, hasStats, onClick }: { p: PickedPlayer; idx: nu
             {s ? adjustedTotal(s.total, isCut) : "—"}
           </span>
           {isCut ? (
-            <span className="text-[9px] text-orange-500 font-semibold mt-0.5">+2 CUT</span>
+            <span className="text-[9px] text-orange-500 font-semibold mt-0.5">+5 CUT</span>
           ) : s && (
             <span className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
               {s.thru === "F" ? "Final" : s.thru ? `Thru ${s.thru}` : ""}
@@ -493,7 +493,7 @@ export default function GolfPicksPicker() {
                               {s ? adjustedTotal(s.total, isCut) : "—"}
                             </span>
                             {isCut && (
-                              <span className="text-[9px] text-orange-500 font-semibold">+2 CUT</span>
+                              <span className="text-[9px] text-orange-500 font-semibold">+5 CUT</span>
                             )}
                           </div>
                         </td>

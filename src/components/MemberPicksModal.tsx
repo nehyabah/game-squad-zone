@@ -507,7 +507,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                   if (!total || total === "E" || total === "—") return "+2";
                   const n = parseInt(total, 10);
                   if (isNaN(n)) return total;
-                  const adj = n + 2;
+                  const adj = n + 5;
                   return adj > 0 ? `+${adj}` : adj === 0 ? "E" : `${adj}`;
                 };
                 const dbScoresReady = golfPicks.some(p => p.dbScore !== null);
@@ -518,7 +518,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                       .reduce((sum, p) => {
                         const n = parseInt(p.stat!.total, 10);
                         const isPickCut = p.stat!.status === "cut" || p.stat!.status === "C";
-                        return sum + (isNaN(n) ? 0 : n) + (isPickCut ? 2 : 0);
+                        return sum + (isNaN(n) ? 0 : n) + (isPickCut ? 5 : 0);
                       }, 0);
                 const totalStr = totalScore === 0 ? "E" : totalScore > 0 ? `+${totalScore}` : `${totalScore}`;
 
@@ -614,7 +614,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                                     </div>
                                     <div className="flex items-center gap-1">
                                       {isPickCut ? (
-                                        <span className="text-[9px] font-semibold text-orange-500">+2 CUT</span>
+                                        <span className="text-[9px] font-semibold text-orange-500">+5 CUT</span>
                                       ) : (
                                         <>
                                           <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-full">
@@ -646,7 +646,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                                     {dbScoreStr}
                                   </span>
                                   {pick.dbIsCut && (
-                                    <span className="text-[9px] font-semibold text-orange-500">+2 CUT</span>
+                                    <span className="text-[9px] font-semibold text-orange-500">+5 CUT</span>
                                   )}
                                 </div>
                               ) : (

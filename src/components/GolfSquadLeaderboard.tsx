@@ -97,7 +97,7 @@ export default function GolfSquadLeaderboard({ squadId, onMemberClick }: Props) 
               .filter((s): s is GolfPlayer => s !== undefined)
               .reduce((sum, s) => {
                 const isCut = s.status === "cut" || s.status === "C";
-                return sum + parseScore(s.total) + (isCut ? 2 : 0);
+                return sum + parseScore(s.total) + (isCut ? 5 : 0);
               }, 0);
           }
 

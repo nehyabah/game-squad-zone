@@ -41,6 +41,7 @@ model User {
   emailUnsubscribed       Boolean             @default(false)
   sixNationsAnswers       SixNationsAnswer[]
   golfPicks               GolfPick[]
+  fifaAnswers             FifaAnswer[]
 
   @@index([email])
   @@index([username])
@@ -456,6 +457,100 @@ model GolfPick {
   @@unique([tournamentId, userId, groupNumber])
   @@index([tournamentId])
   @@index([userId])
+}
+
+// ====================
+// FIFA World Cup Models
+// ====================
+
+model FifaRound {
+  id                String          @id @default(uuid())
+  roundNumber       Int             @unique // 0-6 (fixed, pre-seeded)
+  name              String
+  lockTime          DateTime?       // When submissions close for this round
+  isActive          Boolean         @default(false)
+  isLocked          Boolean         @default(false)
+  pointsPerQuestion Int             @default(1)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  matches           FifaMatch[]
+  questions         FifaQuestion[]  @relation("RoundQuestions") // Round 0 & 1 direct questions
+
+  @@index([roundNumber])
+  @@index([isActive])
+}
+
+model FifaMatch {
+  id          String         @id @default(uuid())
+  roundId     String
+  matchNumber Int
+  homeTeam    String
+  awayTeam    String
+  matchDate   DateTime
+  venue       String?
+  homeScore   Int?
+  awayScore   Int?
+  completed   Boolean        @default(false)
+  groupTeams  Json?          // Round 1 groups: stores array of all team names
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  round       FifaRound      @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  questions   FifaQuestion[]
+
+  @@unique([roundId, matchNumber])
+  @@index([roundId])
+  @@index([matchDate])
+}
+
+model FifaQuestion {
+  id             String        @id @default(uuid())
+  roundId        String?       // Set for Round 0 & 1 (direct round questions)
+  matchId        String?       // Set for Round 2-6 (match questions)
+  questionNumber Int
+  questionText   String
+  questionType   String        // "multiple_choice" | "yes_no"
+  options        Json?
+  correctAnswer  String?
+  points         Int           @default(1)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  round          FifaRound?    @relation("RoundQuestions", fields: [roundId], references: [id], onDelete: Cascade)
+  match          FifaMatch?    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  answers        FifaAnswer[]
+
+  @@index([roundId])
+  @@index([matchId])
+}
+
+model FifaAnswer {
+  id         String       @id @default(uuid())
+  questionId String
+  userId     String
+  answer     String
+  isCorrect  Boolean?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  question   FifaQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, userId])
+  @@index([questionId])
+  @@index([userId])
+}
+
+model FifaAuditLog {
+  id          String   @id @default(uuid())
+  action      String
+  performedBy String
+  targetType  String
+  targetId    String
+  details     Json?
+  createdAt   DateTime @default(now())
+
+  @@index([action])
+  @@index([performedBy])
+  @@index([targetId])
+  @@index([createdAt])
 }
 
 // Enums converted to strings for compatibility

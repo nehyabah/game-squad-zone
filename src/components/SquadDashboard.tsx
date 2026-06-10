@@ -48,6 +48,7 @@ import type { ChatMessage as APIChatMessage } from "@/lib/api/chat";
 import { getDisplayName, getInitials } from "@/lib/utils/user";
 import { squadsAPI } from "@/lib/api/squads";
 import { leaderboardAPI as sixNationsLeaderboardAPI, SixNationsLeaderboardEntry } from "@/lib/api/six-nations";
+import { fifaLeaderboardAPI, FifaLeaderboardEntry } from "@/lib/api/fifa";
 import { MemberPicksModal } from "./MemberPicksModal";
 import GolfSquadLeaderboard from "./GolfSquadLeaderboard";
 import { StatisticsTab } from "./Statistics/StatisticsTab";
@@ -86,21 +87,29 @@ interface SquadMemberRanking {
 }
 
 const getRankIcon = (rank: number) => {
-  switch (rank) {
-    case 1:
-      return <Crown className="w-4 h-4 text-yellow-500" />;
-    case 2:
-      return <Medal className="w-4 h-4 text-gray-400" />;
-    case 3:
-      return <Award className="w-4 h-4 text-amber-600" />;
-    default:
-      return (
-        <span className="w-4 h-4 flex items-center justify-center text-muted-foreground font-bold text-xs">
-          {rank}
-        </span>
-      );
-  }
+  if (rank === 1) return <Trophy className="w-5 h-5 flex-shrink-0 text-amber-400 drop-shadow-[0_1px_4px_rgba(251,191,36,0.7)]" />;
+  if (rank === 2) return <Trophy className="w-4 h-4 flex-shrink-0 text-slate-400" />;
+  if (rank === 3) return <Trophy className="w-4 h-4 flex-shrink-0 text-amber-700/80" />;
+  return (
+    <span className="w-5 flex items-center justify-center text-xs font-semibold text-muted-foreground/60 tabular-nums flex-shrink-0">
+      {rank}
+    </span>
+  );
 };
+
+const NoStatsPlaceholder = () => (
+  <div className="flex flex-col items-center justify-center py-14 gap-4 text-center px-6">
+    <div className="w-11 h-11 rounded-full bg-muted flex items-center justify-center">
+      <BarChart3 className="w-5 h-5 text-muted-foreground" />
+    </div>
+    <div className="space-y-1">
+      <p className="font-semibold text-sm text-foreground">No stats available yet</p>
+      <p className="text-xs text-muted-foreground max-w-xs">
+        Stats will appear once matches are played and results are confirmed.
+      </p>
+    </div>
+  </div>
+);
 
 interface SquadDashboardProps {
   squadId: string;
@@ -121,6 +130,9 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const [globalSixNationsData, setGlobalSixNationsData] = useState<SixNationsLeaderboardEntry[]>([]);
   const [globalSixNationsLoading, setGlobalSixNationsLoading] = useState(false);
 
+  // Global FIFA leaderboard state (filtered to squad members in the component)
+  const [globalFifaData, setGlobalFifaData] = useState<FifaLeaderboardEntry[]>([]);
+
   const {
     messages: chatMessages,
     loading: chatLoading,
@@ -135,6 +147,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
   const isAdminOrOwner = currentUserMember?.role === 'owner' || currentUserMember?.role === 'admin';
   const isSixNations = squad?.sport === 'six-nations';
   const isGolf = squad?.sport === 'golf';
+  const isFifa = squad?.sport === 'fifa';
 
   // Fetch pending join requests count for notification badge
   const { data: pendingRequests = [] } = useQuery({
@@ -157,6 +170,15 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
         .finally(() => setGlobalSixNationsLoading(false));
     }
   }, [isSixNations]);
+
+  // Load FIFA leaderboard (total) when viewing a FIFA squad
+  useEffect(() => {
+    if (isFifa) {
+      fifaLeaderboardAPI.get(undefined, 'total')
+        .then(data => setGlobalFifaData(data))
+        .catch(err => console.error('Error loading FIFA leaderboard:', err));
+    }
+  }, [isFifa]);
 
   const [activeTab, setActiveTab] = useState("leaderboard");
   const [newMessage, setNewMessage] = useState("");
@@ -274,6 +296,29 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
       });
   }, [globalSixNationsData, user]);
 
+  // FIFA squad ranking — global FIFA data filtered to squad members
+  const fifaSquadRanking = useMemo(() => {
+    if (!isFifa || !globalFifaData.length) return [];
+    const memberIds = new Set((squad?.members || []).map(m => m.userId));
+    return globalFifaData
+      .filter(e => memberIds.has(e.user.id))
+      .sort((a, b) => b.totalPoints !== a.totalPoints ? b.totalPoints - a.totalPoints : b.correctAnswers - a.correctAnswers)
+      .map((entry, index) => ({
+        userId: entry.user.id,
+        username: entry.user.username,
+        displayName: entry.user.displayName,
+        firstName: entry.user.firstName,
+        lastName: entry.user.lastName,
+        points: entry.totalPoints,
+        wins: entry.correctAnswers,
+        losses: entry.incorrectAnswers,
+        pushes: entry.totalAnswers - entry.correctAnswers - entry.incorrectAnswers,
+        winPercentage: 0,
+        rank: index + 1,
+        isCurrentUser: user ? entry.user.id === user.id : false,
+      }));
+  }, [globalFifaData, squad?.members, user, isFifa]);
+
   // For Six Nations squads, switch between current round, total, and global based on tab
   const activeSquadRanking = isSixNations
     ? squadLeaderboardTab === 'total'
@@ -281,7 +326,9 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
       : squadLeaderboardTab === 'global'
         ? globalRanking
         : memberRanking
-    : memberRanking;
+    : isFifa
+      ? fifaSquadRanking
+      : memberRanking;
 
   if (loading) {
     return (
@@ -893,12 +940,8 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
           <div className="flex-1 overflow-y-auto px-2 py-2">
             {isSixNations ? (
               <SixNationsStatisticsTab squadId={squadId} userId={user?.id || ""} />
-            ) : isGolf ? (
-              <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-3">
-                <div className="text-4xl">⛳</div>
-                <p className="font-semibold text-foreground">No statistics yet</p>
-                <p className="text-sm text-muted-foreground">Golf squad statistics will be available after the tournament.</p>
-              </div>
+            ) : isGolf || isFifa ? (
+              <NoStatsPlaceholder />
             ) : (
               <StatisticsTab squadId={squadId} userId={user?.id || ""} />
             )}
@@ -988,15 +1031,10 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                     })
                   }
                 >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div className="w-6 flex items-center justify-center flex-shrink-0">
                       {getRankIcon(member.rank)}
                     </div>
-                    <Avatar className="w-6 h-6 ring-1 ring-primary/10 flex-shrink-0">
-                      <AvatarFallback className="text-[9px] font-bold bg-muted">
-                        {getInitials(member)}
-                      </AvatarFallback>
-                    </Avatar>
                     <div className="min-w-0 flex-1">
                       <div
                         className={`text-xs font-bold truncate ${
@@ -1020,7 +1058,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                             No picks
                           </span>
                         ) : (
-                          `${member.wins}W-${member.losses}L-${member.pushes}${isSixNations ? 'P' : 'D'}`
+                          `${member.wins}${isSixNations || isFifa ? '✓' : 'W'}-${member.losses}${isSixNations || isFifa ? '✗' : 'L'}-${member.pushes}${isFifa ? '⏳' : isSixNations ? 'P' : 'D'}`
                         )}
                       </div>
                     </div>
@@ -1029,14 +1067,14 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                     <div className="text-xs font-bold">
                       {member.wins === 0 && member.losses === 0 ? (
                         <span className="text-muted-foreground/50">—</span>
-                      ) : isSixNations ? (
+                      ) : isSixNations || isFifa ? (
                         member.points
                       ) : (
                         `${(member.winPercentage / 100).toFixed(2)}`
                       )}
                     </div>
                     <div className="text-[9px] text-muted-foreground font-medium">
-                      {isSixNations ? 'pts' : 'W%'}
+                      {isSixNations || isFifa ? 'pts' : 'W%'}
                     </div>
                   </div>
                 </div>
@@ -1103,7 +1141,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                         Squad Leaderboard
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {isSixNations ? 'Tournament standings' : isGolf ? 'Tournament standings' : 'Current season standings'}
+                        {isSixNations || isGolf || isFifa ? 'Tournament standings' : 'Current season standings'}
                       </p>
                     </div>
                   </div>
@@ -1193,12 +1231,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                             {getRankIcon(member.rank)}
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
-                              <AvatarFallback className="text-xs font-medium">
-                                {getInitials(member)}
-                              </AvatarFallback>
-                            </Avatar>
+                          <div className="flex items-center">
                             <div>
                               <div
                                 className={`text-sm font-medium ${
@@ -1222,7 +1255,7 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                     —
                                   </span>
                                 ) : (
-                                  `${member.wins}W ${member.losses}L ${member.pushes}${isSixNations ? 'P' : 'D'}`
+                                  `${member.wins}${isSixNations || isFifa ? '✓' : 'W'} ${member.losses}${isSixNations || isFifa ? '✗' : 'L'} ${member.pushes}${isFifa ? '⏳' : isSixNations ? 'P' : 'D'}`
                                 )}
                               </div>
                             </div>
@@ -1236,14 +1269,14 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
                                 <span className="text-muted-foreground/60">
                                   —
                                 </span>
-                              ) : isSixNations ? (
+                              ) : isSixNations || isFifa ? (
                                 member.points
                               ) : (
                                 `${(member.winPercentage / 100).toFixed(2)}`
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {isSixNations ? 'Points' : 'W%'}
+                              {isSixNations || isFifa ? 'Points' : 'W%'}
                             </div>
                           </div>
                         </div>
@@ -1399,12 +1432,8 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
               <div className="overflow-y-auto pr-2" style={{ maxHeight: "700px" }}>
                 {isSixNations ? (
                   <SixNationsStatisticsTab squadId={squadId} userId={user?.id || ""} />
-                ) : isGolf ? (
-                  <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-3">
-                    <div className="text-4xl">⛳</div>
-                    <p className="font-semibold text-foreground">No statistics yet</p>
-                    <p className="text-sm text-muted-foreground">Golf squad statistics will be available after the tournament.</p>
-                  </div>
+                ) : isGolf || isFifa ? (
+                  <NoStatsPlaceholder />
                 ) : (
                   <StatisticsTab squadId={squadId} userId={user?.id || ""} />
                 )}

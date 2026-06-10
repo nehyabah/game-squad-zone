@@ -21,6 +21,7 @@ import leaderboardRoutes from "./modules/leaderboards/leaderboards.routes";
 import statsRoutes from "./modules/stats/stats.routes";
 import gameRoutes from "./modules/games/games.routes";
 import sixNationsRoutes from "./modules/six-nations/six-nations.routes";
+import fifaRoutes from "./modules/fifa/fifa.routes";
 import golfRoutes from "./modules/golf/golf.routes";
 import golfPicksRoutes from "./modules/golf-picks/golf-picks.routes";
 import feedbackRoutes from "./modules/feedback/feedback.routes";
@@ -324,6 +325,9 @@ export function buildApp(): FastifyInstance {
 
   // Six Nations routes
   app.register(sixNationsRoutes, { prefix: "/api" });
+
+  // FIFA World Cup routes
+  app.register(fifaRoutes, { prefix: "/api" });
 
   // Golf routes
   app.register(golfRoutes, { prefix: "/api" });

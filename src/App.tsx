@@ -28,6 +28,7 @@ const App = () => (
               <Route path="/nfl" element={<Index sport="nfl" />} />
               <Route path="/six-nations" element={<Index sport="six-nations" />} />
               <Route path="/golf" element={<Index sport="golf" />} />
+              <Route path="/fifa" element={<Index sport="fifa" />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/auth/success" element={<AuthSuccessPage />} />

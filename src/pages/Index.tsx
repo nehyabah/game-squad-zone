@@ -11,10 +11,12 @@ import Header from "@/components/Header";
 import SquadManagerWithConditionalTabs from "@/components/SquadManagerWithConditionalTabs";
 import GameSelection from "@/components/GameSelection";
 import SixNationsQuestionPicker from "@/components/SixNationsQuestionPicker";
+import FifaQuestionPicker from "@/components/FifaQuestionPicker";
 import GolfFixtures from "@/components/GolfFixtures";
 import GolfPicksPicker from "@/components/GolfPicksPicker";
 import MyPicks from "@/components/MyPicks";
 import MySixNationsPicks from "@/components/MySixNationsPicks";
+import MyFifaPicks from "@/components/MyFifaPicks";
 import TeamLogosBanner from "@/components/TeamLogosBanner";
 import AuthModal from "@/components/AuthModal";
 import AccountMenu from "@/components/AccountMenu";
@@ -82,7 +84,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
     }
 
     if (hasSportSelection && !routeSport) {
-      const path = selectedSport === "nfl" ? "/nfl" : selectedSport === "six-nations" ? "/six-nations" : "/golf";
+      const path = selectedSport === "nfl" ? "/nfl" : selectedSport === "six-nations" ? "/six-nations" : selectedSport === "golf" ? "/golf" : "/fifa";
       navigate(path, { replace: true });
     }
   }, [hasSportSelection, selectedSport, routeSport, navigate]);
@@ -186,9 +188,10 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
   };
 
   // Handle sport selection
-  const handleSportChange = async (sport: "nfl" | "six-nations" | "golf") => {
+  const handleSportChange = async (sport: "nfl" | "six-nations" | "golf" | "fifa") => {
     // Show loading screen
-    setLoadingSportName(sport === "nfl" ? "NFL" : sport === "six-nations" ? "Six Nations" : "Golf");
+    const sportName = sport === "nfl" ? "NFL" : sport === "six-nations" ? "Six Nations" : sport === "golf" ? "Golf" : "FIFA World Cup";
+    setLoadingSportName(sportName);
     setSwitchingSport(true);
     setShowSportSelector(false);
 
@@ -198,7 +201,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
     // Switch sport and navigate
     setSelectedSport(sport);
     setActiveTab("fixtures");
-    const path = sport === "nfl" ? "/nfl" : sport === "six-nations" ? "/six-nations" : "/golf";
+    const path = sport === "nfl" ? "/nfl" : sport === "six-nations" ? "/six-nations" : sport === "golf" ? "/golf" : "/fifa";
     navigate(path);
 
     // Hide loading screen
@@ -246,7 +249,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-24 sm:pb-8">
         {/* Welcome Message and Team Logos Banner - Only on Fixtures tab, not for golf */}
-        {activeTab === "fixtures" && selectedSport !== "golf" && (
+        {activeTab === "fixtures" && selectedSport !== "golf" && selectedSport !== "fifa" && (
           <>
             <div className="text-center mb-4 sm:mb-8">
               <h2 className="text-xl sm:text-3xl font-display font-bold text-foreground mb-1 sm:mb-2">
@@ -262,7 +265,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
           </>
         )}
 
-        {activeTab !== "create" && selectedSport === "nfl" && <CountdownTimer />}
+        {activeTab !== "create" && (selectedSport === "nfl") && <CountdownTimer />}
 
         <Tabs
           value={activeTab}
@@ -526,6 +529,8 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
           <TabsContent value="fixtures" className="space-y-8">
             {selectedSport === "six-nations" ? (
               <SixNationsQuestionPicker />
+            ) : selectedSport === "fifa" ? (
+              <FifaQuestionPicker />
             ) : selectedSport === "golf" ? (
               <GolfFixtures />
             ) : (
@@ -543,6 +548,8 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
           <TabsContent value="games" className="space-y-8">
             {selectedSport === "six-nations" ? (
               <MySixNationsPicks />
+            ) : selectedSport === "fifa" ? (
+              <MyFifaPicks />
             ) : selectedSport === "golf" ? (
               <GolfPicksPicker />
             ) : (
@@ -578,7 +585,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
               {/* The Logo Container */}
               <div className="relative h-32 w-32 rounded-full bg-black/20 backdrop-blur-sm border border-white/10 flex items-center justify-center overflow-hidden shadow-2xl animate-float">
                 <img
-                  src={loadingSportName === "NFL" ? "/nfl-logo.png" : loadingSportName === "Golf" ? "/golf.svg" : "/6Nations.png"}
+                  src={loadingSportName === "NFL" ? "/nfl-logo.png" : loadingSportName === "Golf" ? "/golf.svg" : loadingSportName === "FIFA World Cup" ? "/2026_FIFA_World_Cup_emblem.svg.webp" : "/6Nations.png"}
                   alt={loadingSportName}
                   className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                   style={loadingSportName === "Golf" ? { filter: "invert(1)" } : undefined}
@@ -669,7 +676,7 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 py-3 sm:py-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 py-3 sm:py-4">
             {/* NFL Card */}
             <button
               onClick={() => handleSportChange("nfl")}
@@ -798,6 +805,44 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
                 Golf
               </span>
 
+            </button>
+
+            {/* FIFA World Cup Card */}
+            <button
+              onClick={() => handleSportChange("fifa")}
+              className={`group relative flex flex-col items-center justify-center p-3 sm:p-5 rounded-xl transition-all duration-300 ${
+                selectedSport === "fifa"
+                  ? "bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 shadow-lg shadow-primary/20 ring-2 ring-primary/50"
+                  : "bg-gradient-to-br from-muted/50 to-muted/30 hover:from-primary/10 hover:to-primary/5 hover:shadow-md border border-border/50"
+              }`}
+            >
+              {selectedSport === "fifa" && (
+                <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-2 h-2 bg-primary rounded-full shadow-lg"></div>
+              )}
+
+              <div
+                className={`relative mb-2 sm:mb-3 transition-all duration-300 ${
+                  selectedSport === "fifa" ? "scale-105" : "group-hover:scale-105"
+                }`}
+              >
+                <img
+                  src="/2026_FIFA_World_Cup_emblem.svg.webp"
+                  alt="FIFA World Cup"
+                  className="w-12 h-12 sm:w-16 sm:h-16 object-contain relative z-10"
+                />
+              </div>
+
+              <span
+                className={`font-bold text-xs sm:text-sm transition-all duration-300 ${
+                  selectedSport === "fifa" ? "text-primary" : "text-foreground group-hover:text-primary"
+                }`}
+              >
+                FIFA
+              </span>
+
+              <span className="text-[9px] sm:text-xs text-muted-foreground mt-0.5 text-center">
+                World Cup 2026
+              </span>
             </button>
           </div>
 

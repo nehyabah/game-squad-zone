@@ -12,6 +12,8 @@ import { TeamFlag } from "@/lib/utils/sixNations";
 import { golfPicksUserAPI } from "@/lib/api/golf-picks";
 import { golfAPI, type GolfPlayer } from "@/lib/api/golf";
 import { getPlayerCountryCode } from "@/lib/golf-player-countries";
+import { fifaRoundsAPI, fifaAnswersAPI, type FifaRound, type FifaUserAnswer, type FifaMatch } from "@/lib/api/fifa";
+import { FifaTeamFlag } from "@/lib/utils/fifa";
 
 interface GolfPickDisplay {
   groupNumber: number;
@@ -44,6 +46,11 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
   const [sixNationsAnswers, setSixNationsAnswers] = useState<SixNationsUserAnswer[]>([]);
   const [cachedRounds, setCachedRounds] = useState<Map<string, SixNationsUserAnswer[]>>(new Map());
 
+  // FIFA state
+  const [fifaRounds, setFifaRounds] = useState<FifaRound[]>([]);
+  const [selectedFifaRoundId, setSelectedFifaRoundId] = useState<string | null>(null);
+  const [fifaAnswers, setFifaAnswers] = useState<FifaUserAnswer[]>([]);
+
   // Golf state
   const [golfPicks, setGolfPicks] = useState<GolfPickDisplay[]>([]);
   const [golfTournamentName, setGolfTournamentName] = useState("");
@@ -59,6 +66,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
 
   const isSixNations = sport === 'six-nations';
   const isGolf = sport === 'golf';
+  const isFifa = sport === 'fifa';
 
   const toggleMatchCollapse = (matchId: string) => {
     setExpandedMatches(prev => {
@@ -121,6 +129,8 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
         loadGolfPicks();
       } else if (isSixNations) {
         loadSixNationsRounds();
+      } else if (isFifa) {
+        loadFifaRounds();
       } else {
         const isWeekChange = hasInitialized;
         loadWeekPicks(selectedWeek, isWeekChange);
@@ -130,6 +140,13 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
       }
     }
   }, [isOpen, userId, sport]);
+
+  // Load FIFA answers when selected round changes
+  useEffect(() => {
+    if (isOpen && userId && isFifa && selectedFifaRoundId) {
+      loadFifaAnswers(selectedFifaRoundId);
+    }
+  }, [selectedFifaRoundId, isOpen, userId]);
 
   // Load data when selection changes (week or round)
   useEffect(() => {
@@ -160,6 +177,9 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
       setGolfTournamentName("");
       setGolfHasLeaderboard(false);
       setExpandedGolfPick(null);
+      setFifaRounds([]);
+      setSelectedFifaRoundId(null);
+      setFifaAnswers([]);
     }
   }, [isOpen]);
 
@@ -210,6 +230,34 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
     } finally {
       setIsLoading(false);
       setIsTransitioning(false);
+    }
+  };
+
+  const loadFifaRounds = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fifaRoundsAPI.getAll();
+      setFifaRounds(data);
+      const active = data.find((r) => r.isActive) ?? data[0];
+      if (active) setSelectedFifaRoundId(active.id);
+    } catch {
+      setError('Failed to load rounds');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadFifaAnswers = async (roundId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await fifaAnswersAPI.getSpecificUserAnswers(userId, roundId);
+      setFifaAnswers(data);
+    } catch {
+      setFifaAnswers([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -397,8 +445,41 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
 
         <div className="flex flex-col h-full overflow-hidden">
           {/* Week/Round Selector — hidden for golf */}
-          {!isGolf && <div className="border-b border-border/10 py-2 sm:py-4 bg-gradient-to-r from-emerald-50/30 via-teal-50/20 to-emerald-50/30">
-            {isSixNations ? (
+          {!isGolf && <div className="border-b border-border/10 py-2 sm:py-3 bg-muted/10">
+            {isFifa ? (
+              <div
+                className="flex gap-1 overflow-x-auto px-3"
+                style={{ scrollbarWidth: "none" } as React.CSSProperties}
+              >
+                {[...fifaRounds].sort((a, b) => a.roundNumber - b.roundNumber).map((round) => {
+                  const isSel = round.id === selectedFifaRoundId;
+                  const locked = round.isLocked || (!!round.lockTime && new Date() >= new Date(round.lockTime));
+                  return (
+                    <button
+                      key={round.id}
+                      onClick={() => setSelectedFifaRoundId(round.id)}
+                      className={cn(
+                        "flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all border whitespace-nowrap",
+                        isSel && locked && "bg-primary text-white border-primary shadow-sm",
+                        isSel && !locked && "bg-muted text-muted-foreground border-border shadow-sm",
+                        !isSel && locked && "bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted hover:text-foreground",
+                        !isSel && !locked && "bg-muted/20 text-muted-foreground/50 border-border/20 cursor-default"
+                      )}
+                    >
+                      <span className={cn(
+                        "text-[9px] font-black rounded px-1 py-0.5 leading-none",
+                        isSel ? "bg-white/20 text-white" : "opacity-50"
+                      )}>R{round.roundNumber}</span>
+                      <span className="hidden sm:inline">{round.name}</span>
+                      <span className="sm:hidden">
+                        {["Pred","Groups","R32","R16","QF","SF","Final"][round.roundNumber] ?? round.name}
+                      </span>
+                      {!locked && <Lock className="w-2.5 h-2.5 flex-shrink-0 opacity-50" />}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : isSixNations ? (
               <div className="px-3 sm:px-6">
                 <div className="flex items-center justify-between gap-2 bg-secondary/30 rounded-lg px-3 py-2">
                   <button
@@ -456,8 +537,54 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
             )}
           </div>}
 
+
           {/* Content */}
           <div className="flex-1 overflow-y-auto overscroll-contain bg-gradient-to-b from-transparent via-muted/5 to-transparent" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+
+            {/* ── FIFA Branch ─────────────────────────────── */}
+            {isFifa && (() => {
+              const selectedRound = fifaRounds.find((r) => r.id === selectedFifaRoundId);
+              const roundIsLocked = selectedRound
+                ? selectedRound.isLocked || (!!selectedRound.lockTime && new Date() >= new Date(selectedRound.lockTime))
+                : false;
+
+              if (isLoading) return (
+                <div className="flex items-center justify-center py-14 gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">Loading picks…</span>
+                </div>
+              );
+
+              if (!roundIsLocked) return (
+                <div className="flex flex-col items-center justify-center py-14 gap-4 text-center px-6">
+                  <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="font-bold text-sm">Round still open</p>
+                    <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
+                      Picks for <strong>{selectedRound?.name ?? "this round"}</strong> are hidden while the round is open. They'll be revealed once it locks.
+                    </p>
+                  </div>
+                </div>
+              );
+
+              if (fifaAnswers.length === 0) return (
+                <div className="flex flex-col items-center justify-center py-14 gap-3 text-center px-6">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <Minus className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm">No picks submitted</p>
+                    <p className="text-xs text-muted-foreground">
+                      This player didn't submit picks for {selectedRound?.name ?? "this round"}.
+                    </p>
+                  </div>
+                </div>
+              );
+
+              return <FifaAnswersView answers={fifaAnswers} selectedRoundId={selectedFifaRoundId} rounds={fifaRounds} />;
+            })()}
 
             {/* ── Golf Branch ─────────────────────────────── */}
             {isGolf && (
@@ -714,7 +841,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
             )}
 
             {/* ── NFL / Six Nations Branch ─────────────────── */}
-            {!isGolf && (
+            {!isGolf && !isFifa && (
               isLoading ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12 px-4 sm:px-6">
                 <div className="relative mb-3 sm:mb-4">
@@ -1127,5 +1254,138 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── FIFA answers view ────────────────────────────────────────────────────────
+
+const ROUND_SHORT: Record<number, string> = {
+  0: "Predictions", 1: "Groups", 2: "R32", 3: "R16", 4: "QF", 5: "SF", 6: "Final",
+};
+
+function FifaAnswersView({
+  answers,
+  selectedRoundId,
+  rounds,
+}: {
+  answers: FifaUserAnswer[];
+  selectedRoundId: string | null;
+  rounds: FifaRound[];
+}) {
+  const correct = answers.filter((a) => a.isCorrect === true).length;
+  const wrong = answers.filter((a) => a.isCorrect === false).length;
+  const pending = answers.filter((a) => a.isCorrect == null).length;
+  const pts = answers.filter((a) => a.isCorrect === true).reduce((s, a) => s + (a.question?.points ?? 0), 0);
+
+  const roundName = rounds.find((r) => r.id === selectedRoundId)?.name;
+  const roundNum = rounds.find((r) => r.id === selectedRoundId)?.roundNumber ?? -1;
+
+  // Direct round questions (R0 / R1)
+  const directAnswers = answers.filter((a) => a.question?.roundId && !a.question?.matchId);
+
+  // Match-grouped (R2–6)
+  const matchMap = new Map<string, { match: FifaMatch; answers: FifaUserAnswer[] }>();
+  for (const a of answers) {
+    const match = a.question?.match as FifaMatch | undefined;
+    if (!match) continue;
+    if (!matchMap.has(match.id)) matchMap.set(match.id, { match, answers: [] });
+    matchMap.get(match.id)!.answers.push(a);
+  }
+
+  return (
+    <div className="p-3 sm:p-5 space-y-3">
+      {/* Summary strip */}
+      <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl border border-border/50">
+        <span className="text-xs font-semibold text-foreground">{roundName ?? "Round"}</span>
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          {correct > 0 && <span className="text-emerald-600">{correct}✓</span>}
+          {wrong > 0 && <span className="text-rose-500">{wrong}✗</span>}
+          {pending > 0 && <span className="text-amber-500">{pending}⏳</span>}
+          {pts > 0 && (
+            <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">+{pts}pts</span>
+          )}
+        </div>
+      </div>
+
+      {/* Direct round answers (R0/R1) */}
+      {directAnswers.length > 0 && (
+        <div className="rounded-xl border border-border overflow-hidden">
+          {directAnswers.map((a) => <FifaAnswerRow key={a.id} answer={a} />)}
+        </div>
+      )}
+
+      {/* Match-grouped answers (R2–6) */}
+      {Array.from(matchMap.values()).map(({ match, answers: matchAnswers }) => (
+        <div key={match.id} className="rounded-xl border border-border overflow-hidden">
+          <div className="px-3 py-2.5 bg-muted/30 border-b border-border">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <FifaTeamFlag teamName={match.homeTeam} className="text-lg flex-shrink-0" />
+                <span className="font-bold text-xs truncate">{match.homeTeam}</span>
+              </div>
+              <div className="flex-shrink-0">
+                {match.completed && match.homeScore !== null ? (
+                  <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md tabular-nums">
+                    {match.homeScore}–{match.awayScore}
+                  </span>
+                ) : (
+                  <span className="text-[9px] font-black text-muted-foreground tracking-widest">VS</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0 justify-end">
+                <span className="font-bold text-xs truncate text-right">{match.awayTeam}</span>
+                <FifaTeamFlag teamName={match.awayTeam} className="text-lg flex-shrink-0" />
+              </div>
+            </div>
+          </div>
+          {matchAnswers.map((a) => <FifaAnswerRow key={a.id} answer={a} />)}
+        </div>
+      ))}
+
+      {directAnswers.length === 0 && matchMap.size === 0 && (
+        <p className="text-center text-sm text-muted-foreground py-6">No picks for this round.</p>
+      )}
+    </div>
+  );
+}
+
+function FifaAnswerRow({ answer }: { answer: FifaUserAnswer }) {
+  const status = answer.isCorrect === true ? "correct" : answer.isCorrect === false ? "wrong" : "pending";
+  return (
+    <div className={cn(
+      "flex items-center gap-3 px-3 py-2.5 border-b last:border-0",
+      status === "correct" && "bg-emerald-50/60 dark:bg-emerald-900/10",
+      status === "wrong" && "bg-rose-50/60 dark:bg-rose-900/10",
+    )}>
+      <div className="flex-shrink-0 w-4">
+        {status === "correct" && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />}
+        {status === "wrong" && <XCircle className="w-3.5 h-3.5 text-rose-400" />}
+        {status === "pending" && <Clock className="w-3.5 h-3.5 text-amber-400" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] text-muted-foreground truncate">{answer.question?.questionText}</p>
+        <div className="flex items-center gap-1.5">
+          <span className={cn(
+            "text-xs font-bold",
+            status === "correct" && "text-emerald-700",
+            status === "wrong" && "text-rose-600 line-through opacity-70",
+            status === "pending" && "text-foreground",
+          )}>{answer.answer}</span>
+          {status === "wrong" && answer.question?.correctAnswer && (
+            <span className="text-xs font-bold text-emerald-700">→ {answer.question.correctAnswer}</span>
+          )}
+        </div>
+      </div>
+      <div className="flex-shrink-0">
+        {status === "correct" && (
+          <span className="text-xs font-black text-emerald-600">+{answer.question?.points ?? 0}</span>
+        )}
+        {status === "pending" && (
+          <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+            Awaiting
+          </span>
+        )}
+      </div>
+    </div>
   );
 }

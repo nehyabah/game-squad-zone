@@ -25,13 +25,17 @@ const Header = ({ onAuthClick }: HeaderProps) => {
   const { selectedSport, setSelectedSport, hasSportSelection } = useSport();
   const navigate = useNavigate();
 
-  const sportName = selectedSport === 'nfl' ? 'NFL Fantasy' : selectedSport === 'six-nations' ? '6 Nations Rugby' : 'Golf';
+  const sportName = selectedSport === 'nfl' ? 'NFL Fantasy'
+    : selectedSport === 'six-nations' ? '6 Nations Rugby'
+    : selectedSport === 'golf' ? 'Golf'
+    : 'World Cup 2026';
 
   // Sport-specific colors
   const sportColors: Record<Sport, string> = {
     nfl: 'from-blue-500/10 to-purple-500/10 border-blue-500/20',
     'six-nations': 'from-green-500/10 to-emerald-500/10 border-green-500/20',
     golf: 'from-amber-500/10 to-yellow-500/10 border-amber-500/20',
+    fifa: 'from-red-500/10 to-orange-500/10 border-red-500/20',
   };
 
   // Sport-specific logos
@@ -39,12 +43,13 @@ const Header = ({ onAuthClick }: HeaderProps) => {
     nfl: '/android/android-launchericon-192-192.png',
     'six-nations': '/rugbylogo.png',
     golf: '',
+    fifa: '/2026_FIFA_World_Cup_emblem.svg.webp',
   };
 
   const handleSportChange = (sport: Sport) => {
     setSelectedSport(sport);
-    const path = sport === 'nfl' ? '/nfl' : sport === 'six-nations' ? '/six-nations' : '/golf';
-    navigate(path);
+    const paths: Record<Sport, string> = { nfl: '/nfl', 'six-nations': '/six-nations', golf: '/golf', fifa: '/fifa' };
+    navigate(paths[sport]);
   };
 
   return (
@@ -58,7 +63,7 @@ const Header = ({ onAuthClick }: HeaderProps) => {
           <img
             src={hasSportSelection && selectedSport !== 'golf' ? sportLogos[selectedSport] : '/android/android-launchericon-192-192.png'}
             alt="SquadPot"
-            className="w-10 h-10 sm:w-12 sm:h-12"
+            className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
           />
           <div className="flex flex-col justify-center">
             <h1 className="text-lg sm:text-2xl font-bold text-foreground leading-none" style={{ fontFamily: "'Orbitron', sans-serif" }}>
@@ -182,6 +187,27 @@ const Header = ({ onAuthClick }: HeaderProps) => {
                         </span>
                         {selectedSport === 'golf' && (
                           <span className="text-amber-600 dark:text-amber-400 font-bold">✓</span>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleSportChange('fifa')}
+                        className={cn(
+                          "flex items-center gap-3 py-3 cursor-pointer transition-all duration-200 rounded-md",
+                          "hover:bg-red-400/10 hover:scale-[1.02] focus:bg-red-400/10 focus:text-foreground",
+                          selectedSport === 'fifa' && "bg-red-400/15 border-l-2 border-red-500"
+                        )}
+                      >
+                        <div className="relative w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                          <img src="/2026_FIFA_World_Cup_emblem.svg.webp" alt="FIFA" className="w-8 h-8 object-contain" />
+                        </div>
+                        <span className={cn(
+                          "flex-1 font-medium transition-colors duration-200",
+                          selectedSport === 'fifa' ? "text-red-600 dark:text-red-400" : "group-hover:text-red-600 dark:group-hover:text-red-400"
+                        )}>
+                          FIFA World Cup
+                        </span>
+                        {selectedSport === 'fifa' && (
+                          <span className="text-red-600 dark:text-red-400 font-bold">✓</span>
                         )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />

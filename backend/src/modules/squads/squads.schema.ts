@@ -8,7 +8,7 @@ export const createSquadSchema = z.object({
   name: z.string()
     .min(1, "Squad name is required")
     .max(100, "Squad name must be 100 characters or less")
-    .regex(/^[a-zA-Z0-9\s\-_]+$/, "Squad name can only contain letters, numbers, spaces, hyphens, and underscores"),
+    .refine((val) => !/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(val), "Squad name contains invalid characters"),
   description: z.string()
     .max(500, "Description must be 500 characters or less")
     .optional(),
@@ -27,7 +27,7 @@ export const createSquadSchema = z.object({
   potDeadline: z.string()
     .datetime("Must be a valid datetime")
     .optional(),
-  sport: z.enum(['nfl', 'six-nations', 'golf']).default('nfl'),
+  sport: z.enum(['nfl', 'six-nations', 'golf', 'fifa']).default('nfl'),
 });
 
 export const joinSquadSchema = z.object({
@@ -41,7 +41,7 @@ export const updateSquadSchema = z.object({
   name: z.string()
     .min(1, "Squad name is required")
     .max(100, "Squad name must be 100 characters or less")
-    .regex(/^[a-zA-Z0-9\s\-_]+$/, "Squad name can only contain letters, numbers, spaces, hyphens, and underscores")
+    .refine((val) => !/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(val), "Squad name contains invalid characters")
     .optional(),
   description: z.string()
     .max(500, "Description must be 500 characters or less")

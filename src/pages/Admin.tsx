@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Trophy, Gamepad2, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import SixNationsManager from "@/components/admin/SixNationsManager";
+import FifaManager from "@/components/admin/FifaManager";
 import AdminMembersManager from "@/components/admin/AdminMembersManager";
 import AdminFeedbackManager from "@/components/admin/AdminFeedbackManager";
 import GolfPicksManager from "@/components/admin/GolfPicksManager";
@@ -99,10 +100,14 @@ export default function Admin() {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="six-nations" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
+          <TabsList className="grid w-full grid-cols-6 mb-8">
             <TabsTrigger value="six-nations" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
               6 Nations
+            </TabsTrigger>
+            <TabsTrigger value="fifa" className="flex items-center gap-1.5">
+              ⚽
+              FIFA
             </TabsTrigger>
             <TabsTrigger value="nfl" className="flex items-center gap-2">
               <Gamepad2 className="w-4 h-4" />
@@ -124,6 +129,10 @@ export default function Admin() {
 
           <TabsContent value="six-nations" className="space-y-4">
             <SixNationsManager />
+          </TabsContent>
+
+          <TabsContent value="fifa" className="space-y-4">
+            <FifaManager />
           </TabsContent>
 
           <TabsContent value="nfl" className="space-y-4">

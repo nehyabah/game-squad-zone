@@ -514,127 +514,75 @@ const SquadManager = () => {
       {/* Pending Join Requests */}
       <MyJoinRequests />
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {squads.map((squad) => (
-          <Card
+          <div
             key={squad.id}
-            className="relative overflow-hidden border border-primary/10 shadow-lg bg-gradient-to-br from-background via-primary/3 to-background backdrop-blur-sm hover:shadow-xl transition-all duration-300 group hover:scale-[1.01]"
+            className="rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-primary/4 opacity-50"></div>
-            <CardContent className="relative p-0">
-              {/* Sleek Header */}
-              <div className="bg-gradient-to-r from-background/90 to-primary/5 p-3 border-b border-primary/10 backdrop-blur-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-9 h-9 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center shadow-md border border-primary/20 flex-shrink-0">
-                      <span className="text-primary font-bold text-sm">
-                        {squad.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-sm text-foreground truncate">
-                        {squad.name}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge
-                          variant="default"
-                          className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 rounded-full"
-                        >
-                          Member
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="text-xs px-2 py-0.5 bg-muted/60 text-muted-foreground border-0 rounded-full"
-                        >
-                          Private
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {/* Unread message indicator */}
-                    {squad.unreadCount && squad.unreadCount > 0 && (
-                      <div className="relative">
-                        <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {squad.unreadCount > 99 ? "99+" : squad.unreadCount}
-                        </div>
-                        <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                      </div>
-                    )}
-                    <Button
-                      size="sm"
-                      className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 py-1.5 h-8 transition-all duration-300 hover:scale-105 hover:shadow-lg rounded-lg"
-                      onClick={() => handleViewSquad(squad)}
-                    >
-                      <span className="hidden sm:inline">View Squad</span>
-                      <span className="sm:hidden">View</span>
-                    </Button>
-                  </div>
-                </div>
+            <div className="flex items-center gap-3 p-4">
+              {/* Avatar */}
+              <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/15 flex items-center justify-center flex-shrink-0">
+                <span className="text-primary font-black text-base leading-none">
+                  {squad.name.charAt(0).toUpperCase()}
+                </span>
               </div>
 
-              {/* Sleek Content */}
-              <div className="p-3">
+              {/* Name + meta */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-sm text-foreground truncate">
+                    {squad.name}
+                  </h3>
+                  {squad.unreadCount && squad.unreadCount > 0 ? (
+                    <span className="flex-shrink-0 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold px-1">
+                      {squad.unreadCount > 99 ? "99+" : squad.unreadCount}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    {squad.members?.length || 0}/{squad.maxMembers}
+                  </span>
+                  <span className="font-mono bg-muted/60 border border-border/60 rounded px-1.5 py-0.5 text-foreground font-semibold tracking-wide">
+                    {squad.joinCode}
+                  </span>
+                </div>
                 {squad.description && (
-                  <p className="text-muted-foreground text-xs mb-2 line-clamp-1">
-                    {squad.description}
-                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{squad.description}</p>
                 )}
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
-                        <Users className="w-3 h-3 text-primary" />
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        Members:
-                      </span>
-                      <span className="font-semibold text-xs text-foreground">
-                        {squad.members?.length || 0}/{squad.maxMembers}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-6 h-6 bg-primary/10 rounded-md flex items-center justify-center">
-                        <Trophy className="w-3 h-3 text-primary" />
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        Code:
-                      </span>
-                      <span className="font-mono font-semibold text-xs text-foreground bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
-                        {squad.joinCode}
-                      </span>
-                    </div>
-                  </div>
-                </div>
               </div>
-            </CardContent>
-          </Card>
+
+              {/* CTA */}
+              <Button
+                size="sm"
+                className="flex-shrink-0 h-8 px-3 rounded-xl text-xs font-semibold"
+                onClick={() => handleViewSquad(squad)}
+              >
+                Open
+              </Button>
+            </div>
+          </div>
         ))}
       </div>
 
       {squads.length === 0 && (
-        <Card className="text-center p-8">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-              <Users className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-foreground mb-2">
-                No Squads Yet
-              </h3>
-              <p className="text-muted-foreground text-sm mb-4">
-                Create your first squad to start competing with friends
-              </p>
-              <Button onClick={() => setShowCreateDialog(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Squad
-              </Button>
-            </div>
+        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+            <Users className="w-6 h-6 text-muted-foreground" />
           </div>
-        </Card>
+          <div className="space-y-1">
+            <h3 className="font-bold text-foreground">No squads yet</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Create a squad to compete with friends or join one with a code.
+            </p>
+          </div>
+          <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Create Your First Squad
+          </Button>
+        </div>
       )}
     </div>
   );

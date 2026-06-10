@@ -89,25 +89,30 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
     }
   }, [hasSportSelection, selectedSport, routeSport, navigate]);
 
-  // Handle squad joining from URL parameter
+  // Persist join code to sessionStorage immediately on mount so it survives auth redirects
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get("joinCode");
+    if (code) {
+      sessionStorage.setItem("pendingJoinCode", code.toUpperCase());
+    }
+  }, []);
+
+  // Handle squad joining — checks URL param first, then sessionStorage (post-auth fallback)
   useEffect(() => {
     const handleUrlJoinCode = () => {
       if (!user || loading) return;
 
       const urlParams = new URLSearchParams(window.location.search);
-      const joinCode = urlParams.get("joinCode");
+      const codeFromUrl = urlParams.get("joinCode");
+      const codeFromSession = sessionStorage.getItem("pendingJoinCode");
+      const joinCode = codeFromUrl ?? codeFromSession;
 
       if (joinCode) {
-        // Store the join code and show confirmation modal
+        sessionStorage.removeItem("pendingJoinCode");
         setPendingJoinCode(joinCode.toUpperCase());
         setShowJoinModal(true);
-
-        // Clean up URL parameter immediately
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
+        window.history.replaceState({}, document.title, window.location.pathname);
       }
     };
 

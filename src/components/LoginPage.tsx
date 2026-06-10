@@ -8,9 +8,11 @@ const LoginPage = () => {
   const { login, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    setPendingInvite(!!sessionStorage.getItem("pendingJoinCode"));
   }, []);
 
   const handleLogin = () => {
@@ -204,17 +206,30 @@ const LoginPage = () => {
             <CardContent className="p-6 lg:p-8 space-y-6 lg:space-y-8 relative overflow-hidden">
               {/* Card background glow - more subtle with image background */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/3 via-transparent to-blue-500/3 opacity-50" />
-              {/* Compact Welcome Header */}
+              {/* Invite banner (shown when joining via a shared link) */}
+              {pendingInvite && (
+                <div className="relative bg-gradient-to-r from-primary/10 to-blue-500/10 border border-primary/25 rounded-xl px-4 py-3 text-center space-y-0.5">
+                  <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1.5">
+                    <span>🎯</span> You've been invited to a squad!
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Log in or create a free account — you'll be taken straight to the squad.
+                  </p>
+                </div>
+              )}
+
+              {/* Welcome Header */}
               <div className="relative text-center space-y-2 lg:space-y-3">
                 <div className="relative inline-block">
                   <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white">
-                    Welcome back
+                    {pendingInvite ? "Join the squad" : "Welcome back"}
                   </h2>
                   <div className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-primary via-blue-500 to-purple-500 rounded-full opacity-60" />
                 </div>
                 <p className="text-slate-600 dark:text-slate-400 text-base lg:text-lg">
-                  Ready to{" "}
-                  <span className="text-primary font-semibold">dominate</span>?
+                  {pendingInvite
+                    ? "Sign in or create a free account to continue."
+                    : <>Ready to <span className="text-primary font-semibold">dominate</span>?</>}
                 </p>
               </div>
 
@@ -236,17 +251,19 @@ const LoginPage = () => {
                   ) : (
                     <>
                       <Shield className="w-5 h-5 lg:w-6 lg:h-6 group-hover:scale-110 transition-transform duration-300" />
-                      <span>Enter the Arena</span>
+                      <span>{pendingInvite ? "Sign in to Join" : "Enter the Arena"}</span>
                       <ArrowRight className="w-4 h-4 lg:w-5 lg:h-5 group-hover:translate-x-1 transition-transform duration-300" />
                     </>
                   )}
                 </div>
               </Button>
 
-              {/* Compact Auth Info */}
+              {/* Auth Info */}
               <div className="relative text-center">
                 <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400">
-                  New to SquadPot? Account created automatically
+                  {pendingInvite
+                    ? "No account yet? One will be created for you automatically."
+                    : "New to SquadPot? Account created automatically"}
                 </p>
               </div>
             </CardContent>

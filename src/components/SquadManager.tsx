@@ -123,39 +123,39 @@ const SquadManager = () => {
     }
   };
 
-  const copyJoinCode = async (joinCode: string) => {
+  const getInviteUrl = (squad: Squad) =>
+    `${window.location.origin}/?joinCode=${squad.joinCode}`;
+
+  const copyInviteLink = async (squad: Squad) => {
     try {
-      await navigator.clipboard.writeText(joinCode);
-      toast.success("Join code copied to clipboard!");
+      await navigator.clipboard.writeText(getInviteUrl(squad));
+      toast.success("Invite link copied!");
     } catch (err) {
-      toast.error("Failed to copy join code");
+      toast.error("Failed to copy link");
     }
   };
 
   const shareToWhatsApp = (squad: Squad) => {
-    const message = `🎯 Join my fantasy squad "${squad.name}"!\n\nJoin Code: ${squad.joinCode}\n\nLet's compete and see who's the best at picking winners! 🏆`;
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
+    const url = getInviteUrl(squad);
+    const message = `🎯 Join my fantasy squad "${squad.name}" on SquadPot!\n\nClick to join: ${url}\n\n(Or use code: ${squad.joinCode})`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   const shareGeneric = async (squad: Squad) => {
-    const shareData = {
-      title: `Join ${squad.name}`,
-      text: `🎯 Join my fantasy squad "${squad.name}"! Use join code: ${squad.joinCode}`,
-      url: window.location.origin,
-    };
-
+    const url = getInviteUrl(squad);
     try {
       if (navigator.share) {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: `Join ${squad.name} on SquadPot`,
+          text: `You've been invited to join "${squad.name}"! Click to request access.`,
+          url,
+        });
       } else {
-        await navigator.clipboard.writeText(
-          `${shareData.text}\n${shareData.url}`
-        );
-        toast.success("Squad details copied to clipboard!");
+        await navigator.clipboard.writeText(url);
+        toast.success("Invite link copied to clipboard!");
       }
     } catch (err) {
-      toast.error("Failed to share squad details");
+      toast.error("Failed to share");
     }
   };
 
@@ -417,7 +417,7 @@ const SquadManager = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => copyJoinCode(createdSquad.joinCode)}
+                          onClick={() => copyInviteLink(createdSquad)}
                           className="h-8 rounded-lg border-border/50 text-xs gap-1.5"
                         >
                           <Copy className="w-3.5 h-3.5" />

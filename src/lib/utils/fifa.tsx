@@ -81,6 +81,8 @@ const FIFA_COUNTRIES: Record<string, string> = {
   India: "fi fi-in",
 };
 
+export const FIFA_COUNTRY_NAMES = Object.keys(FIFA_COUNTRIES).sort();
+
 export const getFifaFlagClass = (teamName: string): string => {
   return FIFA_COUNTRIES[teamName] || "fi fi-xx";
 };

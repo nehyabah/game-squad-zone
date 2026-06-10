@@ -510,6 +510,7 @@ model FifaQuestion {
   questionText   String
   questionType   String        // "multiple_choice" | "yes_no"
   options        Json?
+  contextTeams   Json?         // Country names shown as info flags below the question
   correctAnswer  String?
   points         Int           @default(1)
   createdAt      DateTime      @default(now())

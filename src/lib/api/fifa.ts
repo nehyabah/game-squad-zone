@@ -37,6 +37,7 @@ export interface FifaQuestion {
   questionText: string;
   questionType: 'multiple_choice' | 'yes_no';
   options: string[] | null;
+  contextTeams: string[] | null;
   correctAnswer: string | null;
   points: number;
   match?: {
@@ -126,10 +127,10 @@ export const fifaQuestionsAPI = {
 
   getAllAdmin: async (): Promise<FifaQuestion[]> => (await api.get('/fifa/admin/questions')).data,
 
-  create: async (data: { roundId?: string; matchId?: string; questionNumber: number; questionText: string; questionType: 'multiple_choice' | 'yes_no'; options?: string[]; points: number }): Promise<FifaQuestion> =>
+  create: async (data: { roundId?: string; matchId?: string; questionNumber: number; questionText: string; questionType: 'multiple_choice' | 'yes_no'; options?: string[]; contextTeams?: string[]; points: number }): Promise<FifaQuestion> =>
     (await api.post('/fifa/questions', data)).data,
 
-  update: async (id: string, data: { questionNumber?: number; questionText?: string; questionType?: 'multiple_choice' | 'yes_no'; options?: string[]; points?: number }): Promise<FifaQuestion> =>
+  update: async (id: string, data: { questionNumber?: number; questionText?: string; questionType?: 'multiple_choice' | 'yes_no'; options?: string[]; contextTeams?: string[] | null; points?: number }): Promise<FifaQuestion> =>
     (await api.put(`/fifa/questions/${id}`, data)).data,
 
   delete: async (id: string): Promise<void> => { await api.delete(`/fifa/questions/${id}`); },

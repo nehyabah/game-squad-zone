@@ -137,7 +137,7 @@ export class FifaController {
 
   async createQuestion(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const data = request.body as { roundId?: string; matchId?: string; questionNumber: number; questionText: string; questionType: string; options?: string[]; points: number };
+      const data = request.body as { roundId?: string; matchId?: string; questionNumber: number; questionText: string; questionType: string; options?: string[]; contextTeams?: string[]; points: number };
       return reply.status(201).send(await this.service.createQuestion(data));
     } catch (e: any) {
       return reply.status(400).send({ error: e.message || "Failed to create question" });
@@ -146,7 +146,7 @@ export class FifaController {
 
   async updateQuestion(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     try {
-      const data = request.body as { questionNumber?: number; questionText?: string; questionType?: string; options?: string[]; points?: number };
+      const data = request.body as { questionNumber?: number; questionText?: string; questionType?: string; options?: string[]; contextTeams?: string[] | null; points?: number };
       return reply.send(await this.service.updateQuestion(request.params.id, data));
     } catch (e: any) {
       return reply.status(400).send({ error: e.message || "Failed to update question" });

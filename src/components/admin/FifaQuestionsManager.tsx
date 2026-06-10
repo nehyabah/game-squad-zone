@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2, Check, X, Lock } from "lucide-react";
+import { Plus, Edit, Trash2, Check, X, Lock, Search, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { fifaQuestionsAPI, FifaRound, FifaMatch, FifaQuestion } from "@/lib/api/fifa";
+import { FifaTeamFlag, getFifaFlagClass, FIFA_COUNTRY_NAMES } from "@/lib/utils/fifa";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -27,6 +28,7 @@ const BLANK_Q = {
   questionText: "",
   questionType: "multiple_choice" as const,
   options: "",
+  contextTeams: [] as string[],
   points: 1,
 };
 
@@ -41,6 +43,8 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
   const [answerQuestion, setAnswerQuestion] = useState<FifaQuestion | null>(null);
   const [newQuestion, setNewQuestion] = useState(BLANK_Q);
   const [correctAnswerInput, setCorrectAnswerInput] = useState("");
+  const [useCountryPicker, setUseCountryPicker] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
   const { toast } = useToast();
 
   // Default to first round once rounds are available
@@ -118,10 +122,13 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
         questionText: newQuestion.questionText,
         questionType: newQuestion.questionType,
         options,
+        contextTeams: newQuestion.contextTeams.length ? newQuestion.contextTeams : undefined,
         points: newQuestion.points,
       });
       setIsCreateOpen(false);
       setNewQuestion(BLANK_Q);
+      setUseCountryPicker(false);
+      setCountrySearch("");
       toast({ title: "Question created" });
       onRefresh?.();
     } catch (e: any) {
@@ -140,6 +147,7 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
           editQuestion.questionType === "multiple_choice"
             ? (editQuestion.options as string[] | null) ?? []
             : undefined,
+        contextTeams: (editQuestion.contextTeams as string[] | null) ?? null,
         points: editQuestion.points,
       });
       setEditQuestion(null);
@@ -347,10 +355,7 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
             {!isEarlyRound && (
               <div>
                 <Label>Match <span className="text-destructive">*</span></Label>
-                <Select
-                  value={newQuestion.matchId}
-                  onValueChange={handleMatchSelect}
-                >
+                <Select value={newQuestion.matchId} onValueChange={handleMatchSelect}>
                   <SelectTrigger><SelectValue placeholder="Select a match…" /></SelectTrigger>
                   <SelectContent>
                     {roundMatches.length === 0 ? (
@@ -360,6 +365,34 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+            {/* For R1 (Group Stage): optional group attachment */}
+            {isEarlyRound && selectedRound?.roundNumber === 1 && roundMatches.length > 0 && (
+              <div>
+                <Label>Group (optional)</Label>
+                <Select
+                  value={newQuestion.matchId || "__none__"}
+                  onValueChange={(v) => {
+                    if (v === "__none__") {
+                      setNewQuestion((prev) => ({ ...prev, matchId: "", roundId: selectedRoundId, options: "" }));
+                    } else {
+                      handleMatchSelect(v);
+                      setNewQuestion((prev) => ({ ...prev, options: "" }));
+                    }
+                  }}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No group (round-level question)</SelectItem>
+                    {roundMatches.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.homeTeam}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Attach to a group to use that group's teams as answer options.
+                </p>
               </div>
             )}
             {/* For R0/R1 with multi-round support, show round selector */}
@@ -398,20 +431,65 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
               </Select>
             </div>
             {newQuestion.questionType === "multiple_choice" && (
-              <div>
-                <Label>Options (one per line) <span className="text-destructive">*</span></Label>
-                <Textarea
-                  value={newQuestion.options}
-                  onChange={(e) => setNewQuestion({ ...newQuestion, options: e.target.value })}
-                  rows={4}
-                  placeholder={"Brazil\nArgentina\nFrance\nEngland"}
-                  className={!newQuestion.options.trim() ? "border-destructive focus-visible:ring-destructive" : ""}
-                />
+              <div className="space-y-2">
+                {/* Options mode toggle */}
+                <div className="flex items-center justify-between">
+                  <Label>Options <span className="text-destructive">*</span></Label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUseCountryPicker(!useCountryPicker);
+                      setNewQuestion((prev) => ({ ...prev, options: "" }));
+                      setCountrySearch("");
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors",
+                      useCountryPicker
+                        ? "bg-primary text-white border-primary"
+                        : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                    )}
+                  >
+                    <Globe className="w-3 h-3" />
+                    {useCountryPicker ? "Country picker on" : "Use country flags?"}
+                  </button>
+                </div>
+
+                {useCountryPicker ? (
+                  <CountryPicker
+                    selected={newQuestion.options ? newQuestion.options.split("\n").map(o => o.trim()).filter(Boolean) : []}
+                    onChange={(countries) => setNewQuestion((prev) => ({ ...prev, options: countries.join("\n") }))}
+                    search={countrySearch}
+                    onSearchChange={setCountrySearch}
+                    groupTeams={(() => {
+                      const m = matches.find(m => m.id === newQuestion.matchId);
+                      return m?.groupTeams as string[] | null;
+                    })()}
+                  />
+                ) : (
+                  <Textarea
+                    value={newQuestion.options}
+                    onChange={(e) => setNewQuestion({ ...newQuestion, options: e.target.value })}
+                    rows={4}
+                    placeholder={"Option 1\nOption 2\nOption 3"}
+                    className={!newQuestion.options.trim() ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                )}
+
                 {!newQuestion.options.trim() && (
-                  <p className="text-xs text-destructive mt-1">Options are required for multiple choice questions.</p>
+                  <p className="text-xs text-destructive">At least one option is required.</p>
                 )}
               </div>
             )}
+            {/* Attach flags — shown below question as info */}
+            <FlagAttacher
+              label="Attach flags (info only)"
+              selected={newQuestion.contextTeams}
+              onChange={(teams) => setNewQuestion((prev) => ({ ...prev, contextTeams: teams }))}
+              groupTeams={(() => {
+                const m = matches.find((m) => m.id === newQuestion.matchId);
+                return m?.groupTeams as string[] | null;
+              })()}
+            />
             <div>
               <Label>Points</Label>
               <Input type="number" min={1} value={newQuestion.points}
@@ -454,7 +532,14 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
                   <SelectTrigger><SelectValue placeholder="Select answer" /></SelectTrigger>
                   <SelectContent>
                     {(answerQuestion.options as string[]).map((o) => (
-                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                      <SelectItem key={o} value={o}>
+                        <span className="flex items-center gap-2">
+                          {getFifaFlagClass(o) !== "fi fi-xx" && (
+                            <FifaTeamFlag teamName={o} className="text-base" />
+                          )}
+                          {o}
+                        </span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -498,6 +583,15 @@ export default function FifaQuestionsManager({ rounds, matches, questions, onRef
                   />
                 </div>
               )}
+              <FlagAttacher
+                label="Attached flags (info only)"
+                selected={(editQuestion.contextTeams as string[] | null) ?? []}
+                onChange={(teams) => setEditQuestion((prev) => prev ? { ...prev, contextTeams: teams as any } : prev)}
+                groupTeams={(() => {
+                  const m = matches.find((m) => m.id === editQuestion.matchId);
+                  return m?.groupTeams as string[] | null;
+                })()}
+              />
               <div>
                 <Label>Points</Label>
                 <Input type="number" min={1} value={editQuestion.points}
@@ -563,3 +657,240 @@ function QuestionRow({ q, onEdit, onDelete, onSetAnswer, onClearAnswer }: {
     </div>
   );
 }
+
+// ── Flag attacher (simple inline picker for context flags) ───────────────────
+
+function FlagAttacher({
+  label,
+  selected,
+  onChange,
+  groupTeams,
+}: {
+  label: string;
+  selected: string[];
+  onChange: (teams: string[]) => void;
+  groupTeams?: string[] | null;
+}) {
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const toggle = (team: string) =>
+    onChange(selected.includes(team) ? selected.filter((t) => t !== team) : [...selected, team]);
+
+  const filtered = FIFA_COUNTRY_NAMES.filter((c) =>
+    c.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">{label}</Label>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          className={cn(
+            "text-xs font-semibold px-2 py-0.5 rounded-full border transition-colors",
+            open ? "bg-primary text-white border-primary" : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+          )}
+        >
+          {open ? "Done" : selected.length > 0 ? `${selected.length} attached` : "Attach flags"}
+        </button>
+      </div>
+
+      {/* Selected chips — always visible */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => toggle(t)}
+              className="inline-flex items-center gap-1 text-xs font-semibold bg-primary/10 border border-primary/20 text-primary rounded-full px-2 py-0.5 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
+            >
+              <FifaTeamFlag teamName={t} className="text-sm" />
+              {t} <X className="w-2.5 h-2.5 opacity-60" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Picker dropdown */}
+      {open && (
+        <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+          {/* Group quick-fill */}
+          {groupTeams && groupTeams.length > 0 && (
+            <div className="px-3 py-2 border-b border-border bg-muted/20 flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] text-muted-foreground font-medium">Group:</span>
+              {groupTeams.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => toggle(t)}
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[11px] font-semibold rounded-full px-2 py-0.5 border transition-colors",
+                    selected.includes(t)
+                      ? "bg-primary text-white border-primary"
+                      : "bg-background border-border hover:bg-muted"
+                  )}
+                >
+                  <FifaTeamFlag teamName={t} className="text-xs" /> {t}
+                </button>
+              ))}
+            </div>
+          )}
+          {/* Search */}
+          <div className="relative border-b border-border">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              className="w-full pl-8 pr-3 py-2 text-sm bg-background outline-none"
+              placeholder="Search countries…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          {/* List */}
+          <div className="max-h-40 overflow-y-auto divide-y divide-border/40">
+            {filtered.map((country) => {
+              const checked = selected.includes(country);
+              return (
+                <label
+                  key={country}
+                  className={cn(
+                    "flex items-center gap-2.5 px-3 py-2 cursor-pointer select-none text-sm transition-colors",
+                    checked ? "bg-primary/5" : "hover:bg-muted/40"
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(country)}
+                    className="w-3.5 h-3.5 rounded accent-primary flex-shrink-0"
+                  />
+                  <FifaTeamFlag teamName={country} className="text-base flex-shrink-0" />
+                  <span className="font-medium">{country}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Country picker ────────────────────────────────────────────────────────────
+
+function CountryPicker({
+  selected,
+  onChange,
+  search,
+  onSearchChange,
+  groupTeams,
+}: {
+  selected: string[];
+  onChange: (countries: string[]) => void;
+  search: string;
+  onSearchChange: (v: string) => void;
+  groupTeams?: string[] | null;
+}) {
+  const filtered = FIFA_COUNTRY_NAMES.filter((c) =>
+    c.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (country: string) => {
+    onChange(
+      selected.includes(country)
+        ? selected.filter((c) => c !== country)
+        : [...selected, country]
+    );
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* Group quick-fill */}
+      {groupTeams && groupTeams.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-muted-foreground">Quick fill:</span>
+          <button
+            type="button"
+            onClick={() => onChange(groupTeams)}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            All group teams ({groupTeams.length})
+          </button>
+          <div className="flex gap-1 flex-wrap">
+            {groupTeams.map((t) => (
+              <span key={t} className="inline-flex items-center gap-1 text-[11px] bg-primary/8 border border-primary/20 text-primary rounded-full px-2 py-0.5 font-medium">
+                <FifaTeamFlag teamName={t} className="text-xs" /> {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Search + selected count */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Search countries…"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+        {selected.length > 0 && (
+          <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap">
+            {selected.length} selected
+          </span>
+        )}
+      </div>
+
+      {/* Selected chips */}
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 p-2 bg-muted/30 rounded-lg border border-border/50">
+          {selected.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => toggle(c)}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold bg-primary text-white rounded-full px-2.5 py-1 hover:bg-primary/80 transition-colors"
+            >
+              <FifaTeamFlag teamName={c} className="text-sm" />
+              {c}
+              <X className="w-2.5 h-2.5 opacity-70" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Scrollable list */}
+      <div className="max-h-52 overflow-y-auto rounded-lg border border-border divide-y divide-border/50">
+        {filtered.length === 0 ? (
+          <p className="text-xs text-muted-foreground text-center py-4">No countries match.</p>
+        ) : filtered.map((country) => {
+          const isSelected = selected.includes(country);
+          return (
+            <label
+              key={country}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors select-none",
+                isSelected ? "bg-primary/5" : "hover:bg-muted/40"
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggle(country)}
+                className="w-3.5 h-3.5 rounded accent-primary flex-shrink-0"
+              />
+              <FifaTeamFlag teamName={country} className="text-lg flex-shrink-0" />
+              <span className="text-sm font-medium">{country}</span>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

@@ -5,10 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import {
-  CheckCircle2, Loader2, ChevronDown, Calendar, MapPin,
+  CheckCircle2, Loader2, ChevronDown, Calendar,
   Lock, Clock, AlertTriangle,
 } from "lucide-react";
-import { FifaTeamFlag } from "@/lib/utils/fifa";
+import { FifaTeamFlag, getFifaFlagClass } from "@/lib/utils/fifa";
 import {
   fifaQuestionsAPI, fifaMatchesAPI, fifaAnswersAPI, fifaRoundsAPI,
   FifaMatch, FifaQuestion, FifaRound,
@@ -20,21 +20,21 @@ const isRoundLocked = (round: FifaRound): boolean =>
   round.isLocked || (!!round.lockTime && new Date() >= new Date(round.lockTime));
 
 const getLockLabel = (round: FifaRound): string | null => {
-  if (round.isLocked) return "Locked by admin";
+  if (round.isLocked) return "Locked";
   if (!round.lockTime) return null;
   const diff = new Date(round.lockTime).getTime() - Date.now();
-  if (diff <= 0) return "Submissions closed";
+  if (diff <= 0) return "Closed";
   const h = Math.floor(diff / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
-  if (h > 48) return `Locks in ${Math.floor(h / 24)}d`;
-  if (h > 0) return `Locks in ${h}h ${m}m`;
-  return `Locks in ${m}m`;
+  if (h > 48) return `${Math.floor(h / 24)}d left`;
+  if (h > 0) return `${h}h ${m}m left`;
+  return `${m}m left`;
 };
 
 const MAX_PTS: Record<number, number> = { 0: 45, 1: 48, 2: 96, 3: 64, 4: 40, 5: 36, 6: 21 };
 
 const ROUND_SHORT: Record<number, string> = {
-  0: "Predictions", 1: "Groups", 2: "R32", 3: "R16", 4: "QF", 5: "SF", 6: "Final",
+  0: "Preds", 1: "Groups", 2: "R32", 3: "R16", 4: "QF", 5: "SF", 6: "Final",
 };
 
 export default function FifaQuestionPicker() {
@@ -52,11 +52,13 @@ export default function FifaQuestionPicker() {
   const { toast } = useToast();
 
   useEffect(() => {
-    fifaRoundsAPI.getAll().then((data) => {
-      setRounds(data);
-      const active = data.find((r) => r.isActive);
-      setSelectedRoundId(active?.id ?? data[0]?.id ?? null);
-    }).catch(() => toast({ title: "Error", description: "Failed to load rounds", variant: "destructive" }))
+    fifaRoundsAPI.getAll()
+      .then((data) => {
+        setRounds(data);
+        const active = data.find((r) => r.isActive);
+        setSelectedRoundId(active?.id ?? data[0]?.id ?? null);
+      })
+      .catch(() => toast({ title: "Error", description: "Failed to load rounds", variant: "destructive" }))
       .finally(() => setLoadingRounds(false));
   }, []);
 
@@ -75,7 +77,8 @@ export default function FifaQuestionPicker() {
       answerData.forEach((a) => { if (a.answer) map.set(a.questionId, a.answer); });
       setExistingAnswers(map);
       if (matchData.length > 0) setExpandedMatches(new Set([matchData[0].id]));
-    }).catch(() => toast({ title: "Error", description: "Failed to load fixtures", variant: "destructive" }))
+    })
+      .catch(() => toast({ title: "Error", description: "Failed to load fixtures", variant: "destructive" }))
       .finally(() => setLoadingContent(false));
   }, [selectedRoundId]);
 
@@ -144,38 +147,32 @@ export default function FifaQuestionPicker() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-3">
 
       {/* ── Hero ──────────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] shadow-2xl shadow-black/50">
-        {/* Glass base */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#0d1829] via-[#091420] to-[#060d1a]" />
-        {/* Light orb — emerald top-right */}
         <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-emerald-500/25 blur-3xl pointer-events-none" />
-        {/* Light orb — blue bottom-left */}
         <div className="absolute -bottom-10 -left-8 w-32 h-32 rounded-full bg-sky-600/15 blur-3xl pointer-events-none" />
-        {/* Glass surface: diagonal refraction from top-left */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/[0.07] via-transparent to-transparent pointer-events-none" />
-        {/* Top glass highlight */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-        {/* Bottom emerald accent */}
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
 
-        <div className="relative px-5 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0">
+        <div className="relative px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <img
               src="/2026_FIFA_World_Cup_emblem.svg.webp"
               alt="FIFA WC 2026"
-              className="w-12 h-12 object-contain flex-shrink-0 drop-shadow-lg"
+              className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0 drop-shadow-lg"
             />
             <div className="min-w-0">
-              <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">
+              <p className="text-emerald-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-0.5">
                 FIFA World Cup
               </p>
-              <h2 className="text-white font-black text-xl leading-none tracking-tight">2026</h2>
+              <h2 className="text-white font-black text-lg sm:text-xl leading-none tracking-tight">2026</h2>
               {!loadingContent && questions.length > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="h-1 w-28 rounded-full bg-white/10 overflow-hidden">
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div className="h-1 w-20 sm:w-28 rounded-full bg-white/10 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-emerald-400 transition-all duration-700"
                       style={{ width: `${progressPct}%` }}
@@ -194,10 +191,10 @@ export default function FifaQuestionPicker() {
               onClick={handleSubmit}
               disabled={submitting}
               size="sm"
-              className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold gap-1.5 flex-shrink-0 shadow-lg shadow-emerald-900/40 rounded-xl px-4"
+              className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold gap-1.5 flex-shrink-0 shadow-lg shadow-emerald-900/40 rounded-xl h-9 px-3.5"
             >
               {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-              Save {pendingAnswers.size}
+              <span className="text-xs">Save {pendingAnswers.size}</span>
             </Button>
           )}
         </div>
@@ -205,9 +202,9 @@ export default function FifaQuestionPicker() {
 
       {/* ── Both early rounds notice ───────────────────────────────────── */}
       {bothEarlyRoundsActive && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+        <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-3">
           <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-800">
+          <p className="text-xs sm:text-sm text-amber-800 leading-snug">
             <strong>Predictions</strong> and <strong>Group Stage</strong> are both open — submit picks for both before the tournament starts.
           </p>
         </div>
@@ -216,7 +213,7 @@ export default function FifaQuestionPicker() {
       {/* ── Round tabs ────────────────────────────────────────────────── */}
       <div
         ref={sliderRef}
-        className="flex gap-1 overflow-x-auto pb-1 -mx-0.5 px-0.5"
+        className="flex gap-1 overflow-x-auto pb-0.5"
         style={{ scrollbarWidth: "none" } as React.CSSProperties}
       >
         {[...rounds].sort((a, b) => a.roundNumber - b.roundNumber).map((round) => {
@@ -229,22 +226,21 @@ export default function FifaQuestionPicker() {
               data-round-id={round.id}
               onClick={() => setSelectedRoundId(round.id)}
               className={cn(
-                "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap",
+                "flex-shrink-0 flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap min-h-[36px]",
                 isSel
                   ? "bg-primary text-white border-primary shadow-md shadow-primary/30"
                   : isActive
-                  ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/15"
-                  : "bg-muted/40 text-muted-foreground border-border/40 hover:bg-muted hover:text-foreground"
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "bg-muted/40 text-muted-foreground border-border/40"
               )}
             >
               <span className={cn(
                 "text-[9px] font-black rounded px-1 py-0.5 leading-none",
-                isSel ? "bg-white/20 text-white" : "bg-current/10 opacity-60"
+                isSel ? "bg-white/20 text-white" : "opacity-50"
               )}>
                 R{round.roundNumber}
               </span>
-              <span className="hidden sm:inline">{round.name}</span>
-              <span className="sm:hidden">{ROUND_SHORT[round.roundNumber] ?? round.name}</span>
+              {ROUND_SHORT[round.roundNumber] ?? round.name}
               {isActive && (
                 <span className={cn(
                   "w-1.5 h-1.5 rounded-full flex-shrink-0",
@@ -262,12 +258,12 @@ export default function FifaQuestionPicker() {
       {/* ── Round status strip ────────────────────────────────────────── */}
       {selectedRound && (
         <div className={cn(
-          "flex items-center justify-between gap-3 px-3 py-2 rounded-lg border text-xs",
+          "flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 rounded-lg border text-xs",
           locked
             ? "bg-muted/30 border-border/50 text-muted-foreground"
             : "bg-primary/5 border-primary/15 text-foreground"
         )}>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-semibold">{selectedRound.name}</span>
             {selectedRound.isActive && !locked && (
               <span className="inline-flex items-center gap-1 font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5 text-[10px]">
@@ -280,10 +276,8 @@ export default function FifaQuestionPicker() {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <span className="text-muted-foreground">
-              {selectedRound.pointsPerQuestion}pts · max {MAX_PTS[selectedRound.roundNumber] ?? "?"} pts
-            </span>
+          <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
+            <span>{selectedRound.pointsPerQuestion}pts · max {MAX_PTS[selectedRound.roundNumber] ?? "?"}pts</span>
             {lockLabel && !locked && (
               <span className="flex items-center gap-1 font-semibold text-amber-600">
                 <Clock className="w-3 h-3" /> {lockLabel}
@@ -321,34 +315,42 @@ export default function FifaQuestionPicker() {
                 const groupTeams = match.groupTeams as string[] | null;
                 const isExpanded = expandedMatches.has(match.id);
                 const answered = mqs.filter((q) => existingAnswers.has(q.id) || pendingAnswers.has(q.id)).length;
+                const allDone = mqs.length > 0 && answered === mqs.length;
                 return (
                   <Collapsible key={match.id} open={isExpanded} onOpenChange={() => toggleMatch(match.id)}>
                     <CollapsibleTrigger asChild>
                       <button className={cn(
-                        "w-full text-left rounded-xl border p-4 transition-all hover:shadow-sm",
-                        isExpanded ? "border-primary/30 bg-primary/5" : "border-border bg-card hover:border-primary/20"
+                        "w-full text-left rounded-xl border transition-all min-h-[56px]",
+                        isExpanded ? "border-primary/30 bg-primary/5" : "border-border bg-card",
+                        allDone && "border-emerald-200 bg-emerald-50/50"
                       )}>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
-                            <span className="font-bold text-sm">{match.homeTeam}</span>
-                            {groupTeams?.map((t) => (
-                              <span key={t} className="inline-flex items-center gap-1 text-xs bg-muted border border-border px-2 py-0.5 rounded-full">
-                                <FifaTeamFlag teamName={t} className="text-xs" /> {t}
-                              </span>
-                            ))}
+                        <div className="flex items-center justify-between gap-2 px-4 py-3">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm leading-tight">{match.homeTeam}</p>
+                            {groupTeams && groupTeams.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {groupTeams.map((t) => (
+                                  <span key={t} className="inline-flex items-center gap-1 text-[11px] bg-muted border border-border/60 px-1.5 py-0.5 rounded-full font-medium">
+                                    <FifaTeamFlag teamName={t} className="text-xs" /> {t}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <span className={cn(
-                              "text-xs font-semibold px-2 py-0.5 rounded-full",
-                              answered === mqs.length ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
-                            )}>{answered}/{mqs.length}</span>
+                              "text-xs font-bold px-2 py-0.5 rounded-full",
+                              allDone ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
+                            )}>
+                              {answered}/{mqs.length}
+                            </span>
                             <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform duration-200", isExpanded && "rotate-180")} />
                           </div>
                         </div>
                       </button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="mt-2 space-y-2 pl-1">
+                      <div className="mt-2 space-y-2">
                         {mqs.map((q) => (
                           <QuestionCard
                             key={q.id}
@@ -356,7 +358,6 @@ export default function FifaQuestionPicker() {
                             locked={locked}
                             currentAnswer={pendingAnswers.get(q.id) ?? existingAnswers.get(q.id)}
                             onAnswer={handleAnswerChange}
-                            compact
                           />
                         ))}
                       </div>
@@ -384,62 +385,52 @@ export default function FifaQuestionPicker() {
                     <CollapsibleTrigger asChild>
                       <button className={cn(
                         "w-full text-left rounded-xl border transition-all overflow-hidden",
-                        isExpanded ? "border-primary/30 shadow-sm" : "border-border hover:border-primary/20 hover:shadow-sm",
+                        isExpanded ? "border-primary/30 shadow-sm" : "border-border",
                         locked && "opacity-75"
                       )}>
-                        {/* Team matchup bar */}
                         <div className={cn(
-                          "px-4 py-3",
+                          "px-3 py-3 sm:px-4",
                           allDone ? "bg-emerald-50 dark:bg-emerald-900/20" : "bg-card"
                         )}>
-                          {/* Teams */}
-                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <FifaTeamFlag teamName={match.homeTeam} className="text-2xl flex-shrink-0" />
-                              <span className="font-bold text-sm leading-tight truncate">{match.homeTeam}</span>
+                          {/* Teams — responsive layout */}
+                          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <FifaTeamFlag teamName={match.homeTeam} className="text-xl sm:text-2xl flex-shrink-0" />
+                              <span className="font-bold text-xs sm:text-sm leading-tight truncate">{match.homeTeam}</span>
                             </div>
-                            <div className="flex flex-col items-center flex-shrink-0">
+                            <div className="flex flex-col items-center flex-shrink-0 px-1">
                               {match.completed && match.homeScore !== null ? (
-                                <span className="text-xs font-black bg-slate-900 text-white px-2.5 py-1 rounded-md tracking-wide tabular-nums">
-                                  {match.homeScore} – {match.awayScore}
+                                <span className="text-xs font-black bg-slate-900 text-white px-2 py-0.5 rounded-md tabular-nums">
+                                  {match.homeScore}–{match.awayScore}
                                 </span>
                               ) : (
-                                <span className="text-[10px] font-black text-muted-foreground bg-muted px-2 py-0.5 rounded-md tracking-widest">
+                                <span className="text-[10px] font-black text-muted-foreground bg-muted px-1.5 py-0.5 rounded-md">
                                   VS
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-2 min-w-0 justify-end">
-                              <span className="font-bold text-sm leading-tight truncate text-right">{match.awayTeam}</span>
-                              <FifaTeamFlag teamName={match.awayTeam} className="text-2xl flex-shrink-0" />
+                            <div className="flex items-center gap-1.5 min-w-0 justify-end">
+                              <span className="font-bold text-xs sm:text-sm leading-tight truncate text-right">{match.awayTeam}</span>
+                              <FifaTeamFlag teamName={match.awayTeam} className="text-xl sm:text-2xl flex-shrink-0" />
                             </div>
                           </div>
 
                           {/* Meta row */}
-                          <div className="flex items-center justify-between mt-2.5 pt-2.5 border-t border-border/50">
-                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(match.matchDate).toLocaleDateString("en-GB", {
-                                  weekday: "short", day: "numeric", month: "short",
-                                  hour: "2-digit", minute: "2-digit",
-                                })}
-                              </span>
-                              {match.venue && (
-                                <span className="hidden sm:flex items-center gap-1 truncate">
-                                  <MapPin className="w-3 h-3 flex-shrink-0" />{match.venue}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/40">
+                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <Calendar className="w-3 h-3 flex-shrink-0" />
+                              {new Date(match.matchDate).toLocaleDateString("en-GB", {
+                                day: "numeric", month: "short",
+                                hour: "2-digit", minute: "2-digit",
+                              })}
+                            </span>
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
                               {mqs.length > 0 && (
                                 <span className={cn(
                                   "text-[11px] font-bold px-2 py-0.5 rounded-full",
-                                  allDone
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-muted text-muted-foreground"
+                                  allDone ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"
                                 )}>
-                                  {answered}/{mqs.length} picks
+                                  {answered}/{mqs.length}
                                 </span>
                               )}
                               <ChevronDown className={cn(
@@ -452,7 +443,7 @@ export default function FifaQuestionPicker() {
                       </button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <div className="mt-2 space-y-2 px-1">
+                      <div className="mt-2 space-y-2">
                         {mqs.length === 0 ? (
                           <p className="text-xs text-muted-foreground text-center py-4">No questions added yet</p>
                         ) : mqs.map((q) => (
@@ -481,13 +472,13 @@ export default function FifaQuestionPicker() {
         </div>
       )}
 
-      {/* Sticky save */}
+      {/* Sticky save — full-width on mobile */}
       {hasPending && !locked && (
-        <div className="sticky bottom-20 sm:bottom-6 flex justify-center pt-2">
+        <div className="sticky bottom-20 sm:bottom-6 pt-2">
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="shadow-xl gap-2 px-8 py-2.5 rounded-full font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30"
+            className="w-full sm:w-auto sm:mx-auto sm:flex shadow-xl gap-2 px-8 h-12 sm:h-11 rounded-2xl font-bold text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/30"
           >
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
             Save {pendingAnswers.size} Pick{pendingAnswers.size !== 1 ? "s" : ""}
@@ -502,8 +493,8 @@ export default function FifaQuestionPicker() {
 
 function EmptyState({ title, subtitle }: { title: string; subtitle: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-4">
-      <img src="/2026_FIFA_World_Cup_emblem.svg.webp" alt="FIFA World Cup 2026" className="w-16 h-16 object-contain opacity-60" />
+    <div className="flex flex-col items-center justify-center py-14 gap-4">
+      <img src="/2026_FIFA_World_Cup_emblem.svg.webp" alt="FIFA World Cup 2026" className="w-14 h-14 object-contain opacity-60" />
       <div className="text-center space-y-1">
         <p className="font-bold text-foreground">{title}</p>
         <p className="text-sm text-muted-foreground max-w-xs">{subtitle}</p>
@@ -519,13 +510,15 @@ interface QuestionCardProps {
   locked: boolean;
   currentAnswer?: string;
   onAnswer: (questionId: string, answer: string) => void;
-  compact?: boolean;
 }
 
-function QuestionCard({ question, locked, currentAnswer, onAnswer, compact }: QuestionCardProps) {
+function QuestionCard({ question, locked, currentAnswer, onAnswer }: QuestionCardProps) {
   const options = question.questionType === "yes_no" ? ["Yes", "No"] : (question.options as string[] | null) ?? [];
   const isAnswered = !!currentAnswer;
   const showResult = !!question.correctAnswer;
+
+  // Context flags set by admin — purely informational
+  const contextTeams: string[] = (question.contextTeams as string[] | null) ?? [];
 
   return (
     <div className={cn(
@@ -537,14 +530,27 @@ function QuestionCard({ question, locked, currentAnswer, onAnswer, compact }: Qu
         "px-4 py-3 flex items-start justify-between gap-3 border-b border-border/50",
         isAnswered && !locked ? "bg-primary/5" : "bg-muted/20"
       )}>
-        <p className={cn(
-          "font-semibold leading-snug flex-1",
-          compact ? "text-xs" : "text-sm"
-        )}>
-          {question.questionText}
-        </p>
+        <div className="flex-1 min-w-0 space-y-2">
+          <p className="font-semibold text-sm leading-snug">
+            {question.questionText}
+          </p>
+          {/* Context team flags — purely informational */}
+          {contextTeams.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {contextTeams.map((team) => (
+                <span
+                  key={team}
+                  className="inline-flex items-center gap-1 bg-muted/60 border border-border/60 rounded-full px-2 py-0.5"
+                >
+                  <FifaTeamFlag teamName={team} className="text-sm" />
+                  <span className="text-[11px] text-muted-foreground font-medium leading-none">{team}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
         <span className={cn(
-          "flex-shrink-0 text-[10px] font-bold rounded-full px-2 py-0.5 border mt-0.5",
+          "flex-shrink-0 text-[10px] font-bold rounded-full px-2 py-0.5 border mt-0.5 whitespace-nowrap",
           isAnswered && !locked
             ? "border-primary/30 text-primary bg-primary/8"
             : "border-border text-muted-foreground bg-background"
@@ -553,8 +559,8 @@ function QuestionCard({ question, locked, currentAnswer, onAnswer, compact }: Qu
         </span>
       </div>
 
-      {/* Options */}
-      <div className={cn("px-3 py-2.5 bg-background space-y-1.5", compact && "py-2")}>
+      {/* Options — full-height touch targets */}
+      <div className="px-3 py-2 bg-background space-y-1.5">
         <RadioGroup
           value={currentAnswer || ""}
           onValueChange={(val) => !locked && onAnswer(question.id, val)}
@@ -563,17 +569,16 @@ function QuestionCard({ question, locked, currentAnswer, onAnswer, compact }: Qu
           {options.map((option) => {
             const isSelected = currentAnswer === option;
             const isCorrect = question.correctAnswer === option;
+            const hasFlag = getFifaFlagClass(option) !== "fi fi-xx";
             return (
               <div
                 key={option}
                 onClick={() => !locked && onAnswer(question.id, option)}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-all duration-150 select-none",
-                  // Ungraded states
+                  "flex items-center gap-3 px-3 rounded-lg border cursor-pointer transition-all duration-150 select-none min-h-[48px]",
                   !showResult && isSelected && "border-primary bg-primary/8 shadow-sm",
-                  !showResult && !isSelected && !locked && "border-border hover:border-primary/40 hover:bg-muted/40",
+                  !showResult && !isSelected && !locked && "border-border hover:border-primary/40 hover:bg-muted/30 active:bg-muted/60",
                   !showResult && !isSelected && locked && "border-border opacity-50 cursor-not-allowed",
-                  // Graded states
                   showResult && isCorrect && "border-emerald-400 bg-emerald-50 dark:bg-emerald-900/20",
                   showResult && isSelected && !isCorrect && "border-rose-400 bg-rose-50 dark:bg-rose-900/20",
                   showResult && !isSelected && !isCorrect && "border-border opacity-40",
@@ -588,13 +593,15 @@ function QuestionCard({ question, locked, currentAnswer, onAnswer, compact }: Qu
                 <Label
                   htmlFor={`${question.id}-${option}`}
                   className={cn(
-                    "flex-1 font-medium cursor-pointer",
-                    compact ? "text-xs" : "text-sm",
+                    "flex-1 font-medium cursor-pointer flex items-center gap-2 text-sm py-3",
                     locked && "cursor-not-allowed",
                     showResult && isCorrect && "text-emerald-700 dark:text-emerald-400",
                     showResult && isSelected && !isCorrect && "text-rose-700 dark:text-rose-400",
                   )}
                 >
+                  {hasFlag && (
+                    <FifaTeamFlag teamName={option} className="text-xl flex-shrink-0" />
+                  )}
                   {option}
                 </Label>
                 {isSelected && !showResult && (
@@ -604,7 +611,7 @@ function QuestionCard({ question, locked, currentAnswer, onAnswer, compact }: Qu
                   <span className="text-emerald-600 font-bold text-xs flex-shrink-0">✓ Correct</span>
                 )}
                 {showResult && isSelected && !isCorrect && (
-                  <span className="text-rose-500 text-xs flex-shrink-0">✗ Wrong</span>
+                  <span className="text-rose-500 text-xs flex-shrink-0">✗</span>
                 )}
               </div>
             );

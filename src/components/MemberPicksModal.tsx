@@ -13,7 +13,7 @@ import { golfPicksUserAPI } from "@/lib/api/golf-picks";
 import { golfAPI, type GolfPlayer } from "@/lib/api/golf";
 import { getPlayerCountryCode } from "@/lib/golf-player-countries";
 import { fifaRoundsAPI, fifaAnswersAPI, type FifaRound, type FifaUserAnswer, type FifaMatch } from "@/lib/api/fifa";
-import { FifaTeamFlag } from "@/lib/utils/fifa";
+import { FifaTeamFlag, getFifaFlagClass } from "@/lib/utils/fifa";
 
 interface GolfPickDisplay {
   groupNumber: number;
@@ -1364,15 +1364,26 @@ function FifaAnswerRow({ answer }: { answer: FifaUserAnswer }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] text-muted-foreground truncate">{answer.question?.questionText}</p>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className={cn(
-            "text-xs font-bold",
+            "text-xs font-bold flex items-center gap-1",
             status === "correct" && "text-emerald-700",
             status === "wrong" && "text-rose-600 line-through opacity-70",
             status === "pending" && "text-foreground",
-          )}>{answer.answer}</span>
+          )}>
+            {answer.answer && getFifaFlagClass(answer.answer) !== "fi fi-xx" && (
+              <FifaTeamFlag teamName={answer.answer} className="text-sm flex-shrink-0" />
+            )}
+            {answer.answer}
+          </span>
           {status === "wrong" && answer.question?.correctAnswer && (
-            <span className="text-xs font-bold text-emerald-700">→ {answer.question.correctAnswer}</span>
+            <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+              →
+              {getFifaFlagClass(answer.question.correctAnswer) !== "fi fi-xx" && (
+                <FifaTeamFlag teamName={answer.question.correctAnswer} className="text-sm flex-shrink-0" />
+              )}
+              {answer.question.correctAnswer}
+            </span>
           )}
         </div>
       </div>

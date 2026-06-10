@@ -267,6 +267,7 @@ export class FifaService {
     questionText: string;
     questionType: string;
     options?: string[];
+    contextTeams?: string[];
     points: number;
   }) {
     if (!data.roundId && !data.matchId) throw new Error("Either roundId or matchId is required.");
@@ -286,6 +287,7 @@ export class FifaService {
         questionText: data.questionText.trim(),
         questionType: data.questionType,
         options: finalOptions,
+        contextTeams: data.contextTeams?.length ? data.contextTeams : null,
         points: data.points,
         correctAnswer: null,
       },
@@ -301,6 +303,7 @@ export class FifaService {
     questionText?: string;
     questionType?: string;
     options?: string[];
+    contextTeams?: string[] | null;
     points?: number;
   }) {
     const existing = await this.prisma.fifaQuestion.findUnique({ where: { id } });
@@ -321,6 +324,7 @@ export class FifaService {
         ...(data.questionText !== undefined && { questionText: data.questionText.trim() }),
         ...(data.questionType !== undefined && { questionType: data.questionType }),
         ...(finalOptions !== undefined && { options: finalOptions }),
+        ...(data.contextTeams !== undefined && { contextTeams: data.contextTeams?.length ? data.contextTeams : null }),
         ...(data.points !== undefined && { points: data.points }),
       },
       include: { round: true, match: { include: { round: true } } },

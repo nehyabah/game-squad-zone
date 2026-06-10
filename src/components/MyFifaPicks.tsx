@@ -9,7 +9,7 @@ import {
   fifaAnswersAPI, fifaRoundsAPI, fifaLeaderboardAPI,
   FifaUserAnswer, FifaRound, FifaLeaderboardEntry, FifaMatch,
 } from "@/lib/api/fifa";
-import { FifaTeamFlag } from "@/lib/utils/fifa";
+import { FifaTeamFlag, getFifaFlagClass } from "@/lib/utils/fifa";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { getDisplayName, getInitials } from "@/lib/utils/user";
@@ -28,7 +28,7 @@ const AnswerRow: React.FC<{ answer: FifaUserAnswer }> = ({ answer }) => {
   const status = answer.isCorrect === true ? "correct" : answer.isCorrect === false ? "wrong" : "pending";
   return (
     <div className={cn(
-      "flex items-center gap-3 px-4 py-3 border-b last:border-0 transition-colors",
+      "flex items-center gap-3 px-4 py-3 min-h-[52px] border-b last:border-0 transition-colors",
       status === "correct" && "bg-emerald-50/60 dark:bg-emerald-900/10",
       status === "wrong" && "bg-rose-50/60 dark:bg-rose-900/10",
     )}>
@@ -44,18 +44,25 @@ const AnswerRow: React.FC<{ answer: FifaUserAnswer }> = ({ answer }) => {
         <p className="text-[11px] text-muted-foreground leading-snug mb-0.5 truncate">
           {answer.question?.questionText}
         </p>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className={cn(
-            "text-sm font-bold",
+            "text-sm font-bold flex items-center gap-1.5",
             status === "correct" && "text-emerald-700",
             status === "wrong" && "text-rose-600 line-through opacity-70",
             status === "pending" && "text-foreground",
           )}>
+            {answer.answer && getFifaFlagClass(answer.answer) !== "fi fi-xx" && (
+              <FifaTeamFlag teamName={answer.answer} className="text-base flex-shrink-0" />
+            )}
             {answer.answer}
           </span>
           {status === "wrong" && answer.question?.correctAnswer && (
-            <span className="text-sm font-bold text-emerald-700">
-              → {answer.question.correctAnswer}
+            <span className="text-sm font-bold text-emerald-700 flex items-center gap-1.5">
+              →
+              {getFifaFlagClass(answer.question.correctAnswer) !== "fi fi-xx" && (
+                <FifaTeamFlag teamName={answer.question.correctAnswer} className="text-base flex-shrink-0" />
+              )}
+              {answer.question.correctAnswer}
             </span>
           )}
         </div>
@@ -180,35 +187,35 @@ export default function MyFifaPicks() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-400/60 to-transparent" />
 
-        <div className="relative px-5 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 min-w-0">
+        <div className="relative px-4 py-3.5 sm:px-5 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <img
                 src="/2026_FIFA_World_Cup_emblem.svg.webp"
                 alt="FIFA WC 2026"
-                className="w-12 h-12 object-contain flex-shrink-0 drop-shadow-lg"
+                className="w-10 h-10 sm:w-12 sm:h-12 object-contain flex-shrink-0 drop-shadow-lg"
               />
               <div>
-                <p className="text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">
+                <p className="text-emerald-400 text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mb-0.5">
                   My Picks
                 </p>
-                <h2 className="text-white font-black text-xl leading-none tracking-tight">World Cup 2026</h2>
+                <h2 className="text-white font-black text-lg sm:text-xl leading-none tracking-tight">World Cup 2026</h2>
               </div>
             </div>
 
-            {/* Points pill */}
+            {/* Points */}
             <div className="flex-shrink-0 text-right">
               <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wider mb-0.5">Points</p>
-              <p className="text-white font-black text-3xl leading-none tabular-nums">{totalPoints}</p>
+              <p className="text-white font-black text-2xl sm:text-3xl leading-none tabular-nums">{totalPoints}</p>
             </div>
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/10">
+          <div className="grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-white/10">
             <StatPill label="Correct" value={correct} color="emerald" />
             <StatPill label="Wrong" value={wrong} color="rose" />
             <StatPill
-              label={accuracy !== null ? `${accuracy}% acc.` : "Pending"}
+              label={accuracy !== null ? `${accuracy}%` : "Pending"}
               value={pending}
               color="amber"
             />
@@ -232,7 +239,7 @@ export default function MyFifaPicks() {
               data-round-id={round.id}
               onClick={() => setSelectedRoundId(round.id)}
               className={cn(
-                "flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap",
+                "flex-shrink-0 flex items-center gap-1 px-2.5 py-2 rounded-lg text-xs font-semibold transition-all border whitespace-nowrap min-h-[36px]",
                 isSel
                   ? "bg-primary text-white border-primary shadow-md shadow-primary/30"
                   : isActive
@@ -455,7 +462,7 @@ function LeaderboardTable({
             <div
               key={entry.rank}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 border-b last:border-0 transition-colors",
+                "flex items-center gap-3 px-4 py-3 min-h-[52px] border-b last:border-0 transition-colors",
                 isMe && "bg-primary/5",
                 !isMe && idx === 0 && "bg-gradient-to-r from-yellow-50/80 to-transparent dark:from-yellow-900/10",
                 !isMe && idx === 1 && "bg-gradient-to-r from-slate-50 to-transparent dark:from-slate-800/20",

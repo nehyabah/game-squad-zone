@@ -532,12 +532,10 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
           </div>
 
           <TabsContent value="fixtures" className="space-y-8">
-            {selectedSport === "six-nations" ? (
-              <SixNationsQuestionPicker />
+            {selectedSport === "six-nations" || selectedSport === "golf" ? (
+              <OffSeasonScreen sport={selectedSport} />
             ) : selectedSport === "fifa" ? (
               <FifaQuestionPicker />
-            ) : selectedSport === "golf" ? (
-              <GolfFixtures />
             ) : (
               <GameSelection />
             )}
@@ -551,19 +549,21 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
           </TabsContent>
 
           <TabsContent value="games" className="space-y-8">
-            {selectedSport === "six-nations" ? (
-              <MySixNationsPicks />
+            {selectedSport === "six-nations" || selectedSport === "golf" ? (
+              <OffSeasonScreen sport={selectedSport} />
             ) : selectedSport === "fifa" ? (
               <MyFifaPicks />
-            ) : selectedSport === "golf" ? (
-              <GolfPicksPicker />
             ) : (
               <MyPicks onEditPicks={() => handleTabChange("fixtures")} />
             )}
           </TabsContent>
 
           <TabsContent value="leaderboard" className="space-y-8">
-            <Leaderboard />
+            {selectedSport === "six-nations" || selectedSport === "golf" ? (
+              <OffSeasonScreen sport={selectedSport} />
+            ) : (
+              <Leaderboard />
+            )}
           </TabsContent>
         </Tabs>
       </div>
@@ -864,3 +864,25 @@ const Index = ({ sport: routeSport }: IndexProps = {}) => {
 };
 
 export default Index;
+
+function OffSeasonScreen({ sport }: { sport: string }) {
+  const config = sport === "golf"
+    ? { logo: "/golf.svg", name: "Golf", invert: true }
+    : { logo: "/6Nations.png", name: "Six Nations", invert: false };
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20 gap-5 text-center">
+      <img
+        src={config.logo}
+        alt={config.name}
+        className={`w-20 h-20 object-contain opacity-40 ${config.invert ? "dark:invert" : ""}`}
+      />
+      <div className="space-y-1.5">
+        <p className="text-xl font-black text-foreground">Off Season</p>
+        <p className="text-sm text-muted-foreground max-w-xs">
+          {config.name} is currently off season. Check back when the next tournament begins.
+        </p>
+      </div>
+    </div>
+  );
+}

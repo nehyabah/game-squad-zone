@@ -296,27 +296,31 @@ const SquadDashboard = ({ squadId, onBack }: SquadDashboardProps) => {
       });
   }, [globalSixNationsData, user]);
 
-  // FIFA squad ranking — global FIFA data filtered to squad members
+  // FIFA squad ranking — all squad members, merged with FIFA pick data (0 pts if no picks yet)
   const fifaSquadRanking = useMemo(() => {
-    if (!isFifa || !globalFifaData.length) return [];
-    const memberIds = new Set((squad?.members || []).map(m => m.userId));
-    return globalFifaData
-      .filter(e => memberIds.has(e.user.id))
-      .sort((a, b) => b.totalPoints !== a.totalPoints ? b.totalPoints - a.totalPoints : b.correctAnswers - a.correctAnswers)
-      .map((entry, index) => ({
-        userId: entry.user.id,
-        username: entry.user.username,
-        displayName: entry.user.displayName,
-        firstName: entry.user.firstName,
-        lastName: entry.user.lastName,
-        points: entry.totalPoints,
-        wins: entry.correctAnswers,
-        losses: entry.incorrectAnswers,
-        pushes: entry.totalAnswers - entry.correctAnswers - entry.incorrectAnswers,
-        winPercentage: 0,
-        rank: index + 1,
-        isCurrentUser: user ? entry.user.id === user.id : false,
-      }));
+    if (!isFifa) return [];
+    const members = squad?.members || [];
+    const fifaMap = new Map(globalFifaData.map(e => [e.user.id, e]));
+    return members
+      .map(m => {
+        const entry = fifaMap.get(m.userId);
+        return {
+          userId: m.userId,
+          username: m.user?.username || m.username || 'Unknown',
+          displayName: m.user?.displayName ?? null,
+          firstName: m.user?.firstName ?? null,
+          lastName: m.user?.lastName ?? null,
+          points: entry?.totalPoints ?? 0,
+          wins: entry?.correctAnswers ?? 0,
+          losses: entry?.incorrectAnswers ?? 0,
+          pushes: entry ? entry.totalAnswers - entry.correctAnswers - entry.incorrectAnswers : 0,
+          winPercentage: 0,
+          rank: 0,
+          isCurrentUser: user ? m.userId === user.id : false,
+        };
+      })
+      .sort((a, b) => b.points !== a.points ? b.points - a.points : b.wins - a.wins)
+      .map((member, index) => ({ ...member, rank: index + 1 }));
   }, [globalFifaData, squad?.members, user, isFifa]);
 
   // For Six Nations squads, switch between current round, total, and global based on tab

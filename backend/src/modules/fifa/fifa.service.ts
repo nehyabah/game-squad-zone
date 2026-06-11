@@ -393,7 +393,9 @@ export class FifaService {
   }
 
   // ── Answers ──────────────────────────────────────────────────────────
-  // Locking is round-level: checks round.isLocked OR lockTime has passed
+  // Locking rules:
+  //   Round-level: round.isLocked OR round.lockTime has passed
+  //   Match-level: match questions also lock LOCK_HOURS before kickoff
 
   private async getRoundForQuestion(questionId: string) {
     const q = await this.prisma.fifaQuestion.findUnique({
@@ -404,6 +406,7 @@ export class FifaService {
   }
 
   async submitAnswers(userId: string, answers: { questionId: string; answer: string }[]) {
+    const LOCK_HOURS = 1;
     const now = new Date();
     const questionIds = answers.map((a) => a.questionId);
 
@@ -414,7 +417,7 @@ export class FifaService {
     const qMap = new Map(questions.map((q) => [q.id, q]));
 
     const allowed: { questionId: string; answer: string }[] = [];
-    const locked: { questionId: string; answer: string; roundName: string }[] = [];
+    const locked: { questionId: string; answer: string; reason: string }[] = [];
 
     for (const { questionId, answer } of answers) {
       const q = qMap.get(questionId);
@@ -422,9 +425,15 @@ export class FifaService {
       const round = q.round ?? q.match?.round;
       if (!round) continue;
 
-      const isLocked = round.isLocked || (round.lockTime != null && now >= new Date(round.lockTime));
-      if (isLocked) {
-        locked.push({ questionId, answer, roundName: round.name });
+      const roundLocked = round.isLocked || (round.lockTime != null && now >= new Date(round.lockTime));
+      const matchLocked = q.match != null &&
+        now >= new Date(q.match.matchDate.getTime() - LOCK_HOURS * 60 * 60 * 1000);
+
+      if (roundLocked || matchLocked) {
+        const reason = roundLocked
+          ? `${round.name} is locked`
+          : `${q.match!.homeTeam} vs ${q.match!.awayTeam} locks ${LOCK_HOURS}h before kickoff`;
+        locked.push({ questionId, answer, reason });
       } else {
         allowed.push({ questionId, answer });
       }
@@ -437,13 +446,13 @@ export class FifaService {
           performedBy: userId,
           targetType: "answer",
           targetId: l.questionId,
-          details: { questionId: l.questionId, answer: l.answer, roundName: l.roundName, submittedAt: now.toISOString() },
+          details: { questionId: l.questionId, answer: l.answer, reason: l.reason, submittedAt: now.toISOString() },
         },
       });
     }
 
     if (allowed.length === 0 && locked.length > 0) {
-      throw new Error("All answers rejected: round is locked.");
+      throw new Error(`All answers rejected: ${locked[0].reason}`);
     }
 
     let saved: any[] = [];
@@ -474,8 +483,8 @@ export class FifaService {
     if (locked.length > 0) {
       return {
         saved,
-        locked: locked.map((l) => ({ questionId: l.questionId, reason: `${l.roundName} is locked` })),
-        message: `${saved.length} answer(s) saved, ${locked.length} rejected (round locked)`,
+        locked: locked.map((l) => ({ questionId: l.questionId, reason: l.reason })),
+        message: `${saved.length} answer(s) saved, ${locked.length} rejected (locked)`,
       };
     }
     return saved;

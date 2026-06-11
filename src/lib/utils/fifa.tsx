@@ -79,6 +79,13 @@ const FIFA_COUNTRIES: Record<string, string> = {
   Vietnam: "fi fi-vn",
   Philippines: "fi fi-ph",
   India: "fi fi-in",
+  "Bosnia and Herzegovina": "fi fi-ba",
+  Bosnia: "fi fi-ba",
+  Curacao: "fi fi-cw",
+  "Cape Verde": "fi fi-cv",
+  "DR Congo": "fi fi-cd",
+  "Congo DR": "fi fi-cd",
+  Uzbekistan: "fi fi-uz",
 };
 
 export const FIFA_COUNTRY_NAMES = Object.keys(FIFA_COUNTRIES).sort();

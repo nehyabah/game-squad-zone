@@ -207,6 +207,16 @@ export class FifaController {
     }
   }
 
+  async getMatchPickStatus(request: FastifyRequest<{ Params: { roundId: string; userId: string } }>, reply: FastifyReply) {
+    try {
+      const requestingUserId = (request as any).currentUser?.id;
+      if (!requestingUserId) return reply.status(401).send({ error: "Unauthorized" });
+      return reply.send(await this.service.getMatchPickStatus(request.params.userId, request.params.roundId));
+    } catch (e: any) {
+      return reply.status(500).send({ error: e.message || "Failed to fetch match pick status" });
+    }
+  }
+
   async getUserAnswers(request: FastifyRequest, reply: FastifyReply) {
     try {
       const userId = (request as any).currentUser?.id;

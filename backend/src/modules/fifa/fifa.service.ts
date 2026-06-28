@@ -524,6 +524,58 @@ export class FifaService {
     });
   }
 
+  // Per-match pick visibility for match-based rounds (R2–6):
+  // Returns each match in the round, whether the user picked, and actual picks only for locked matches.
+  async getMatchPickStatus(targetUserId: string, roundId: string) {
+    const LOCK_HOURS = 1;
+    const now = new Date();
+
+    const matches = await this.prisma.fifaMatch.findMany({
+      where: { roundId },
+      orderBy: { matchNumber: "asc" },
+      include: { round: true },
+    });
+
+    if (matches.length === 0) return [];
+
+    const matchIds = matches.map((m) => m.id);
+    const answers = await this.prisma.fifaAnswer.findMany({
+      where: {
+        userId: targetUserId,
+        question: { matchId: { in: matchIds } },
+      },
+      include: {
+        question: {
+          include: {
+            match: { include: { round: true } },
+            round: true,
+          },
+        },
+      },
+      orderBy: { question: { questionNumber: "asc" } },
+    });
+
+    const answersByMatch = new Map<string, typeof answers>();
+    for (const a of answers) {
+      const mid = a.question.matchId;
+      if (!mid) continue;
+      if (!answersByMatch.has(mid)) answersByMatch.set(mid, []);
+      answersByMatch.get(mid)!.push(a);
+    }
+
+    return matches.map((match) => {
+      const lockTime = new Date(match.matchDate.getTime() - LOCK_HOURS * 60 * 60 * 1000);
+      const isLocked = now >= lockTime;
+      const matchAnswers = answersByMatch.get(match.id) ?? [];
+      return {
+        match,
+        isLocked,
+        hasPick: matchAnswers.length > 0,
+        picks: isLocked ? matchAnswers : undefined,
+      };
+    });
+  }
+
   async getUserAnswers(userId: string, roundId?: string) {
     // Resolve which round IDs to filter by
     let targetRoundIds: string[];

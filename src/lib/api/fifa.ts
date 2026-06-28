@@ -156,7 +156,17 @@ export const fifaAnswersAPI = {
     const params = roundId ? { roundId } : {};
     return (await api.get(`/fifa/answers/user/${userId}`, { params })).data;
   },
+
+  getMatchPickStatus: async (userId: string, roundId: string): Promise<FifaMatchPickStatus[]> =>
+    (await api.get(`/fifa/rounds/${roundId}/member-picks/${userId}`)).data,
 };
+
+export interface FifaMatchPickStatus {
+  match: FifaMatch;
+  isLocked: boolean;
+  hasPick: boolean;
+  picks?: FifaUserAnswer[];
+}
 
 // Leaderboard API
 export const fifaLeaderboardAPI = {

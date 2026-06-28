@@ -12,7 +12,7 @@ import { TeamFlag } from "@/lib/utils/sixNations";
 import { golfPicksUserAPI } from "@/lib/api/golf-picks";
 import { golfAPI, type GolfPlayer } from "@/lib/api/golf";
 import { getPlayerCountryCode } from "@/lib/golf-player-countries";
-import { fifaRoundsAPI, fifaAnswersAPI, type FifaRound, type FifaUserAnswer, type FifaMatch } from "@/lib/api/fifa";
+import { fifaRoundsAPI, fifaAnswersAPI, type FifaRound, type FifaUserAnswer, type FifaMatch, type FifaMatchPickStatus } from "@/lib/api/fifa";
 import { FifaTeamFlag, getFifaFlagClass } from "@/lib/utils/fifa";
 
 interface GolfPickDisplay {
@@ -50,6 +50,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
   const [fifaRounds, setFifaRounds] = useState<FifaRound[]>([]);
   const [selectedFifaRoundId, setSelectedFifaRoundId] = useState<string | null>(null);
   const [fifaAnswers, setFifaAnswers] = useState<FifaUserAnswer[]>([]);
+  const [fifaMatchPickStatus, setFifaMatchPickStatus] = useState<FifaMatchPickStatus[]>([]);
 
   // Golf state
   const [golfPicks, setGolfPicks] = useState<GolfPickDisplay[]>([]);
@@ -180,6 +181,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
       setFifaRounds([]);
       setSelectedFifaRoundId(null);
       setFifaAnswers([]);
+      setFifaMatchPickStatus([]);
     }
   }, [isOpen]);
 
@@ -251,11 +253,25 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
   const loadFifaAnswers = async (roundId: string) => {
     setIsLoading(true);
     setError(null);
+    const selectedRound = fifaRounds.find((r) => r.id === roundId);
+    const isMatchBased = (selectedRound?.roundNumber ?? 0) >= 2;
     try {
-      const data = await fifaAnswersAPI.getSpecificUserAnswers(userId, roundId);
-      setFifaAnswers(data);
+      if (isMatchBased) {
+        // For match-based rounds, fetch per-match pick status (shows picks only for locked matches)
+        const [statusData, answersData] = await Promise.all([
+          fifaAnswersAPI.getMatchPickStatus(userId, roundId),
+          fifaAnswersAPI.getSpecificUserAnswers(userId, roundId),
+        ]);
+        setFifaMatchPickStatus(statusData);
+        setFifaAnswers(answersData);
+      } else {
+        setFifaMatchPickStatus([]);
+        const data = await fifaAnswersAPI.getSpecificUserAnswers(userId, roundId);
+        setFifaAnswers(data);
+      }
     } catch {
       setFifaAnswers([]);
+      setFifaMatchPickStatus([]);
     } finally {
       setIsLoading(false);
     }
@@ -547,6 +563,7 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
               const roundIsLocked = selectedRound
                 ? selectedRound.isLocked || (!!selectedRound.lockTime && new Date() >= new Date(selectedRound.lockTime))
                 : false;
+              const isMatchBased = (selectedRound?.roundNumber ?? 0) >= 2;
 
               if (isLoading) return (
                 <div className="flex items-center justify-center py-14 gap-2">
@@ -555,6 +572,12 @@ export function MemberPicksModal({ isOpen, onClose, userId, displayName, sport =
                 </div>
               );
 
+              // Match-based rounds (R32, R16, QF, SF, Final): show per-match pick status
+              if (isMatchBased && fifaMatchPickStatus.length > 0) {
+                return <FifaMatchPickStatusView matchPickStatus={fifaMatchPickStatus} selectedRoundId={selectedFifaRoundId} rounds={fifaRounds} displayName={displayName} />;
+              }
+
+              // Round 0/1 (no matches): hide picks until round is fully locked
               if (!roundIsLocked) return (
                 <div className="flex flex-col items-center justify-center py-14 gap-4 text-center px-6">
                   <div className="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center">
@@ -1345,6 +1368,110 @@ function FifaAnswersView({
       {directAnswers.length === 0 && matchMap.size === 0 && (
         <p className="text-center text-sm text-muted-foreground py-6">No picks for this round.</p>
       )}
+    </div>
+  );
+}
+
+// ── Per-match pick status view (R32 and beyond, before round locks) ──────────
+
+function FifaMatchPickStatusView({
+  matchPickStatus,
+  selectedRoundId,
+  rounds,
+  displayName,
+}: {
+  matchPickStatus: FifaMatchPickStatus[];
+  selectedRoundId: string | null;
+  rounds: FifaRound[];
+  displayName: string;
+}) {
+  const roundName = rounds.find((r) => r.id === selectedRoundId)?.name;
+  const allLocked = matchPickStatus.every((m) => m.isLocked);
+  const pickedCount = matchPickStatus.filter((m) => m.hasPick).length;
+
+  const formatKickoff = (dateStr: string) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  };
+
+  return (
+    <div className="p-3 sm:p-5 space-y-3">
+      {/* Summary strip */}
+      <div className="flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl border border-border/50">
+        <span className="text-xs font-semibold text-foreground">{roundName ?? "Round"}</span>
+        <span className="text-xs text-muted-foreground">
+          {pickedCount}/{matchPickStatus.length} picked
+        </span>
+      </div>
+
+      {!allLocked && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+          <Lock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+          <p className="text-[11px] text-amber-700 leading-snug">
+            Picks are hidden until each game kicks off. You can see whether {displayName} has picked.
+          </p>
+        </div>
+      )}
+
+      {matchPickStatus.map(({ match, isLocked, hasPick, picks }) => (
+        <div key={match.id} className="rounded-xl border border-border overflow-hidden">
+          {/* Match header */}
+          <div className={cn(
+            "px-3 py-2.5 border-b border-border",
+            isLocked ? "bg-muted/30" : "bg-amber-50/40",
+          )}>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <FifaTeamFlag teamName={match.homeTeam} className="text-lg flex-shrink-0" />
+                <span className="font-bold text-xs truncate">{match.homeTeam}</span>
+              </div>
+              <div className="flex-shrink-0 flex flex-col items-center gap-0.5">
+                {match.completed && match.homeScore !== null ? (
+                  <span className="text-[10px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md tabular-nums">
+                    {match.homeScore}–{match.awayScore}
+                  </span>
+                ) : isLocked ? (
+                  <span className="text-[9px] font-black text-muted-foreground tracking-widest">VS</span>
+                ) : (
+                  <Lock className="w-3 h-3 text-amber-500" />
+                )}
+                {!match.completed && (
+                  <span className="text-[9px] text-muted-foreground">{formatKickoff(match.matchDate)}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0 justify-end">
+                <span className="font-bold text-xs truncate text-right">{match.awayTeam}</span>
+                <FifaTeamFlag teamName={match.awayTeam} className="text-lg flex-shrink-0" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pick status or actual picks */}
+          {isLocked && picks && picks.length > 0 ? (
+            picks.map((a) => <FifaAnswerRow key={a.id} answer={a} />)
+          ) : isLocked && (!picks || picks.length === 0) ? (
+            <div className="flex items-center gap-2 px-3 py-2.5">
+              <Minus className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs text-muted-foreground">No pick submitted</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2.5">
+              {hasPick ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                  <span className="text-xs font-medium text-emerald-700">Pick submitted</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground">Hidden until kickoff</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs text-muted-foreground">No pick yet</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }

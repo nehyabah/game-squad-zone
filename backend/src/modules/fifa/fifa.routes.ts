@@ -38,6 +38,7 @@ export default async function fifaRoutes(app: FastifyInstance) {
   app.post("/fifa/answers", { preHandler: [app.auth] }, (req, reply) => controller.submitAnswers(req, reply));
   app.get("/fifa/answers", { preHandler: [app.auth] }, (req, reply) => controller.getUserAnswers(req, reply));
   app.get("/fifa/answers/user/:userId", { preHandler: [app.auth] }, (req: FastifyRequest<{ Params: { userId: string } }>, reply) => controller.getSpecificUserAnswers(req, reply));
+  app.get("/fifa/rounds/:roundId/member-picks/:userId", { preHandler: [app.auth] }, (req: FastifyRequest<{ Params: { roundId: string; userId: string } }>, reply) => controller.getMatchPickStatus(req, reply));
 
   // ── Leaderboard / Stats ──────────────────────────────────────────────
   app.get("/fifa/leaderboard", { preHandler: [app.auth] }, (req, reply) => controller.getLeaderboard(req, reply));

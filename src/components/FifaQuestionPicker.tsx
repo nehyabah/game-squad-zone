@@ -31,6 +31,21 @@ const getLockLabel = (round: FifaRound): string | null => {
   return `${m}m left`;
 };
 
+const MATCH_LOCK_MS = 60 * 60 * 1000;
+
+const isMatchLocked = (matchDate: string): boolean =>
+  new Date() >= new Date(new Date(matchDate).getTime() - MATCH_LOCK_MS);
+
+const getMatchLockLabel = (matchDate: string): string | null => {
+  const timeUntilLock = new Date(matchDate).getTime() - Date.now() - MATCH_LOCK_MS;
+  if (timeUntilLock <= 0) return null;
+  const h = Math.floor(timeUntilLock / 3600000);
+  const m = Math.floor((timeUntilLock % 3600000) / 60000);
+  if (h > 24) return null;
+  if (h > 0) return `Locks in ${h}h ${m}m`;
+  return `Locks in ${m}m`;
+};
+
 const MAX_PTS: Record<number, number> = { 0: 45, 1: 48, 2: 96, 3: 64, 4: 40, 5: 36, 6: 21 };
 
 const ROUND_SHORT: Record<number, string> = {
@@ -48,6 +63,7 @@ export default function FifaQuestionPicker() {
   const [loadingRounds, setLoadingRounds] = useState(true);
   const [loadingContent, setLoadingContent] = useState(false);
   const [expandedMatches, setExpandedMatches] = useState<Set<string>>(new Set());
+  const [, setTick] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -88,12 +104,24 @@ export default function FifaQuestionPicker() {
     el?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, [rounds, selectedRoundId]);
 
+  // Re-render every minute so match lock countdowns stay accurate
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const selectedRound = rounds.find((r) => r.id === selectedRoundId) ?? null;
   const locked = selectedRound ? isRoundLocked(selectedRound) : true;
   const lockLabel = selectedRound ? getLockLabel(selectedRound) : null;
+  const matchById = new Map(matches.map((m) => [m.id, m]));
 
   const handleAnswerChange = (questionId: string, answer: string) => {
     if (locked) return;
+    const q = questions.find((q) => q.id === questionId);
+    if (q?.matchId) {
+      const m = matchById.get(q.matchId);
+      if (m && isMatchLocked(m.matchDate)) return;
+    }
     setPendingAnswers((prev) => new Map(prev).set(questionId, answer));
   };
 
@@ -380,13 +408,15 @@ export default function FifaQuestionPicker() {
                 const isExpanded = expandedMatches.has(match.id);
                 const answered = mqs.filter((q) => existingAnswers.has(q.id) || pendingAnswers.has(q.id)).length;
                 const allDone = mqs.length > 0 && answered === mqs.length;
+                const matchLocked = locked || isMatchLocked(match.matchDate);
+                const matchLockLabel = !matchLocked ? getMatchLockLabel(match.matchDate) : null;
                 return (
                   <Collapsible key={match.id} open={isExpanded} onOpenChange={() => toggleMatch(match.id)}>
                     <CollapsibleTrigger asChild>
                       <button className={cn(
                         "w-full text-left rounded-xl border transition-all overflow-hidden",
                         isExpanded ? "border-primary/30 shadow-sm" : "border-border",
-                        locked && "opacity-75"
+                        matchLocked && "opacity-75"
                       )}>
                         <div className={cn(
                           "px-3 py-3 sm:px-4",
@@ -425,6 +455,16 @@ export default function FifaQuestionPicker() {
                               })}
                             </span>
                             <div className="flex items-center gap-1.5 flex-shrink-0">
+                              {matchLocked && !locked && (
+                                <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground bg-muted border border-border/60 rounded-full px-1.5 py-0.5">
+                                  <Lock className="w-2.5 h-2.5" /> Locked
+                                </span>
+                              )}
+                              {matchLockLabel && (
+                                <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-600">
+                                  <Clock className="w-2.5 h-2.5" /> {matchLockLabel}
+                                </span>
+                              )}
                               {mqs.length > 0 && (
                                 <span className={cn(
                                   "text-[11px] font-bold px-2 py-0.5 rounded-full",
@@ -450,7 +490,7 @@ export default function FifaQuestionPicker() {
                           <QuestionCard
                             key={q.id}
                             question={q}
-                            locked={locked}
+                            locked={matchLocked}
                             currentAnswer={pendingAnswers.get(q.id) ?? existingAnswers.get(q.id)}
                             onAnswer={handleAnswerChange}
                           />

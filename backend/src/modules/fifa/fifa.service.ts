@@ -406,7 +406,7 @@ export class FifaService {
   }
 
   async submitAnswers(userId: string, answers: { questionId: string; answer: string }[]) {
-    const LOCK_HOURS = 1;
+    const LOCK_HOURS = 0;
     const now = new Date();
     const questionIds = answers.map((a) => a.questionId);
 
@@ -432,7 +432,7 @@ export class FifaService {
       if (roundLocked || matchLocked) {
         const reason = roundLocked
           ? `${round.name} is locked`
-          : `${q.match!.homeTeam} vs ${q.match!.awayTeam} locks ${LOCK_HOURS}h before kickoff`;
+          : `${q.match!.homeTeam} vs ${q.match!.awayTeam} has kicked off`;
         locked.push({ questionId, answer, reason });
       } else {
         allowed.push({ questionId, answer });
@@ -527,7 +527,7 @@ export class FifaService {
   // Per-match pick visibility for match-based rounds (R2–6):
   // Returns each match in the round, whether the user picked, and actual picks only for locked matches.
   async getMatchPickStatus(targetUserId: string, roundId: string) {
-    const LOCK_HOURS = 1;
+    const LOCK_HOURS = 0;
     const now = new Date();
 
     const matches = await this.prisma.fifaMatch.findMany({

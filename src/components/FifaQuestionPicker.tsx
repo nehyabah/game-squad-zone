@@ -31,7 +31,7 @@ const getLockLabel = (round: FifaRound): string | null => {
   return `${m}m left`;
 };
 
-const MATCH_LOCK_MS = 60 * 60 * 1000;
+const MATCH_LOCK_MS = 0;
 
 const isMatchLocked = (matchDate: string): boolean =>
   new Date() >= new Date(new Date(matchDate).getTime() - MATCH_LOCK_MS);
